@@ -1,105 +1,74 @@
 {
-  "name": "reactree",
-  "displayName": "ReacTree",
-  "description": "React hierarchy tree visualizer and navigation tool",
-  "version": "1.0.7",
-  "icon": "icon.png",
-  "publisher": "ReacTreeDev",
-  "preview": false,
+  "name": "symmetric-blueprints",
+  "displayName": "Symmetric Blueprints",
+  "description": "Extension Description Goes Here",
+  "version": "0.0.1",
+  "publisher": "Jay Koontz",
+  "preview": true,
   "engines": {
     "vscode": "^1.74.3"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/oslabs-beta/ReacTree/tree/main"
+    "url": "https://github.com/"
   },
   "categories": [
     "Other"
   ],
   "keywords": [
-    "react",
-    "hierarchy tree",
-    "react components",
-    "parent-child",
-    "navigation",
-    "visualizer"
+    "vscode"
   ],
-  "license": "MIT",
-  "activationEvents": [
-    "onStartupFinished"
-  ],
+  "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "reacTree.start",
-        "title": "ReacTree: Show Panel"
-      },
-      {
-        "command": "reacTree.startStatusBar",
-        "title": "ReacTree: Show StatusBar"
+        "command": "symmetric-blueprints.start",
+        "title": "Init"
       }
     ]
   },
-  "extensionPack": [
-    "docsmsft.docs-markdown",
-    "docsmsft.docs-preview"
-  ],
   "scripts": {
     "vscode:prepublish": "npm run compile",
-    "compile": "webpack --mode production --config webpack.config.ts",
-    "watch": "webpack --mode development --config webpack.config.ts --watch",
-    "test": "node ./out/test/runTest.js"
+    "compile": "webpack --mode production --config webpack.config.ts"
   },
   "devDependencies": {
     "@babel/core": "^7.7.7",
-    "@babel/preset-react": "^7.18.6",
-    "@types/babel__core": "^7.20.0",
-    "@types/chai": "^4.3.4",
-    "@types/dagre": "^0.7.48",
-    "@types/fs-extra": "^8.0.1",
-    "@types/jest": "^24.0.24",
-    "@types/mocha": "^10.0.1",
+    "@babel/preset-react": "^7.7.4",
     "@types/node": "^12.20.55",
-    "@types/object-path": "^0.11.0",
-    "@types/rimraf": "^2.0.3",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
     "@types/webpack": "^4.41.0",
-    "@vscode/test-electron": "^2.2.3",
     "babel-loader": "^8.0.6",
-    "chai": "^4.3.7",
     "copy-webpack-plugin": "^5.1.1",
-    "glob": "^8.1.0",
-    "mocha": "^10.2.0",
+    "css-loader": "^3.4.0",
+    "file-loader": "^6.2.0",
+    "style-loader": "^1.0.2",
     "ts-loader": "^9.4.2",
     "ts-node": "^8.5.4",
     "typescript": "^4.9.5",
+    "url-loader": "^4.1.1",
     "webpack": "^5.75.0",
     "webpack-cli": "^5.0.1"
   },
   "dependencies": {
-    "@babel/preset-env": "^7.20.2",
-    "@coreui/icons": "^3.0.0",
-    "@coreui/icons-react": "^2.1.0",
-    "@emotion/react": "^11.10.5",
-    "@emotion/styled": "^11.10.5",
-    "@fontsource/roboto": "^4.5.8",
-    "@fortawesome/free-solid-svg-icons": "^6.3.0",
-    "@fortawesome/react-fontawesome": "^0.2.0",
-    "@mui/icons-material": "^5.11.0",
-    "@mui/material": "^5.11.8",
-    "@types/react": "^18.0.27",
-    "@types/react-dom": "^18.0.10",
+    "@dnd-kit/core": "^6.1.0",
+    "@dnd-kit/sortable": "^8.0.0",
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@fontsource/inter": "^5.0.19",
+    "@mui/icons-material": "^5.16.4",
+    "@mui/joy": "^5.0.0-beta.47",
+    "@mui/material": "^5.16.4",
+    "@types/lodash": "^4.17.7",
     "@types/vscode": "^1.75.0",
-    "babel-loader": "^9.1.2",
-    "css-loader": "^6.7.3",
-    "dagre": "^0.8.5",
-    "fs-extra": "^8.1.0",
-    "object-path": "^0.11.4",
+    "lodash": "^4.17.21",
+    "nanoid": "^5.0.7",
     "path": "^0.12.7",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "reactflow": "^11.5.2",
-    "sass-loader": "^13.2.0",
-    "style-loader": "^3.3.1"
+    "react-hook-form": "^7.52.1",
+    "react-hotkeys-hook": "^4.5.0",
+    "symmetric-parser": "^0.1.20"
   }
 }

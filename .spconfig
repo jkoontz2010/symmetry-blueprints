@@ -1,0 +1,3 @@
+GENERATOR_FILE=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/src/parser/generator-pool.ts
+TEMPLATE_FILE=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/src/parser/template-pool.js
+WORDS_FILE=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/src/parser/word-pool.ts
