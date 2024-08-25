@@ -5,7 +5,7 @@ import { useHotkeys } from "react-hotkeys-hook";
 import { hotKeyToItem } from "../util/hotKeyBuilder";
 import { Chip, ChipDelete, Sheet } from "@mui/joy";
 import { FocusableElements } from "./BuilderAccordion";
-import { compact } from "lodash";
+import { compact, isObject } from "lodash";
 import { arrayMove } from "@dnd-kit/sortable";
 import {
   closestCenter,
@@ -37,12 +37,70 @@ const generateFormFields = (
   getValues,
   setFocusedElement,
   setFocusedStepIdx,
-  outputHotkeys
+  outputHotkeys,
+  keyPrefix = null,
+  arrayFields,
+  setArrayFields
 ) => {
   console.count("generateFormFields");
   if(schema==null) return null;
+  console.log("THE SCHEMA", schema);
   return Object.keys(schema).map((key, i) => {
     console.log("doing key", key);
+    console.log("and schema at key...",schema[key])
+    if(Array.isArray(schema[key])) {
+      // RECURSE!!
+      console.log("IS ARRAY!!!", schema[key])
+      // we must have an array field here, so can add multiple.
+      // but, we add multiple of the schema inside it, which can also have an array of objects.
+      const nestedSchema: Schema =  schema[key][0] as Schema;
+      // we need the key to say "key.0.subKey", ex "mappings.0.from", "mappings.0.to", etc. 
+      // while also being able to add to it....
+      const nestedKeyPrefix = keyPrefix ? `${keyPrefix}.${key}` : key;
+
+      const nestedFormFields = generateFormFields(
+        register,
+        control,
+        nestedSchema,
+        hotkeys,
+        hotkeyEnabledIndex,
+        setHotkeyEnabledIndex,
+        setValue,
+        getValues,
+        setFocusedElement,
+        setFocusedStepIdx,
+        outputHotkeys,
+        keyPrefix ==
+      ); 
+            // we need the key to say "key.0.subKey", ex "mappings.0.from", "mappings.0.to", etc. 
+
+      return (<div style={{border:"1px solid blue"}}>MULTIPLE ADDABLE:{nestedFormFields}</div>)
+    }
+    if(!Array.isArray(schema[key]) && isObject(schema[key])) {
+      console.log("IS OBJECT!!!", schema[key])
+      // if it's an object, then the object is another schema.
+      // nest, and call generateFormFields again.
+      const nestedSchema: Schema =  schema[key] as Schema;
+      const nestedFormFields = generateFormFields(
+        register,
+        control,
+        nestedSchema,
+        hotkeys,
+        hotkeyEnabledIndex,
+        setHotkeyEnabledIndex,
+        setValue,
+        getValues,
+        setFocusedElement,
+        setFocusedStepIdx,
+        outputHotkeys,
+
+      );
+      return (
+        <div key={key} style={{border: "1px solid red"}}>NEST{nestedFormFields}</div>
+      )
+    }
+
+    const registeredKey = nestedIndex != null ? `${key}.${nestedIndex}` : key;
     switch (schema[key]) {
       case Types.String:
         return (
@@ -51,17 +109,13 @@ const generateFormFields = (
             <input {...register(key)} />
           </div>
         );
-      case Types.Object:
-        return (
-          <div key={key}>
-            <label>{key}</label>
-            <Controller
-              name={key}
-              control={control}
-              render={({ field }) => <textarea {...field} />}
-            />
-          </div>
-        );
+        case Types.Number:
+          return (
+            <div key={key}>
+              <label>{key}</label>
+              <input {...register(key)} />
+            </div>
+          );
       case Types.Template:
         return (
           <div key={key}>
@@ -308,6 +362,7 @@ const DynamicForm: React.FC<FormProps> = ({
 }) => {
   const { register, handleSubmit, control, setValue, getValues } = useForm();
   const [hotkeyEnabledIndex, setHotkeyEnabledIndex] = React.useState(null);
+  const [arrayFields, setArrayFields] = React.useState({});
 
   return (
     <div
@@ -329,7 +384,10 @@ const DynamicForm: React.FC<FormProps> = ({
           getValues,
           setFocusedElement,
           setFocusedStepIdx,
-          outputHotkeys
+          outputHotkeys,
+          null,
+          arrayFields,
+          setArrayFields
         )}
         <button type="submit">Submit</button>
       </form>

@@ -26,6 +26,7 @@ const wordStepInputsTemplate = genTemplateWithVars({
 
 
 function buildWordMeta(template:Template): Template { 
+    console.log("BUILD WORD META TEMPLTATE", template);
     const mapFromTo = [{
         template: template,
         fromToKeys: [
@@ -33,7 +34,8 @@ function buildWordMeta(template:Template): Template {
             { from: "word", to: "wordName"},
             { from: "genOutput", to: "stepOutputName"},
             {from: "genInputs", to: "stepInputs"},
-        ]
+        ],
+        index: 1
     }]
 
     const mapped = fillTemplateWithMappedKeys(mapFromTo, template);

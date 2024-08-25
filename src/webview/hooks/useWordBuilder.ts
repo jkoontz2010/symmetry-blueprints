@@ -14,7 +14,7 @@ export type BuilderTemplate = {
   template: Template;
 };
 
-export type Schema = Record<string, Types>;
+export type Schema = Record<string, any>;
 
 export type BuilderGenerator = {
   name: string;
@@ -29,10 +29,14 @@ export type BuilderNewWord = {
 };
 
 export enum Types {
-  Template,
-  TemplateArray,
-  String,
-  Object,
+  Template= "Template",
+  TemplateArray= "TemplateArray",
+  String="String",
+  StringArray="StringArray",
+  Number="Number",
+  Object="Object", // recurse on this
+  Function="Function",
+  ArrayOfObjects="ArrayOfObjects", // recurse on this*/
 }
 const firsty: Template = {
   firsty: () => `this is where we do it`,
@@ -67,9 +71,7 @@ function buildInputsFromSchema(schema: Schema) {
     if (type === Types.String) {
       inputs[key] = "";
     }
-    if (type === Types.Object) {
-      inputs[key] = {};
-    }
+
   });
   return inputs;
 }
@@ -111,12 +113,15 @@ useEffect(() =>{
     // start with fake, move to ....how do we get from file system.
     // VS Code API. do that separately?
     // need to turn input into meta.
-
+console.log("STARTING!!")
     const parsedWords = parseWords(wordsFileText);
     const parsedGenerators = parseGenerators(generatorsFileText);
+    console.log("DONE, PARSING TEMPLATES")
     const parsedTemplates = parseTemplates(templatesFileText);
-    console.log("PARSED", parsedWords, parsedGenerators, parsedTemplates);
-    const words = buildWordMetas(parsedWords, "wordDef",{
+    console.log("PARSEDAND GOOD", {parsedWords, parsedGenerators, parsedTemplates});
+
+    console.log("BUILDING WORD METAS? DIDNT WE ALREADY?")
+    /*const words = buildWordMetas(parsedWords, "wordDef",{
       "word": "name",
       "outputName": "wordOutput",
       "elementName":"step",
@@ -124,6 +129,7 @@ useEffect(() =>{
       "genOutput":"outputName"
     });
     console.log("WORDS", words)
+    */
     // grab all the meta! apply to the objects! go go go!
    /* setWords([
       {
@@ -142,6 +148,7 @@ useEffect(() =>{
 
     setGenerators([identityGenerator, combineGenerator]);
     */
+   setGeneratorsMeta(parsedGenerators);
   },[generatorsFileText, templatesFileText, wordsFileText]);
 
   function addStepToWord(step: any, position: number) {

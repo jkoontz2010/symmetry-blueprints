@@ -24,7 +24,7 @@
     "commands": [
       {
         "command": "symmetric-blueprints.start",
-        "title": "Init"
+        "title": "Symmetric Blueprints: Start"
       }
     ]
   },
@@ -68,7 +68,6 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.52.1",
-    "react-hotkeys-hook": "^4.5.0",
-    "symmetric-parser": "^0.1.20"
+    "react-hotkeys-hook": "^4.5.0"
   }
 }

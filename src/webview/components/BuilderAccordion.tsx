@@ -11,7 +11,7 @@ import AccordionSummary from "@mui/joy/AccordionSummary";
 import Typography from "@mui/joy/Typography";
 import { SortableItem } from "./SortableItem";
 import { Box, Card, ChipDelete, Select, Sheet } from "@mui/joy";
-import ClearIcon from '@mui/icons-material/Clear';
+import ClearIcon from "@mui/icons-material/Clear";
 import {
   DndContext,
   closestCenter,
@@ -29,7 +29,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Item } from "./Item";
-import { BuilderGenerator, BuilderWord, Types, useWordBuilder } from "../hooks/useWordBuilder";
+import {
+  BuilderGenerator,
+  BuilderWord,
+  Types,
+  useWordBuilder,
+} from "../hooks/useWordBuilder";
 import {
   hotKeyToItem,
   itemToHotKey,
@@ -66,20 +71,17 @@ const TemplateNode = ({ name, template, hotkey, showHotkey }: TemplateMeta) => {
 };
 type GeneratorMeta = {
   name: string;
-  generator: (args: any) => Template;
   hotkey: string;
   showHotkey: boolean;
 };
 
 const GeneratorNode = ({
   name,
-  generator,
   hotkey,
   showHotkey,
 }: GeneratorMeta) => {
-  const text = generator.toString();
   return (
-    <Tooltip title={text}>
+    <Tooltip title={name}>
       <Chip variant="outlined">
         {name} {showHotkey && <>| {hotkey}</>}
       </Chip>
@@ -117,10 +119,10 @@ export const WordEditorCard = ({
   showOutputHotkey,
   setFocusedStepIdx,
   outputHotkeys,
-  removeStepFromWord
+  removeStepFromWord,
 }: {
   name: string;
-  inputs: Record<string, any>;
+  inputs?: Record<string, any>;
   inputSchema: Record<string, Types>;
   outputName?: string;
   hotkeys: Map<string, any>;
@@ -139,7 +141,9 @@ export const WordEditorCard = ({
   // we'll need to parse the input schema to determine what to put in the form
   return (
     <Card>
-      <div style={{cursor:"pointer"}}><ClearIcon onClick={() => removeStepFromWord(idx)} /></div>
+      <div style={{ cursor: "pointer" }}>
+        <ClearIcon onClick={() => removeStepFromWord(idx)} />
+      </div>
       <Typography>{name}</Typography>
       <Typography>Inputs</Typography>
       <DynamicForm
@@ -177,8 +181,12 @@ const BuilderAccordion = ({
   templatesFileText: string;
   wordsFileText: string;
 }) => {
-  if(generatorsFileText == null || templatesFileText == null || wordsFileText == null) {
-    return <div>Loading...</div>
+  if (
+    generatorsFileText == null ||
+    templatesFileText == null ||
+    wordsFileText == null
+  ) {
+    return <div>Loading...</div>;
   }
   const {
     wordsMeta,
@@ -189,8 +197,8 @@ const BuilderAccordion = ({
     addStepToWord,
     updateStepPosition,
     runWord,
-    removeStepFromWord
-  } = useWordBuilder({wordsFileText, templatesFileText, generatorsFileText});
+    removeStepFromWord,
+  } = useWordBuilder({ wordsFileText, templatesFileText, generatorsFileText });
 
   const [focusedElement, setFocusedElement] = React.useState<FocusableElements>(
     FocusableElements.builder
@@ -232,7 +240,6 @@ const BuilderAccordion = ({
         {generatorsMeta.map((g) => (
           <GeneratorNode
             name={g.name}
-            generator={g.generator}
             hotkey={itemToHotKey(g, stepHotKeys)}
             showHotkey={isStepHotKeysEnabled}
           />
@@ -269,6 +276,5 @@ const BuilderAccordion = ({
     </div>
   );
 };
-
 
 export default BuilderAccordion;
