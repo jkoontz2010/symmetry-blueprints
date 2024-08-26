@@ -43,20 +43,25 @@ const generateFormFields = (
   setArrayFields
 ) => {
   console.count("generateFormFields");
-  if(schema==null) return null;
+  if (schema == null) return null;
   console.log("THE SCHEMA", schema);
-  return Object.keys(schema).map((key, i) => {
+  return Object.keys(schema).map((schemaKey, i) => {
+    let key = schemaKey;
     console.log("doing key", key);
-    console.log("and schema at key...",schema[key])
-    if(Array.isArray(schema[key])) {
+    console.log("and schema at key...", schema[key]);
+    if (Array.isArray(schema[key])) {
+      if (arrayFields[key] == null) {
+        setArrayFields({ ...arrayFields, [key]: 0 });
+      }
       // RECURSE!!
-      console.log("IS ARRAY!!!", schema[key])
+      console.log("IS ARRAY!!!", schema[key]);
       // we must have an array field here, so can add multiple.
       // but, we add multiple of the schema inside it, which can also have an array of objects.
-      const nestedSchema: Schema =  schema[key][0] as Schema;
-      // we need the key to say "key.0.subKey", ex "mappings.0.from", "mappings.0.to", etc. 
+      const nestedSchema: Schema = schema[key][0] as Schema;
+      // we need the key to say "key.0.subKey", ex "mappings.0.from", "mappings.0.to", etc.
       // while also being able to add to it....
-      const nestedKeyPrefix = keyPrefix ? `${keyPrefix}.${key}` : key;
+      console.log("KEY PREFIX", keyPrefix, "KEY", key)
+      const nestedKeyPrefix = keyPrefix != null ? `${keyPrefix}.${key}.0` : `${key}.0`;
 
       const nestedFormFields = generateFormFields(
         register,
@@ -70,17 +75,23 @@ const generateFormFields = (
         setFocusedElement,
         setFocusedStepIdx,
         outputHotkeys,
-        keyPrefix ==
-      ); 
-            // we need the key to say "key.0.subKey", ex "mappings.0.from", "mappings.0.to", etc. 
-
-      return (<div style={{border:"1px solid blue"}}>MULTIPLE ADDABLE:{nestedFormFields}</div>)
+        nestedKeyPrefix,
+        arrayFields,
+        setArrayFields
+      );
+      // we need the key to say "key.0.subKey", ex "mappings.0.from", "mappings.0.to", etc.
+console.log("NEST FORM FIELDS?", nestedFormFields)
+      return (
+        <div style={{ border: "1px solid blue" }}>
+          MULTIPLE ADDABLE:{nestedFormFields}
+        </div>
+      );
     }
-    if(!Array.isArray(schema[key]) && isObject(schema[key])) {
-      console.log("IS OBJECT!!!", schema[key])
+    if (!Array.isArray(schema[key]) && isObject(schema[key])) {
+      console.log("IS OBJECT!!!", schema[key]);
       // if it's an object, then the object is another schema.
       // nest, and call generateFormFields again.
-      const nestedSchema: Schema =  schema[key] as Schema;
+      const nestedSchema: Schema = schema[key] as Schema;
       const nestedFormFields = generateFormFields(
         register,
         control,
@@ -93,15 +104,23 @@ const generateFormFields = (
         setFocusedElement,
         setFocusedStepIdx,
         outputHotkeys,
-
+        null,
+        arrayFields,
+        setArrayFields
       );
       return (
-        <div key={key} style={{border: "1px solid red"}}>NEST{nestedFormFields}</div>
-      )
+        <div key={key} style={{ border: "1px solid red" }}>
+          NEST{nestedFormFields}
+        </div>
+      );
     }
 
-    const registeredKey = nestedIndex != null ? `${key}.${nestedIndex}` : key;
-    switch (schema[key]) {
+    const schemaValue = schema[key]
+    // sneaky use of let, bad!
+    key = keyPrefix ? `${keyPrefix}.${key}` : key;
+    console.log("THE KEY", key)
+    console.log("THE SCHEMA AT...", schema[key])
+    switch (schemaValue) {
       case Types.String:
         return (
           <div key={key}>
@@ -109,13 +128,13 @@ const generateFormFields = (
             <input {...register(key)} />
           </div>
         );
-        case Types.Number:
-          return (
-            <div key={key}>
-              <label>{key}</label>
-              <input {...register(key)} />
-            </div>
-          );
+      case Types.Number:
+        return (
+          <div key={key}>
+            <label>{key}</label>
+            <input {...register(key)} />
+          </div>
+        );
       case Types.Template:
         return (
           <div key={key}>
@@ -152,6 +171,7 @@ const generateFormFields = (
           </div>
         );
       default:
+        console.log("DEFAULT NULL")
         return null;
     }
   });
@@ -166,7 +186,7 @@ const SingleTemplatefield = ({
   setValue,
   setFocusedElement,
   setFocusedStepIdx,
-  outputHotkeys
+  outputHotkeys,
 }) => {
   useHotkeys(
     Array.from(hotkeys.keys()),
@@ -179,10 +199,10 @@ const SingleTemplatefield = ({
     Array.from(outputHotkeys.keys()),
     (event) => {
       // stored as a string, so we need to make it a "Template" with a name
-      setValue(name, {name:hotKeyToItem(event.key, outputHotkeys)});
+      setValue(name, { name: hotKeyToItem(event.key, outputHotkeys) });
     },
     { enabled: isHotkeyEnabled }
-  )
+  );
   return (
     <div
       key={idx}
@@ -200,7 +220,7 @@ const SingleTemplatefield = ({
       }}
       onBlur={() => {
         setFocusedElement(FocusableElements.builder);
-        setFocusedStepIdx(null)
+        setFocusedStepIdx(null);
         setIsHotkeyEnabled(null);
       }}
       tabIndex={idx}
@@ -212,7 +232,11 @@ const SingleTemplatefield = ({
         render={({ field }) => {
           return (
             <div>
-              <Sheet variant="outlined" color="neutral" sx={{ width: 1, minHeight:30 }}>
+              <Sheet
+                variant="outlined"
+                color="neutral"
+                sx={{ width: 1, minHeight: 30 }}
+              >
                 {field.value?.name != null && (
                   <Chip
                     size="sm"
@@ -248,7 +272,7 @@ const DynamicTemplatesField = ({
   getValues,
   setFocusedElement,
   setFocusedStepIdx,
-  outputHotkeys
+  outputHotkeys,
 }) => {
   useHotkeys(
     Array.from(hotkeys.keys()),
@@ -267,7 +291,10 @@ const DynamicTemplatesField = ({
       const currentValues = getValues(name) ?? [];
       setValue(
         name,
-        compact([...currentValues, {name:hotKeyToItem(event.key, outputHotkeys)}])
+        compact([
+          ...currentValues,
+          { name: hotKeyToItem(event.key, outputHotkeys) },
+        ])
       );
     },
     { enabled: isHotkeyEnabled }
@@ -319,7 +346,11 @@ const DynamicTemplatesField = ({
           );
           return (
             <div>
-              <Sheet variant="outlined" color="neutral" sx={{ width: 1, minHeight:30 }}>
+              <Sheet
+                variant="outlined"
+                color="neutral"
+                sx={{ width: 1, minHeight: 30 }}
+              >
                 {field.value?.map((item, i) => (
                   <Chip
                     size="sm"
@@ -358,7 +389,7 @@ const DynamicForm: React.FC<FormProps> = ({
   hotkeys,
   setFocusedElement,
   setFocusedStepIdx,
-  outputHotkeys
+  outputHotkeys,
 }) => {
   const { register, handleSubmit, control, setValue, getValues } = useForm();
   const [hotkeyEnabledIndex, setHotkeyEnabledIndex] = React.useState(null);
