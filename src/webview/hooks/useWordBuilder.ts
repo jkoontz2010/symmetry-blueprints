@@ -2,7 +2,7 @@ import { customAlphabet } from "nanoid";
 import { useEffect, useState } from "react";
 import { genTemplateWithVars } from "symmetric-parser";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
-import { parseGenerators, parseTemplates, parseWords } from "../util/parsers";
+import { buildTemplateMeta, parseGenerators, parseTemplates, parseWords } from "../util/parsers";
 import { buildWordMetas } from "../util/objBuilder";
 
 export type BuilderWord = {
@@ -11,7 +11,8 @@ export type BuilderWord = {
 };
 export type BuilderTemplate = {
   name: string;
-  template: Template;
+  templateBody: string; // the body of the template
+  vars: string[]; // the variables in the template
 };
 
 export type Schema = Record<string, any>;
@@ -117,7 +118,7 @@ console.log("STARTING!!")
     const parsedWords = parseWords(wordsFileText);
     const parsedGenerators = parseGenerators(generatorsFileText);
     console.log("DONE, PARSING TEMPLATES")
-    const parsedTemplates = parseTemplates(templatesFileText);
+    const parsedTemplates = buildTemplateMeta(templatesFileText);
     console.log("PARSEDAND GOOD", {parsedWords, parsedGenerators, parsedTemplates});
 
     console.log("BUILDING WORD METAS? DIDNT WE ALREADY?")
@@ -131,12 +132,12 @@ console.log("STARTING!!")
     console.log("WORDS", words)
     */
     // grab all the meta! apply to the objects! go go go!
-   /* setWords([
+    setWordsMeta([
       {
         name: "combineEverything",
         steps: [combineGenerator],
       },
-    ]);
+    ]);/*
     setTemplates([
       { name: "firsty", template: firsty },
       { name: "secondy", template: secondy },
@@ -149,6 +150,7 @@ console.log("STARTING!!")
     setGenerators([identityGenerator, combineGenerator]);
     */
    setGeneratorsMeta(parsedGenerators);
+   setTemplatesMeta(parsedTemplates);
   },[generatorsFileText, templatesFileText, wordsFileText]);
 
   function addStepToWord(step: any, position: number) {

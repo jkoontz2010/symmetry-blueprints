@@ -13,6 +13,7 @@ import {
   multiply,
   FoldMode,
   divide,
+  tts,
 } from "symmetric-parser";
 
 import {
@@ -244,13 +245,46 @@ function parseGenArgs(template: Template, index: number): Template {
 
   return all;
 }
-export function parseTemplates(templateFile: string) {
+const templateMeta = genTemplateWithVars(
+  {
+    templateDefinition: () =>
+      `{ name: "templateName", template: { templateBody } },`,
+  },
+  ["templateName", "templateBody"]
+);
+
+const genTemplateMeta = genTemplateWithVars(
+  {
+    genTemplate: () =>
+      `{ name: "templateName", template: { templateBody }, vars: [genVars] },`,
+  },
+  ["templateName", "templateBody", "genVars"]
+);
+export function buildTemplateMeta(templateFile: string) {
+
   const cleaned = stringCleaning(templateFile);
   const file = { file: () => cleaned };
+  const parsed = parseTemplates(file);
+
+  const theMetaIso = replaceWithAllIsomorphic(parsed, [templateMeta]);
+  const theMetaIso2 = replaceWithAllIsomorphic(theMetaIso, [genTemplateMeta]);
+
+  const collapsed = collapseTemplateAtKey(theMetaIso2, "templateDefinition");
+  const theStaticMeta = joiner(collapsed, "templateDefinition", "metas", "\n");
+  const theGenMeta = joiner(collapsed, "genTemplate", "metas", "\n");
+
+  const templatesString = stringUnCleaning(
+    "[" + theStaticMeta["metas"]() + ", " + theGenMeta["metas"]() + "]"
+  );
+
+  return eval(templatesString);
+}
+
+export function parseTemplates(file: Template) {
   // need to parse out `...`
   const template = genTemplateWithVars(
     {
-      templateStatic: () => `export const templateName = {templateBody\n};`,
+      templateDefinition: () => `export const templateName = {templateBody\n};`,
     },
     ["templateName", "templateBody"]
   );
@@ -258,9 +292,9 @@ export function parseTemplates(templateFile: string) {
   const gendTemplate = genTemplateWithVars(
     {
       genTemplate: () =>
-        `export const genName = genTemplateWithVars(\n  {genInputs},\n  [genVars]\n);`,
+        `export const templateName = genTemplateWithVars(\n  {templateBody},\n  [genVars]\n);`,
     },
-    ["genName", "genInputs", "genVars"]
+    ["templateName", "templateBody", "genVars"]
   );
   const fr = recursiveFold(
     file,

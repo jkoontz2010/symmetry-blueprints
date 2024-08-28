@@ -1,9 +1,9 @@
 import * as React from "react";
 import { Controller, set, useFieldArray, useForm } from "react-hook-form";
-import { Schema, Types } from "../hooks/useWordBuilder";
+import { BuilderTemplate, Schema, Types } from "../hooks/useWordBuilder";
 import { useHotkeys } from "react-hotkeys-hook";
 import { hotKeyToItem } from "../util/hotKeyBuilder";
-import { Chip, ChipDelete, Sheet } from "@mui/joy";
+import { Box, Chip, ChipDelete, Sheet } from "@mui/joy";
 import { FocusableElements } from "./BuilderAccordion";
 import { compact, isObject } from "lodash";
 import { arrayMove } from "@dnd-kit/sortable";
@@ -24,13 +24,15 @@ interface FormProps {
   setFocusedElement: (element: FocusableElements) => void;
   setFocusedStepIdx: () => void;
   outputHotkeys: Map<string, any>;
+  templatesMeta: BuilderTemplate[];
 }
 
-const generateFormFields = (
+const NestedFormFields = ({
   register,
+  unregister,
   control,
-  schema: Schema,
-  hotkeys: Map<string, any>,
+  schema,
+  hotkeys,
   hotkeyEnabledIndex,
   setHotkeyEnabledIndex,
   setValue,
@@ -40,86 +42,144 @@ const generateFormFields = (
   outputHotkeys,
   keyPrefix = null,
   arrayFields,
-  setArrayFields
-) => {
-  console.count("generateFormFields");
+  setArrayFields,
+  nestIndex,
+  templatesMeta,
+}: {
+  register: any;
+  unregister: any;
+  control: any;
+  schema: Schema;
+  hotkeys: Map<string, any>;
+  hotkeyEnabledIndex: number;
+  setHotkeyEnabledIndex: (index: number) => void;
+  setValue: any;
+  getValues: any;
+  setFocusedElement: (element: FocusableElements) => void;
+  setFocusedStepIdx: (index: number) => void;
+  outputHotkeys: Map<string, any>;
+  keyPrefix: string | null;
+  arrayFields: Record<string, number>;
+  setArrayFields: (fields: Record<string, number>) => void;
+  nestIndex?: number;
+  templatesMeta: BuilderTemplate[];
+}) => {
+  //console.count("generateFormFields");
   if (schema == null) return null;
-  console.log("THE SCHEMA", schema);
-  return Object.keys(schema).map((schemaKey, i) => {
+  //console.log("THE SCHEMA", schema);
+  const [arrayCount, setArrayCount] = React.useState({});
+  const components = Object.keys(schema).map((schemaKey, i) => {
     let key = schemaKey;
-    console.log("doing key", key);
-    console.log("and schema at key...", schema[key]);
+    //console.log("doing key", key);
+    //console.log("and schema at key...", schema[key]);
     if (Array.isArray(schema[key])) {
-      if (arrayFields[key] == null) {
-        setArrayFields({ ...arrayFields, [key]: 0 });
-      }
       // RECURSE!!
-      console.log("IS ARRAY!!!", schema[key]);
+      //console.log("IS ARRAY!!!", schema[key]);
       // we must have an array field here, so can add multiple.
       // but, we add multiple of the schema inside it, which can also have an array of objects.
       const nestedSchema: Schema = schema[key][0] as Schema;
+
       // we need the key to say "key.0.subKey", ex "mappings.0.from", "mappings.0.to", etc.
       // while also being able to add to it....
-      console.log("KEY PREFIX", keyPrefix, "KEY", key)
-      const nestedKeyPrefix = keyPrefix != null ? `${keyPrefix}.${key}.0` : `${key}.0`;
 
-      const nestedFormFields = generateFormFields(
-        register,
-        control,
-        nestedSchema,
-        hotkeys,
-        hotkeyEnabledIndex,
-        setHotkeyEnabledIndex,
-        setValue,
-        getValues,
-        setFocusedElement,
-        setFocusedStepIdx,
-        outputHotkeys,
-        nestedKeyPrefix,
-        arrayFields,
-        setArrayFields
-      );
+      const fullKey = keyPrefix != null ? `${keyPrefix}.${key}` : key;
+
+      if (arrayCount[fullKey] == null) {
+        setArrayCount({ ...arrayCount, [fullKey]: 1 });
+      }
+
+      const nestedFormFields = [];
+      for (let i = 0; i < (arrayCount[fullKey] ?? 1); i++) {
+        const nestedKeyPrefix =
+          keyPrefix != null ? `${fullKey}.${i}` : `${fullKey}.${i}`;
+        nestedFormFields.push(
+          <div>
+            {i}:
+            {i === arrayCount[fullKey] - 1 && (
+              <button
+                onClick={() => {
+                  setArrayCount({
+                    ...arrayCount,
+                    [fullKey]: arrayCount[fullKey] - 1,
+                  });
+                  unregister(nestedKeyPrefix);
+                }}
+              >
+                Remove
+              </button>
+            )}
+            <NestedFormFields
+              register={register}
+              unregister={unregister}
+              control={control}
+              schema={nestedSchema}
+              hotkeys={hotkeys}
+              hotkeyEnabledIndex={hotkeyEnabledIndex}
+              setHotkeyEnabledIndex={setHotkeyEnabledIndex}
+              setValue={setValue}
+              getValues={getValues}
+              setFocusedElement={setFocusedElement}
+              setFocusedStepIdx={setFocusedStepIdx}
+              outputHotkeys={outputHotkeys}
+              keyPrefix={nestedKeyPrefix}
+              arrayFields={arrayFields}
+              setArrayFields={setArrayFields}
+              templatesMeta={templatesMeta}
+            />
+          </div>
+        );
+      }
       // we need the key to say "key.0.subKey", ex "mappings.0.from", "mappings.0.to", etc.
-console.log("NEST FORM FIELDS?", nestedFormFields)
+
       return (
-        <div style={{ border: "1px solid blue" }}>
-          MULTIPLE ADDABLE:{nestedFormFields}
+        <div>
+          <button
+            onClick={() => {
+              // add to the array count
+              setArrayCount({
+                ...arrayCount,
+                [fullKey]: arrayCount[fullKey] + 1,
+              });
+            }}
+          >
+            Add
+          </button>
+          {nestedFormFields}
         </div>
       );
     }
     if (!Array.isArray(schema[key]) && isObject(schema[key])) {
-      console.log("IS OBJECT!!!", schema[key]);
+      //console.log("IS OBJECT!!!", schema[key]);
       // if it's an object, then the object is another schema.
       // nest, and call generateFormFields again.
       const nestedSchema: Schema = schema[key] as Schema;
-      const nestedFormFields = generateFormFields(
-        register,
-        control,
-        nestedSchema,
-        hotkeys,
-        hotkeyEnabledIndex,
-        setHotkeyEnabledIndex,
-        setValue,
-        getValues,
-        setFocusedElement,
-        setFocusedStepIdx,
-        outputHotkeys,
-        null,
-        arrayFields,
-        setArrayFields
+      const nestedFormFields = (
+        <NestedFormFields
+          register={register}
+          unregister={unregister}
+          control={control}
+          schema={nestedSchema}
+          hotkeys={hotkeys}
+          hotkeyEnabledIndex={hotkeyEnabledIndex}
+          setHotkeyEnabledIndex={setHotkeyEnabledIndex}
+          setValue={setValue}
+          getValues={getValues}
+          setFocusedElement={setFocusedElement}
+          setFocusedStepIdx={setFocusedStepIdx}
+          outputHotkeys={outputHotkeys}
+          keyPrefix={null}
+          arrayFields={arrayFields}
+          setArrayFields={setArrayFields}
+          templatesMeta={templatesMeta}
+        />
       );
-      return (
-        <div key={key} style={{ border: "1px solid red" }}>
-          NEST{nestedFormFields}
-        </div>
-      );
+      return <div key={key}>{nestedFormFields}</div>;
     }
 
-    const schemaValue = schema[key]
+    const schemaValue = schema[key];
     // sneaky use of let, bad!
     key = keyPrefix ? `${keyPrefix}.${key}` : key;
-    console.log("THE KEY", key)
-    console.log("THE SCHEMA AT...", schema[key])
+
     switch (schemaValue) {
       case Types.String:
         return (
@@ -149,6 +209,7 @@ console.log("NEST FORM FIELDS?", nestedFormFields)
               setValue={setValue}
               setFocusedElement={setFocusedElement}
               setFocusedStepIdx={setFocusedStepIdx}
+              templatesMeta={templatesMeta}
             />
           </div>
         );
@@ -167,14 +228,20 @@ console.log("NEST FORM FIELDS?", nestedFormFields)
               getValues={getValues}
               setFocusedElement={setFocusedElement}
               setFocusedStepIdx={setFocusedStepIdx}
+              templatesMeta={templatesMeta}
             />
           </div>
         );
       default:
-        console.log("DEFAULT NULL")
         return null;
     }
   });
+
+  return (
+    <Box fontSize={12} p={1} m={1} sx={{ border: "1px solid grey" }}>
+      {components}
+    </Box>
+  );
 };
 const SingleTemplatefield = ({
   name,
@@ -187,6 +254,7 @@ const SingleTemplatefield = ({
   setFocusedElement,
   setFocusedStepIdx,
   outputHotkeys,
+  templatesMeta,
 }) => {
   useHotkeys(
     Array.from(hotkeys.keys()),
@@ -249,7 +317,10 @@ const SingleTemplatefield = ({
                       />
                     }
                   >
-                    {field.value.name}
+                    {field.value.name}:{" "}
+                    {templatesMeta
+                      .find((t) => t?.name === field.value.name)
+                      ?.vars?.join(", ")}
                   </Chip>
                 )}
               </Sheet>
@@ -273,6 +344,7 @@ const DynamicTemplatesField = ({
   setFocusedElement,
   setFocusedStepIdx,
   outputHotkeys,
+  templatesMeta,
 }) => {
   useHotkeys(
     Array.from(hotkeys.keys()),
@@ -371,7 +443,10 @@ const DynamicTemplatesField = ({
                       />
                     }
                   >
-                    {item.name}
+                    {item.name}:{" "}
+                    {templatesMeta
+                      .find((t) => t?.name === item.name)
+                      ?.vars?.join(", ")}
                   </Chip>
                 ))}
               </Sheet>
@@ -390,8 +465,10 @@ const DynamicForm: React.FC<FormProps> = ({
   setFocusedElement,
   setFocusedStepIdx,
   outputHotkeys,
+  templatesMeta,
 }) => {
-  const { register, handleSubmit, control, setValue, getValues } = useForm();
+  const { register, handleSubmit, control, setValue, getValues, unregister } =
+    useForm();
   const [hotkeyEnabledIndex, setHotkeyEnabledIndex] = React.useState(null);
   const [arrayFields, setArrayFields] = React.useState({});
 
@@ -400,26 +477,27 @@ const DynamicForm: React.FC<FormProps> = ({
       onClick={() => {
         setHotkeyEnabledIndex(null);
         setFocusedElement(FocusableElements.builder);
-        console.log("SETSET");
       }}
     >
       <form onSubmit={handleSubmit(onSubmit)}>
-        {generateFormFields(
-          register,
-          control,
-          schema,
-          hotkeys,
-          hotkeyEnabledIndex,
-          setHotkeyEnabledIndex,
-          setValue,
-          getValues,
-          setFocusedElement,
-          setFocusedStepIdx,
-          outputHotkeys,
-          null,
-          arrayFields,
-          setArrayFields
-        )}
+        <NestedFormFields
+          register={register}
+          unregister={unregister}
+          control={control}
+          schema={schema}
+          hotkeys={hotkeys}
+          hotkeyEnabledIndex={hotkeyEnabledIndex}
+          setHotkeyEnabledIndex={setHotkeyEnabledIndex}
+          setValue={setValue}
+          getValues={getValues}
+          setFocusedElement={setFocusedElement}
+          setFocusedStepIdx={setFocusedStepIdx}
+          outputHotkeys={outputHotkeys}
+          keyPrefix={null}
+          arrayFields={arrayFields}
+          setArrayFields={setArrayFields}
+          templatesMeta={templatesMeta}
+        />
         <button type="submit">Submit</button>
       </form>
     </div>

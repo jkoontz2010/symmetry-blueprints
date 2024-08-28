@@ -31,6 +31,7 @@ import {
 import { Item } from "./Item";
 import {
   BuilderGenerator,
+  BuilderTemplate,
   BuilderWord,
   Types,
   useWordBuilder,
@@ -54,17 +55,17 @@ function combine(t1: Template, t2: Template): Template {
 
 type TemplateMeta = {
   name: string;
-  template: Template;
+  templateBody: string;
   hotkey: string;
   showHotkey: boolean;
+  vars: string[];
 };
 
-const TemplateNode = ({ name, template, hotkey, showHotkey }: TemplateMeta) => {
-  const text = template.toString();
+const TemplateNode = ({ name, templateBody,vars, hotkey, showHotkey }: TemplateMeta) => {
   return (
-    <Tooltip title={text}>
+    <Tooltip title={templateBody}>
       <Chip variant="outlined">
-        {name} {showHotkey && <>| {hotkey}</>}
+        {name}: {vars?.join(", ")} {showHotkey && <>| {hotkey}</>}
       </Chip>
     </Tooltip>
   );
@@ -120,6 +121,7 @@ export const WordEditorCard = ({
   setFocusedStepIdx,
   outputHotkeys,
   removeStepFromWord,
+  templatesMeta
 }: {
   name: string;
   inputs?: Record<string, any>;
@@ -133,6 +135,7 @@ export const WordEditorCard = ({
   setFocusedStepIdx: (idx: number) => void;
   outputHotkeys: Map<string, any>;
   removeStepFromWord: (idx: number) => void;
+  templatesMeta: BuilderTemplate[]
 }) => {
   //  console.log("RENDERING", name, inputs, outputs);
   function handleSubmit(results) {
@@ -153,6 +156,7 @@ export const WordEditorCard = ({
         outputHotkeys={outputHotkeys}
         setFocusedElement={setFocusedElement}
         setFocusedStepIdx={() => setFocusedStepIdx(idx)}
+        templatesMeta={templatesMeta}
       />
       <Typography>Outputs</Typography>
       <Chip variant="outlined" color="primary">
@@ -249,7 +253,8 @@ const BuilderAccordion = ({
         {templatesMeta.map((t) => (
           <TemplateNode
             name={t.name}
-            template={t.template}
+            templateBody={t.templateBody}
+            vars={t.vars}
             hotkey={itemToHotKey(t, templateHotKeys)}
             showHotkey={isTemplateHotKeysEnabled}
           />
@@ -270,6 +275,7 @@ const BuilderAccordion = ({
             }
             setFocusedStepIdx={setFocusedStepIdx}
             removeStepFromWord={removeStepFromWord}
+            templatesMeta={templatesMeta}
           />
         ))}
       </Sheet>

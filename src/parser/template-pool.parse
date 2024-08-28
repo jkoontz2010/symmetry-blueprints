@@ -20,12 +20,14 @@ export const selectorTempl = genTemplateWithVars(
   },
   ["selectorName"]
 );
+
 export const selectorFinTempl = genTemplateWithVars(
   {
     otherSelector: () => `\nselectorFinName`,
   },
   ["selectorFinName"]
 );
+
 export const cssDecl = genTemplateWithVars(
   {
     cssDecl: () => `\ncssSelectors {
@@ -34,9 +36,12 @@ export const cssDecl = genTemplateWithVars(
   },
   ["cssSelectors", "cssRules"]
 );
+
 export const bgRule = genTemplateWithVars(
   {
     cssBg: () => `background-color: bgValue;`,
   },
   ["bgValue"]
 );
+
+export const someTempl = {}'templateDefinition/templateName,templateBody': ({templateName, templateBody})=>`{ name: "${run(templateName, 'templateName')}", template: ${run(templateBody, 'templateBody')} }
