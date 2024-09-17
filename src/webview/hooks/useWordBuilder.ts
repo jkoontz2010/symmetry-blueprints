@@ -2,8 +2,14 @@ import { customAlphabet } from "nanoid";
 import { useEffect, useState } from "react";
 import { genTemplateWithVars } from "symmetric-parser";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
-import { buildTemplateMeta, parseGenerators, parseTemplates, parseWords } from "../util/parsers";
+import {
+  buildTemplateMeta,
+  parseGenerators,
+  parseTemplates,
+  parseWords,
+} from "../util/parsers";
 import { buildWordMetas } from "../util/objBuilder";
+import { compact } from "lodash";
 
 export type BuilderWord = {
   name: string;
@@ -30,14 +36,14 @@ export type BuilderNewWord = {
 };
 
 export enum Types {
-  Template= "Template",
-  TemplateArray= "TemplateArray",
-  String="String",
-  StringArray="StringArray",
-  Number="Number",
-  Object="Object", // recurse on this
-  Function="Function",
-  ArrayOfObjects="ArrayOfObjects", // recurse on this*/
+  Template = "Template",
+  TemplateArray = "TemplateArray",
+  String = "String",
+  StringArray = "StringArray",
+  Number = "Number",
+  Object = "Object", // recurse on this
+  Function = "Function",
+  ArrayOfObjects = "ArrayOfObjects", // recurse on this*/
 }
 const firsty: Template = {
   firsty: () => `this is where we do it`,
@@ -72,7 +78,6 @@ function buildInputsFromSchema(schema: Schema) {
     if (type === Types.String) {
       inputs[key] = "";
     }
-
   });
   return inputs;
 }
@@ -100,7 +105,15 @@ const combineGenerator = {
   },
   inputs: { template1: null, template2: null },
 };
-export function useWordBuilder({wordsFileText, templatesFileText, generatorsFileText}: {wordsFileText: string, templatesFileText: string, generatorsFileText: string}) {
+export function useWordBuilder({
+  wordsFileText,
+  templatesFileText,
+  generatorsFileText,
+}: {
+  wordsFileText: string;
+  templatesFileText: string;
+  generatorsFileText: string;
+}) {
   const [newWord, setNewWord] = useState<BuilderNewWord>({
     name: "new",
     steps: [],
@@ -110,18 +123,22 @@ export function useWordBuilder({wordsFileText, templatesFileText, generatorsFile
   const [generatorsMeta, setGeneratorsMeta] = useState<BuilderGenerator[]>([]);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
 
-useEffect(() =>{
+  useEffect(() => {
     // start with fake, move to ....how do we get from file system.
     // VS Code API. do that separately?
     // need to turn input into meta.
-console.log("STARTING!!")
+    console.log("STARTING!!");
     const parsedWords = parseWords(wordsFileText);
     const parsedGenerators = parseGenerators(generatorsFileText);
-    console.log("DONE, PARSING TEMPLATES")
+    console.log("DONE, PARSING TEMPLATES");
     const parsedTemplates = buildTemplateMeta(templatesFileText);
-    console.log("PARSEDAND GOOD", {parsedWords, parsedGenerators, parsedTemplates});
+    console.log("PARSEDAND GOOD", {
+      parsedWords,
+      parsedGenerators,
+      parsedTemplates,
+    });
 
-    console.log("BUILDING WORD METAS? DIDNT WE ALREADY?")
+    console.log("BUILDING WORD METAS? DIDNT WE ALREADY?");
     /*const words = buildWordMetas(parsedWords, "wordDef",{
       "word": "name",
       "outputName": "wordOutput",
@@ -137,7 +154,7 @@ console.log("STARTING!!")
         name: "combineEverything",
         steps: [combineGenerator],
       },
-    ]);/*
+    ]); /*
     setTemplates([
       { name: "firsty", template: firsty },
       { name: "secondy", template: secondy },
@@ -149,9 +166,9 @@ console.log("STARTING!!")
 
     setGenerators([identityGenerator, combineGenerator]);
     */
-   setGeneratorsMeta(parsedGenerators);
-   setTemplatesMeta(parsedTemplates);
-  },[generatorsFileText, templatesFileText, wordsFileText]);
+    setGeneratorsMeta(parsedGenerators);
+    setTemplatesMeta(compact(parsedTemplates));
+  }, [generatorsFileText, templatesFileText, wordsFileText]);
 
   function addStepToWord(step: any, position: number) {
     // if step doesn't have an output, we create one.
@@ -161,13 +178,30 @@ console.log("STARTING!!")
       "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     const nanoid = customAlphabet(alphabet, 4);
     const stepOutputId = nanoid();
-    const newStep = { ...step, outputName: step.name + "_" + stepOutputId, ...buildInputsFromSchema(step.inputSchema) };
+    const newStep = {
+      ...step,
+      outputName: step.name + "_" + stepOutputId,
+      ...buildInputsFromSchema(step.inputSchema),
+    };
 
     setNewWord((prev) => {
       const newSteps = [...prev.steps];
       newSteps.splice(position, 0, newStep);
       return { ...prev, steps: newSteps };
     });
+  }
+
+  function submitWord(formSubmission: any) {
+    console.log("SUBMITTING", formSubmission);
+    // grab steps
+    // update the values at each step
+    const newSteps = newWord.steps.map((step) => {
+      const stepOutputName = step.outputName;
+      const formStep = formSubmission[stepOutputName];
+      // put step values from formStep into step
+      return { ...step, inputValues: formStep };
+    });
+    console.log("NEW STESP", JSON.stringify(newSteps,null,2));
   }
 
   function removeStepFromWord(position: number) {
@@ -177,9 +211,15 @@ console.log("STARTING!!")
     const removedStep = steps[position];
     const removedOutput = removedStep.outputName;
     const newSteps = steps.filter((step) => {
-      console.log("FULL STEP", step)
+      console.log("FULL STEP", step);
       const inputs = Object.values(step.inputs);
-      console.log("LOOKING AT", inputs, removedOutput, "FROM STEP", step.inputs);
+      console.log(
+        "LOOKING AT",
+        inputs,
+        removedOutput,
+        "FROM STEP",
+        step.inputs
+      );
       return !inputs.includes(removedOutput);
     });
     setNewWord((prev) => {
@@ -202,7 +242,7 @@ console.log("STARTING!!")
     function registerOutput(output: Template) {
       outputs.push(output);
     }
-/*
+    /*
     const word = words.find((w: BuilderWord) => w.name === name);
     // run the word raw. if any errors occur, let TypeScript return them, and we'll display.
     // we'll need to load it into typescript dynamically, which is very V2.
@@ -225,5 +265,6 @@ console.log("STARTING!!")
     updateStepPosition,
     runWord,
     removeStepFromWord,
+    submitWord
   };
 }

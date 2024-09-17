@@ -45,6 +45,7 @@ import {
 import { useHotkeys } from "react-hotkeys-hook";
 import DynamicForm from "./DynamicForm";
 import { template } from "@babel/core";
+import { useForm } from "react-hook-form";
 
 function identity(t: Template): Template {
   return t;
@@ -61,7 +62,13 @@ type TemplateMeta = {
   vars: string[];
 };
 
-const TemplateNode = ({ name, templateBody,vars, hotkey, showHotkey }: TemplateMeta) => {
+const TemplateNode = ({
+  name,
+  templateBody,
+  vars,
+  hotkey,
+  showHotkey,
+}: TemplateMeta) => {
   return (
     <Tooltip title={templateBody}>
       <Chip variant="outlined">
@@ -76,11 +83,7 @@ type GeneratorMeta = {
   showHotkey: boolean;
 };
 
-const GeneratorNode = ({
-  name,
-  hotkey,
-  showHotkey,
-}: GeneratorMeta) => {
+const GeneratorNode = ({ name, hotkey, showHotkey }: GeneratorMeta) => {
   return (
     <Tooltip title={name}>
       <Chip variant="outlined">
@@ -121,7 +124,9 @@ export const WordEditorCard = ({
   setFocusedStepIdx,
   outputHotkeys,
   removeStepFromWord,
-  templatesMeta
+  templatesMeta,
+  formObject,
+  formKeyPrefix,
 }: {
   name: string;
   inputs?: Record<string, any>;
@@ -135,12 +140,14 @@ export const WordEditorCard = ({
   setFocusedStepIdx: (idx: number) => void;
   outputHotkeys: Map<string, any>;
   removeStepFromWord: (idx: number) => void;
-  templatesMeta: BuilderTemplate[]
+  templatesMeta: BuilderTemplate[];
+  formObject: any; // really, the react-hook-form object
+  formKeyPrefix: string;
 }) => {
   //  console.log("RENDERING", name, inputs, outputs);
-  function handleSubmit(results) {
-    console.log("submit", results);
-  }
+  const registerWithPrefix = (key: string) => {
+    return formObject.register(`${formKeyPrefix}.${key}`);
+  };
   // we'll need to parse the input schema to determine what to put in the form
   return (
     <Card>
@@ -151,12 +158,13 @@ export const WordEditorCard = ({
       <Typography>Inputs</Typography>
       <DynamicForm
         schema={inputSchema}
-        onSubmit={handleSubmit}
         hotkeys={hotkeys}
         outputHotkeys={outputHotkeys}
         setFocusedElement={setFocusedElement}
         setFocusedStepIdx={() => setFocusedStepIdx(idx)}
         templatesMeta={templatesMeta}
+        formObject={formObject}
+        formKeyPrefix={formKeyPrefix}
       />
       <Typography>Outputs</Typography>
       <Chip variant="outlined" color="primary">
@@ -202,6 +210,7 @@ const BuilderAccordion = ({
     updateStepPosition,
     runWord,
     removeStepFromWord,
+    submitWord
   } = useWordBuilder({ wordsFileText, templatesFileText, generatorsFileText });
 
   const [focusedElement, setFocusedElement] = React.useState<FocusableElements>(
@@ -226,7 +235,13 @@ const BuilderAccordion = ({
   );
   console.log("what is focused?", focusedElement);
   const { steps } = newWord;
+  function onSubmit(results) {
+    console.log("submit", results, "steps", steps);
+    submitWord(results)
+  }
 
+  const formObject = useForm();
+  const { handleSubmit } = formObject;
   return (
     <div>
       <Sheet variant="outlined" color="neutral">
@@ -261,23 +276,31 @@ const BuilderAccordion = ({
         ))}
         <hr />
         Word Builder
-        {steps.map((step, idx) => (
-          <WordEditorCard
-            {...step}
-            hotkeys={templateHotKeys}
-            setFocusedElement={setFocusedElement}
-            idx={idx}
-            outputHotkeys={outputTemplateHotkeys}
-            outputHotkey={itemToHotKey(step.outputName, outputTemplateHotkeys)}
-            showOutputHotkey={
-              isTemplateHotKeysEnabled &&
-              itemToHotKey(step.outputName, outputTemplateHotkeys) != null
-            }
-            setFocusedStepIdx={setFocusedStepIdx}
-            removeStepFromWord={removeStepFromWord}
-            templatesMeta={templatesMeta}
-          />
-        ))}
+        <form onSubmit={handleSubmit(onSubmit)}>
+          {steps.map((step, idx) => (
+            <WordEditorCard
+              {...step}
+              hotkeys={templateHotKeys}
+              setFocusedElement={setFocusedElement}
+              idx={idx}
+              outputHotkeys={outputTemplateHotkeys}
+              outputHotkey={itemToHotKey(
+                step.outputName,
+                outputTemplateHotkeys
+              )}
+              showOutputHotkey={
+                isTemplateHotKeysEnabled &&
+                itemToHotKey(step.outputName, outputTemplateHotkeys) != null
+              }
+              setFocusedStepIdx={setFocusedStepIdx}
+              removeStepFromWord={removeStepFromWord}
+              templatesMeta={templatesMeta}
+              formObject={formObject}
+              formKeyPrefix={step.outputName}
+            />
+          ))}
+          <button type="submit">Submit</button>
+        </form>
       </Sheet>
     </div>
   );

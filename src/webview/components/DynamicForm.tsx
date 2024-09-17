@@ -16,15 +16,17 @@ import {
   useSensors,
 } from "@dnd-kit/core";
 import { SortableItem } from "./SortableItem";
+import { Template } from "symmetric-parser/dist/src/templator/template-group";
 
 interface FormProps {
   schema: Schema;
-  onSubmit: (data: any) => void;
   hotkeys: Map<string, any>;
   setFocusedElement: (element: FocusableElements) => void;
   setFocusedStepIdx: () => void;
   outputHotkeys: Map<string, any>;
   templatesMeta: BuilderTemplate[];
+  formObject: any;
+  formKeyPrefix: string;
 }
 
 const NestedFormFields = ({
@@ -45,6 +47,7 @@ const NestedFormFields = ({
   setArrayFields,
   nestIndex,
   templatesMeta,
+  keyWithPrefix,
 }: {
   register: any;
   unregister: any;
@@ -63,6 +66,7 @@ const NestedFormFields = ({
   setArrayFields: (fields: Record<string, number>) => void;
   nestIndex?: number;
   templatesMeta: BuilderTemplate[];
+  keyWithPrefix: (key: string) => string;
 }) => {
   //console.count("generateFormFields");
   if (schema == null) return null;
@@ -102,7 +106,7 @@ const NestedFormFields = ({
                     ...arrayCount,
                     [fullKey]: arrayCount[fullKey] - 1,
                   });
-                  unregister(nestedKeyPrefix);
+                  unregister(keyWithPrefix(nestedKeyPrefix));
                 }}
               >
                 Remove
@@ -125,6 +129,7 @@ const NestedFormFields = ({
               arrayFields={arrayFields}
               setArrayFields={setArrayFields}
               templatesMeta={templatesMeta}
+              keyWithPrefix={keyWithPrefix}
             />
           </div>
         );
@@ -171,6 +176,7 @@ const NestedFormFields = ({
           arrayFields={arrayFields}
           setArrayFields={setArrayFields}
           templatesMeta={templatesMeta}
+          keyWithPrefix={keyWithPrefix}
         />
       );
       return <div key={key}>{nestedFormFields}</div>;
@@ -185,21 +191,21 @@ const NestedFormFields = ({
         return (
           <div key={key}>
             <label>{key}</label>
-            <input {...register(key)} />
+            <input {...register(keyWithPrefix(key))} />
           </div>
         );
       case Types.Number:
         return (
           <div key={key}>
             <label>{key}</label>
-            <input {...register(key)} />
+            <input {...register(keyWithPrefix(key))} />
           </div>
         );
       case Types.Template:
         return (
-          <div key={key}>
+          <div key={keyWithPrefix(key)}>
             <SingleTemplatefield
-              name={key}
+              name={keyWithPrefix(key)}
               control={control}
               hotkeys={hotkeys}
               outputHotkeys={outputHotkeys}
@@ -215,9 +221,9 @@ const NestedFormFields = ({
         );
       case Types.TemplateArray:
         return (
-          <div key={key}>
+          <div key={keyWithPrefix(key)}>
             <DynamicTemplatesField
-              name={key}
+              name={keyWithPrefix(key)}
               control={control}
               hotkeys={hotkeys}
               outputHotkeys={outputHotkeys}
@@ -259,15 +265,17 @@ const SingleTemplatefield = ({
   useHotkeys(
     Array.from(hotkeys.keys()),
     (event) => {
-      setValue(name, hotKeyToItem(event.key, hotkeys));
+      console.log("ITEM FROM HOTKEY31", hotKeyToItem(event.key, hotkeys));
+      setValue(name, (hotKeyToItem(event.key, hotkeys) as Template).name);
     },
     { enabled: isHotkeyEnabled }
   );
   useHotkeys(
     Array.from(outputHotkeys.keys()),
     (event) => {
+      console.log("ITEM FROM HOTKEY4",hotKeyToItem(event.key, outputHotkeys))
       // stored as a string, so we need to make it a "Template" with a name
-      setValue(name, { name: hotKeyToItem(event.key, outputHotkeys) });
+      setValue(name, hotKeyToItem(event.key, outputHotkeys));
     },
     { enabled: isHotkeyEnabled }
   );
@@ -305,7 +313,7 @@ const SingleTemplatefield = ({
                 color="neutral"
                 sx={{ width: 1, minHeight: 30 }}
               >
-                {field.value?.name != null && (
+                {field.value != null && (
                   <Chip
                     size="sm"
                     variant="outlined"
@@ -317,9 +325,9 @@ const SingleTemplatefield = ({
                       />
                     }
                   >
-                    {field.value.name}:{" "}
+                    {field.value}:
                     {templatesMeta
-                      .find((t) => t?.name === field.value.name)
+                      .find((t) => t?.name === field.value)
                       ?.vars?.join(", ")}
                   </Chip>
                 )}
@@ -350,9 +358,13 @@ const DynamicTemplatesField = ({
     Array.from(hotkeys.keys()),
     (event) => {
       const currentValues = getValues(name) ?? [];
+      console.log("ITEM FROM HOTKEY1", hotKeyToItem(event.key, hotkeys));
       setValue(
         name,
-        compact([...currentValues, hotKeyToItem(event.key, hotkeys)])
+        compact([
+          ...currentValues,
+          (hotKeyToItem(event.key, hotkeys) as Template).name,
+        ])
       );
     },
     { enabled: isHotkeyEnabled }
@@ -361,11 +373,12 @@ const DynamicTemplatesField = ({
     Array.from(outputHotkeys.keys()),
     (event) => {
       const currentValues = getValues(name) ?? [];
+      console.log("ITEM FROM HOTKEY",hotKeyToItem(event.key, outputHotkeys))
       setValue(
         name,
         compact([
           ...currentValues,
-          { name: hotKeyToItem(event.key, outputHotkeys) },
+          hotKeyToItem(event.key, outputHotkeys),
         ])
       );
     },
@@ -443,9 +456,9 @@ const DynamicTemplatesField = ({
                       />
                     }
                   >
-                    {item.name}:{" "}
+                    {item}:{" "}
                     {templatesMeta
-                      .find((t) => t?.name === item.name)
+                      .find((t) => t?.name === item)
                       ?.vars?.join(", ")}
                   </Chip>
                 ))}
@@ -460,17 +473,21 @@ const DynamicTemplatesField = ({
 
 const DynamicForm: React.FC<FormProps> = ({
   schema,
-  onSubmit,
   hotkeys,
   setFocusedElement,
   setFocusedStepIdx,
   outputHotkeys,
   templatesMeta,
+  formObject,
+  formKeyPrefix,
 }) => {
-  const { register, handleSubmit, control, setValue, getValues, unregister } =
-    useForm();
+  const { control, setValue, getValues, unregister, register } = formObject;
   const [hotkeyEnabledIndex, setHotkeyEnabledIndex] = React.useState(null);
   const [arrayFields, setArrayFields] = React.useState({});
+
+  function keyWithPrefix(key: string) {
+    return `${formKeyPrefix}.${key}`;
+  }
 
   return (
     <div
@@ -479,27 +496,25 @@ const DynamicForm: React.FC<FormProps> = ({
         setFocusedElement(FocusableElements.builder);
       }}
     >
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <NestedFormFields
-          register={register}
-          unregister={unregister}
-          control={control}
-          schema={schema}
-          hotkeys={hotkeys}
-          hotkeyEnabledIndex={hotkeyEnabledIndex}
-          setHotkeyEnabledIndex={setHotkeyEnabledIndex}
-          setValue={setValue}
-          getValues={getValues}
-          setFocusedElement={setFocusedElement}
-          setFocusedStepIdx={setFocusedStepIdx}
-          outputHotkeys={outputHotkeys}
-          keyPrefix={null}
-          arrayFields={arrayFields}
-          setArrayFields={setArrayFields}
-          templatesMeta={templatesMeta}
-        />
-        <button type="submit">Submit</button>
-      </form>
+      <NestedFormFields
+        register={register}
+        unregister={unregister}
+        control={control}
+        schema={schema}
+        hotkeys={hotkeys}
+        hotkeyEnabledIndex={hotkeyEnabledIndex}
+        setHotkeyEnabledIndex={setHotkeyEnabledIndex}
+        setValue={setValue}
+        getValues={getValues}
+        setFocusedElement={setFocusedElement}
+        setFocusedStepIdx={setFocusedStepIdx}
+        outputHotkeys={outputHotkeys}
+        keyPrefix={null}
+        arrayFields={arrayFields}
+        setArrayFields={setArrayFields}
+        templatesMeta={templatesMeta}
+        keyWithPrefix={keyWithPrefix}
+      />
     </div>
   );
 };
