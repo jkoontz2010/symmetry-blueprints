@@ -212,7 +212,8 @@ export function useWordBuilder({
     const removedOutput = removedStep.outputName;
     const newSteps = steps.filter((step) => {
       console.log("FULL STEP", step);
-      const inputs = Object.values(step.inputs);
+      if(step.inputs == null) return true
+      const inputs = Object.values(step?.inputs);
       console.log(
         "LOOKING AT",
         inputs,
