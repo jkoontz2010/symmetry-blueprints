@@ -217,7 +217,7 @@ export function makeTemplateGenericAtKey(
 const DEBUG_FILL_TEMPLATE_WITH_MAPPED_KEYS = false;
 export function fillTemplateWithMappedKeys(
   mappings: Array<{
-    template: Template;
+    inputTemplate: Template;
     fromToKeys: Array<{ from: string; to: string }>;
     index: string | number;
   }>,

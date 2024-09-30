@@ -48,7 +48,6 @@ export function parseWords(wordFile: string) {
   );
   return { ...of.result, ...of.divisors };
 }
-
 export function parseGenerators(generatorFile: string) {
   const cleaned = stringCleaning(generatorFile);
   const file = { file: () => cleaned };
@@ -79,7 +78,7 @@ export function parseGenerators(generatorFile: string) {
   const generatorString = stringUnCleaning(
     "[" + generatorMeta["metas"]() + "]"
   );
-
+// console.log("EVAL THIS", generatorString)
   const final = eval(generatorString);
   return final;
 }
@@ -130,9 +129,9 @@ function buildGeneratorMeta(template: Template) {
     "typeValue",
     replacedTypeNames
   );
-  //console.log("JOIN", tts(replacedTypeNames2, false));
+  // console.log("JOIN", replacedTypeNames2);
   const genMeta = performOnNodes("generator", replacedTypeNames2, buildMeta);
-  //console.log("GENMETA", tts(genMeta, false));
+  // console.log("GENMETA", tts(genMeta, false));
   // we want {name: "genName", inputSchema: {metaBody}}
   const allMeta = joiner(genMeta, "meta", "metas", ",\n");
   return allMeta;
@@ -161,10 +160,11 @@ function buildMeta(template: Template, index: number): Template {
 
   // what do we want this structure to be again..?
   // g1:()=>`{name:"identity",inputSchema:{template:Template}}`
-  //console.log("START");
+
   const funcStringd = replaceWithAllIsomorphic(swapped, [
     newFinalRemainderFuncTypes,
   ]);
+
   const normalized = replaceWithAllIsomorphic(funcStringd, [
     singleLineTypeKeyVal,
   ]);
@@ -385,27 +385,27 @@ const newFinalRemainderFuncTypes = genTemplateWithVars(
 );
 const cbFuncCommaTempl = genTemplateWithVars(
   {
-    cbTempl: () => `  cb: (cbtypeFuncBody) => Template,`,
+    cbTempl: () => `  cb: (cbTypeFuncBody) => Template,`,
   },
 
-  ["cbtypeFuncBody"]
+  ["cbTypeFuncBody"]
 );
 const numberTypeValueTempl = {
   schemaNumType: () => `number`,
 };
 const cbFuncNewlineTempl = genTemplateWithVars(
   {
-    cbTempl: () => `  cb: (cbtypeFuncBody) => Template`,
+    cbTempl: () => `  cb: (cbTypeFuncBody) => Template`,
   },
 
-  ["cbtypeFuncBody"]
+  ["cbTypeFuncBody"]
 );
 const newCbTemplFunc = genTemplateWithVars(
   {
-    cbTempl: () => `  cb: "(cbtypeFuncBody) => Template",`,
+    cbTempl: () => `  cb: "(cbTypeFuncBody) => Template",`,
   },
 
-  ["cbtypeFuncBody"]
+  ["cbTypeFuncBody"]
 );
 const finalRemainderTypes = genTemplateWithVars(
   {
