@@ -8,8 +8,10 @@ import {
   parseTemplates,
   parseWords,
 } from "../util/parsers";
-import { buildWordMetas } from "../util/objBuilder";
-import { compact } from "lodash";
+
+import { cloneDeep, compact } from "lodash";
+import { setKeyValue } from "./util";
+
 
 export type BuilderWord = {
   name: string;
@@ -31,7 +33,7 @@ export type BuilderGenerator = {
 };
 
 export type BuilderNewWord = {
-  name: string;
+  wordName: string;
   steps: BuilderGenerator[];
 };
 
@@ -71,11 +73,9 @@ function buildInputsFromSchema(schema: Schema) {
   Object.entries(schema).forEach(([key, type]) => {
     if (type === Types.Template) {
       inputs[key] = null;
-    }
-    if (type === Types.TemplateArray) {
+    } else if (type === Types.TemplateArray) {
       inputs[key] = [];
-    }
-    if (type === Types.String) {
+    } else if (type === Types.String) {
       inputs[key] = "";
     }
   });
@@ -115,7 +115,7 @@ export function useWordBuilder({
   generatorsFileText: string;
 }) {
   const [newWord, setNewWord] = useState<BuilderNewWord>({
-    name: "new",
+    wordName: "new", // handled by form now, sorry for the tech debt!
     steps: [],
   });
   const [wordsMeta, setWordsMeta] = useState<BuilderWord[]>([]);
@@ -138,16 +138,6 @@ export function useWordBuilder({
       parsedTemplates,
     });
 
-    console.log("BUILDING WORD METAS? DIDNT WE ALREADY?");
-    /*const words = buildWordMetas(parsedWords, "wordDef",{
-      "word": "name",
-      "outputName": "wordOutput",
-      "elementName":"step",
-      "elementInputs":"genInputs",
-      "genOutput":"outputName"
-    });
-    console.log("WORDS", words)
-    */
     // grab all the meta! apply to the objects! go go go!
     setWordsMeta([
       {
@@ -178,6 +168,7 @@ export function useWordBuilder({
       "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     const nanoid = customAlphabet(alphabet, 4);
     const stepOutputId = nanoid();
+
     const newStep = {
       ...step,
       outputName: step.name + "_" + stepOutputId,
@@ -187,7 +178,9 @@ export function useWordBuilder({
     setNewWord((prev) => {
       const newSteps = [...prev.steps];
       newSteps.splice(position, 0, newStep);
-      return { ...prev, steps: newSteps };
+      const stepsWithInput = setAllStepInputsToPriorStepOutput(newSteps)
+      console.log("NEW STEPS", stepsWithInput);
+      return { ...prev, steps: stepsWithInput };
     });
   }
 
@@ -201,7 +194,18 @@ export function useWordBuilder({
       // put step values from formStep into step
       return { ...step, inputValues: formStep };
     });
-    console.log("NEW STESP", JSON.stringify(newSteps,null,2));
+    console.log("NEW STESP", JSON.stringify(newSteps, null, 2));
+  }
+  
+  function setAllStepInputsToPriorStepOutput(steps) {
+    return steps.map((step, idx) => {
+      const priorStepOutput = steps[idx - 1]?.outputName ?? "wordInput";
+      const inputSchema = cloneDeep(step.inputSchema);
+      delete step.inputSchema;
+      const newStep = setKeyValue("input", priorStepOutput, step)
+      newStep.inputSchema = inputSchema;
+      return newStep
+    });
   }
 
   function removeStepFromWord(position: number) {
@@ -212,7 +216,7 @@ export function useWordBuilder({
     const removedOutput = removedStep.outputName;
     const newSteps = steps.filter((step) => {
       console.log("FULL STEP", step);
-      if(step.inputs == null) return true
+      if (step.inputs == null) return true;
       const inputs = Object.values(step?.inputs);
       console.log(
         "LOOKING AT",
@@ -266,6 +270,6 @@ export function useWordBuilder({
     updateStepPosition,
     runWord,
     removeStepFromWord,
-    submitWord
+    submitWord,
   };
 }

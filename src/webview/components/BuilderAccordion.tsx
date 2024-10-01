@@ -127,6 +127,7 @@ export const WordEditorCard = ({
   templatesMeta,
   formObject,
   formKeyPrefix,
+  steps
 }: {
   name: string;
   inputs?: Record<string, any>;
@@ -143,11 +144,13 @@ export const WordEditorCard = ({
   templatesMeta: BuilderTemplate[];
   formObject: any; // really, the react-hook-form object
   formKeyPrefix: string;
+  steps: BuilderGenerator[]
 }) => {
   //  console.log("RENDERING", name, inputs, outputs);
   const registerWithPrefix = (key: string) => {
     return formObject.register(`${formKeyPrefix}.${key}`);
   };
+  console.log("FORM OBJECT", formObject)
   // we'll need to parse the input schema to determine what to put in the form
   return (
     <Card>
@@ -158,6 +161,8 @@ export const WordEditorCard = ({
       <Typography>Inputs</Typography>
       <DynamicForm
         schema={inputSchema}
+        steps={steps}
+        stepIdx={idx}
         hotkeys={hotkeys}
         outputHotkeys={outputHotkeys}
         setFocusedElement={setFocusedElement}
@@ -210,7 +215,7 @@ const BuilderAccordion = ({
     updateStepPosition,
     runWord,
     removeStepFromWord,
-    submitWord
+    submitWord,
   } = useWordBuilder({ wordsFileText, templatesFileText, generatorsFileText });
 
   const [focusedElement, setFocusedElement] = React.useState<FocusableElements>(
@@ -237,11 +242,14 @@ const BuilderAccordion = ({
   const { steps } = newWord;
   function onSubmit(results) {
     console.log("submit", results, "steps", steps);
-    submitWord(results)
+    submitWord(results);
   }
 
   const formObject = useForm();
   const { handleSubmit } = formObject;
+
+  // have a useEffect check that the form properly sets the input template value based on what is in step.
+  // that's odd though...there has to be a better way
   return (
     <div>
       <Sheet variant="outlined" color="neutral">
@@ -277,9 +285,15 @@ const BuilderAccordion = ({
         <hr />
         Word Builder
         <form onSubmit={handleSubmit(onSubmit)}>
+          <label>
+            Word name
+            <input type="text" {...formObject.register("wordName")} />
+          </label>
+          <br />
           {steps.map((step, idx) => (
             <WordEditorCard
               {...step}
+              steps={steps}
               hotkeys={templateHotKeys}
               setFocusedElement={setFocusedElement}
               idx={idx}

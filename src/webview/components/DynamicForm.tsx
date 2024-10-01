@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Controller, set, useFieldArray, useForm } from "react-hook-form";
-import { BuilderTemplate, Schema, Types } from "../hooks/useWordBuilder";
+import { BuilderGenerator, BuilderTemplate, Schema, Types } from "../hooks/useWordBuilder";
 import { useHotkeys } from "react-hotkeys-hook";
 import { hotKeyToItem } from "../util/hotKeyBuilder";
 import { Box, Chip, ChipDelete, Sheet } from "@mui/joy";
@@ -27,6 +27,8 @@ interface FormProps {
   templatesMeta: BuilderTemplate[];
   formObject: any;
   formKeyPrefix: string;
+  steps:BuilderGenerator[];
+  stepIdx: number;
 }
 
 const NestedFormFields = ({
@@ -48,6 +50,8 @@ const NestedFormFields = ({
   nestIndex,
   templatesMeta,
   keyWithPrefix,
+  steps,
+  stepIdx
 }: {
   register: any;
   unregister: any;
@@ -67,6 +71,8 @@ const NestedFormFields = ({
   nestIndex?: number;
   templatesMeta: BuilderTemplate[];
   keyWithPrefix: (key: string) => string;
+  steps: BuilderGenerator[],
+  stepIdx: number;
 }) => {
   //console.count("generateFormFields");
   if (schema == null) return null;
@@ -130,6 +136,8 @@ const NestedFormFields = ({
               setArrayFields={setArrayFields}
               templatesMeta={templatesMeta}
               keyWithPrefix={keyWithPrefix}
+              steps={steps}
+              stepIdx={stepIdx}
             />
           </div>
         );
@@ -177,6 +185,8 @@ const NestedFormFields = ({
           setArrayFields={setArrayFields}
           templatesMeta={templatesMeta}
           keyWithPrefix={keyWithPrefix}
+          steps={steps}
+          stepIdx={stepIdx}
         />
       );
       return <div key={key}>{nestedFormFields}</div>;
@@ -216,6 +226,8 @@ const NestedFormFields = ({
               setFocusedElement={setFocusedElement}
               setFocusedStepIdx={setFocusedStepIdx}
               templatesMeta={templatesMeta}
+              steps={steps}
+              stepIdx={stepIdx}
             />
           </div>
         );
@@ -261,7 +273,17 @@ const SingleTemplatefield = ({
   setFocusedStepIdx,
   outputHotkeys,
   templatesMeta,
+  steps,
+  stepIdx
 }) => {
+  console.log("single templ field name", name, idx)
+  React.useEffect(() => {
+    if(name.split(".").some(n=>n==="input")) {
+      const priorStepOutput = steps[stepIdx-1]?.outputName ?? "wordInput";
+      console.log("did we nail it?", priorStepOutput, steps, steps[stepIdx-1])
+      setValue(name, priorStepOutput)
+    }
+  },[])
   useHotkeys(
     Array.from(hotkeys.keys()),
     (event) => {
@@ -480,6 +502,8 @@ const DynamicForm: React.FC<FormProps> = ({
   templatesMeta,
   formObject,
   formKeyPrefix,
+  steps,
+  stepIdx
 }) => {
   const { control, setValue, getValues, unregister, register } = formObject;
   const [hotkeyEnabledIndex, setHotkeyEnabledIndex] = React.useState(null);
@@ -497,6 +521,8 @@ const DynamicForm: React.FC<FormProps> = ({
       }}
     >
       <NestedFormFields
+      steps={steps}
+      stepIdx={stepIdx}
         register={register}
         unregister={unregister}
         control={control}
