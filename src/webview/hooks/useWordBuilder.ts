@@ -1,17 +1,10 @@
 import { customAlphabet } from "nanoid";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { genTemplateWithVars } from "symmetric-parser";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
-import {
-  buildTemplateMeta,
-  parseGenerators,
-  parseTemplates,
-  parseWords,
-} from "../util/parsers";
 
-import { cloneDeep, compact } from "lodash";
+import { cloneDeep } from "lodash";
 import { setKeyValue } from "./util";
-
 
 export type BuilderWord = {
   name: string;
@@ -106,59 +99,19 @@ const combineGenerator = {
   inputs: { template1: null, template2: null },
 };
 export function useWordBuilder({
-  wordsFileText,
-  templatesFileText,
-  generatorsFileText,
+  wordsMeta,
+  templatesMeta,
+  generatorsMeta,
 }: {
-  wordsFileText: string;
-  templatesFileText: string;
-  generatorsFileText: string;
+  wordsMeta: BuilderWord[];
+  templatesMeta: BuilderTemplate[];
+  generatorsMeta: BuilderGenerator[];
 }) {
   const [newWord, setNewWord] = useState<BuilderNewWord>({
     wordName: "new", // handled by form now, sorry for the tech debt!
     steps: [],
   });
-  const [wordsMeta, setWordsMeta] = useState<BuilderWord[]>([]);
-  const [templatesMeta, setTemplatesMeta] = useState<BuilderTemplate[]>([]);
-  const [generatorsMeta, setGeneratorsMeta] = useState<BuilderGenerator[]>([]);
   const [runtimeError, setRuntimeError] = useState<string | null>(null);
-
-  useEffect(() => {
-    // start with fake, move to ....how do we get from file system.
-    // VS Code API. do that separately?
-    // need to turn input into meta.
-    console.log("STARTING!!");
-    const parsedWords = parseWords(wordsFileText);
-    const parsedGenerators = parseGenerators(generatorsFileText);
-    console.log("DONE, PARSING TEMPLATES");
-    const parsedTemplates = buildTemplateMeta(templatesFileText);
-    console.log("PARSEDAND GOOD", {
-      parsedWords,
-      parsedGenerators,
-      parsedTemplates,
-    });
-
-    // grab all the meta! apply to the objects! go go go!
-    setWordsMeta([
-      {
-        name: "combineEverything",
-        steps: [combineGenerator],
-      },
-    ]); /*
-    setTemplates([
-      { name: "firsty", template: firsty },
-      { name: "secondy", template: secondy },
-      { name: "thirdy", template: thirdy },
-      { name: "fourthy", template: fourthy },
-      { name: "fifthy", template: fifthy },
-      { name: "sixthy", template: sixthy },
-    ]);
-
-    setGenerators([identityGenerator, combineGenerator]);
-    */
-    setGeneratorsMeta(parsedGenerators);
-    setTemplatesMeta(compact(parsedTemplates));
-  }, [generatorsFileText, templatesFileText, wordsFileText]);
 
   function addStepToWord(step: any, position: number) {
     // if step doesn't have an output, we create one.
@@ -178,7 +131,7 @@ export function useWordBuilder({
     setNewWord((prev) => {
       const newSteps = [...prev.steps];
       newSteps.splice(position, 0, newStep);
-      const stepsWithInput = setAllStepInputsToPriorStepOutput(newSteps)
+      const stepsWithInput = setAllStepInputsToPriorStepOutput(newSteps);
       console.log("NEW STEPS", stepsWithInput);
       return { ...prev, steps: stepsWithInput };
     });
@@ -196,15 +149,15 @@ export function useWordBuilder({
     });
     console.log("NEW STESP", JSON.stringify(newSteps, null, 2));
   }
-  
+
   function setAllStepInputsToPriorStepOutput(steps) {
     return steps.map((step, idx) => {
       const priorStepOutput = steps[idx - 1]?.outputName ?? "wordInput";
       const inputSchema = cloneDeep(step.inputSchema);
       delete step.inputSchema;
-      const newStep = setKeyValue("input", priorStepOutput, step)
+      const newStep = setKeyValue("input", priorStepOutput, step);
       newStep.inputSchema = inputSchema;
-      return newStep
+      return newStep;
     });
   }
 
@@ -261,9 +214,6 @@ export function useWordBuilder({
   }
 
   return {
-    wordsMeta,
-    templatesMeta,
-    generatorsMeta,
     newWord,
     runtimeError,
     addStepToWord,

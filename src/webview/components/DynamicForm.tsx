@@ -503,7 +503,7 @@ const DynamicForm: React.FC<FormProps> = ({
   formObject,
   formKeyPrefix,
   steps,
-  stepIdx
+  stepIdx,
 }) => {
   const { control, setValue, getValues, unregister, register } = formObject;
   const [hotkeyEnabledIndex, setHotkeyEnabledIndex] = React.useState(null);
