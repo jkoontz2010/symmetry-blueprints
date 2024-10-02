@@ -1,16 +1,15 @@
 import { compact } from "lodash";
 import { useEffect, useState } from "react";
-import {
-  buildTemplateMeta,
-  parseGenerators,
-  parseWords,
-} from "../util/parsers";
+
 import {
   BuilderGenerator,
   BuilderNewWord,
   BuilderTemplate,
   BuilderWord,
 } from "./useWordBuilder";
+import {  parseWords } from "../util/parsers/parseWords";
+import { parseGenerators } from "../util/parsers/parseGenerators";
+import { buildTemplateMeta } from "../util/parsers/parseTemplates";
 
 export function useMeta({
   wordsFileText,
