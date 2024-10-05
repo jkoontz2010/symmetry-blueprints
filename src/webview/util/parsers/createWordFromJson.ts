@@ -1,106 +1,5 @@
-import { applyToGenericHomomorphism, collapseAllBelowChildrenOfKey, FoldMode, genTemplateWithVars, joiner, joinOnSameValue, orderedFold, performIfHasTemplates, performOnNodes, recursiveFold, replaceWithAllIsomorphic, swapValuesForGenericKeysWithCb } from "symmetric-parser";
-import { sortTemplateByDeps, Template } from "symmetric-parser/dist/src/templator/template-group";
+import { sortTemplateByDeps, Template, applyToGenericHomomorphism, collapseAllBelowChildrenOfKey, FoldMode, genTemplateWithVars, joiner, joinOnSameValue, orderedFold, performIfHasTemplates, performOnNodes, recursiveFold, replaceWithAllIsomorphic, swapValuesForGenericKeysWithCb } from "symmetric-parser";
 
-const inputSchemaArrayKeyVal = genTemplateWithVars(
-    {
-      inputSchemaArrayKeyVal: () =>
-        `\n      "schemaInputKey": [schemaInputValue\n      ],`,
-    },
-    ["schemaInputKey", "schemaInputValue"]
-  );
-  
-  const inputSchemaObjectBody = genTemplateWithVars(
-    {
-      inputSchemaObjectBody: () => `      {schemaObjectBody\n      }`,
-    },
-    ["schemaObjectBody"]
-  );
-  
-  const quotedSchemaKeyVal = genTemplateWithVars(
-    {
-      inputSchemaKeyVal: () => `\n    "schemaInputKey": "schemaInputValue",`,
-    },
-    ["schemaInputKey", "schemaInputValue"]
-  );
-  
-  const endingSchemaKeyVal = genTemplateWithVars(
-    {
-      inputSchemaKeyVal: () => `\n    "schemaInputKey": "schemaInputValue"`,
-    },
-    ["schemaInputKey", "schemaInputValue"]
-  );
-  
-  const inputValueArrayKeyVal = genTemplateWithVars(
-    {
-      inputValueArrayKeyVal: () =>
-        `\n      "valueInputKey": [valueInputValue\n      ]`,
-    },
-    ["valueInputKey", "valueInputValue"]
-  );
-  
-  const inputValueObjectBody = genTemplateWithVars(
-    {
-      inputValueObjectBody: () => `      {valueObjectBody\n      }`,
-    },
-    ["valueObjectBody"]
-  );
-  
-  const quotedValueKeyVal = genTemplateWithVars(
-    {
-      inputValueKeyVal: () => `\n    "valueInputKey": "valueInputValue",`,
-    },
-    ["valueInputKey", "valueInputValue"]
-  );
-  
-  const quotedKeyUnquotedValue = genTemplateWithVars(
-    {
-      inputValueKeyVal: () => `\n    "valueInputKey": valueInputValue,`,
-    },
-    ["valueInputKey", "valueInputValue"]
-  );
-  
-  const endingValueKeyVal = genTemplateWithVars(
-    {
-      inputValueKeyVal: () => `\n    "valueInputKey": "valueInputValue"`,
-    },
-    ["valueInputKey", "valueInputValue"]
-  );
-  
-  const stepBody = genTemplateWithVars(
-    {
-      stepBody: () => `\n  {stepElement\n  }`,
-    },
-    ["stepElement"]
-  );
-
-const inputSchemaTempl = genTemplateWithVars(
-    {
-      inputSchema: () => `\n    "inputSchema": {schemaBody
-      }`,
-    },
-    ["schemaBody"]
-  );
-  
-  const inputValuesTempl = genTemplateWithVars(
-    {
-      inputValues: () => `\n    "inputValues": {inputValuesBody
-      }`,
-    },
-    ["inputValuesBody"]
-  );
-  const templNameSchema = genTemplateWithVars(
-    {
-      templNameSchema: () => `\n    "name": "templName",`,
-    },
-    ["templName"]
-  );
-  
-  const outputNameSchema = genTemplateWithVars(
-    {
-      outputNameSchema: () => `\n    "outputName": "varNameForOutput",`,
-    },
-    ["varNameForOutput"]
-  );
 export function parseSteps(steps: string) {
     const file = { file: () => steps };
     const stepOf = orderedFold(file, [stepBody],{mode:FoldMode.Strict});
@@ -249,3 +148,105 @@ export function parseSteps(steps: string) {
     const step = applyToGenericHomomorphism({...collapsedAtArray, ...joinedValues}, stepTempl);
     return step;
   }
+
+
+const inputSchemaArrayKeyVal = genTemplateWithVars(
+    {
+      inputSchemaArrayKeyVal: () =>
+        `\n      "schemaInputKey": [schemaInputValue\n      ],`,
+    },
+    ["schemaInputKey", "schemaInputValue"]
+  );
+  
+  const inputSchemaObjectBody = genTemplateWithVars(
+    {
+      inputSchemaObjectBody: () => `      {schemaObjectBody\n      }`,
+    },
+    ["schemaObjectBody"]
+  );
+  
+  const quotedSchemaKeyVal = genTemplateWithVars(
+    {
+      inputSchemaKeyVal: () => `\n    "schemaInputKey": "schemaInputValue",`,
+    },
+    ["schemaInputKey", "schemaInputValue"]
+  );
+  
+  const endingSchemaKeyVal = genTemplateWithVars(
+    {
+      inputSchemaKeyVal: () => `\n    "schemaInputKey": "schemaInputValue"`,
+    },
+    ["schemaInputKey", "schemaInputValue"]
+  );
+  
+  const inputValueArrayKeyVal = genTemplateWithVars(
+    {
+      inputValueArrayKeyVal: () =>
+        `\n      "valueInputKey": [valueInputValue\n      ]`,
+    },
+    ["valueInputKey", "valueInputValue"]
+  );
+  
+  const inputValueObjectBody = genTemplateWithVars(
+    {
+      inputValueObjectBody: () => `      {valueObjectBody\n      }`,
+    },
+    ["valueObjectBody"]
+  );
+  
+  const quotedValueKeyVal = genTemplateWithVars(
+    {
+      inputValueKeyVal: () => `\n    "valueInputKey": "valueInputValue",`,
+    },
+    ["valueInputKey", "valueInputValue"]
+  );
+  
+  const quotedKeyUnquotedValue = genTemplateWithVars(
+    {
+      inputValueKeyVal: () => `\n    "valueInputKey": valueInputValue,`,
+    },
+    ["valueInputKey", "valueInputValue"]
+  );
+  
+  const endingValueKeyVal = genTemplateWithVars(
+    {
+      inputValueKeyVal: () => `\n    "valueInputKey": "valueInputValue"`,
+    },
+    ["valueInputKey", "valueInputValue"]
+  );
+  
+  const stepBody = genTemplateWithVars(
+    {
+      stepBody: () => `\n  {stepElement\n  }`,
+    },
+    ["stepElement"]
+  );
+
+const inputSchemaTempl = genTemplateWithVars(
+    {
+      inputSchema: () => `\n    "inputSchema": {schemaBody
+      }`,
+    },
+    ["schemaBody"]
+  );
+  
+  const inputValuesTempl = genTemplateWithVars(
+    {
+      inputValues: () => `\n    "inputValues": {inputValuesBody
+      }`,
+    },
+    ["inputValuesBody"]
+  );
+  const templNameSchema = genTemplateWithVars(
+    {
+      templNameSchema: () => `\n    "name": "templName",`,
+    },
+    ["templName"]
+  );
+  
+  const outputNameSchema = genTemplateWithVars(
+    {
+      outputNameSchema: () => `\n    "outputName": "varNameForOutput",`,
+    },
+    ["varNameForOutput"]
+  );

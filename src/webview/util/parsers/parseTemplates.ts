@@ -1,5 +1,4 @@
-import { collapseTemplateAtKey, genTemplateWithVars, joiner, recursiveFold, replaceWithAllIsomorphic, stringCleaning, stringUnCleaning } from "symmetric-parser";
-import { Template } from "symmetric-parser/dist/src/templator/template-group";
+import { Template, collapseTemplateAtKey, genTemplateWithVars, joiner, recursiveFold, replaceWithAllIsomorphic, stringCleaning, stringUnCleaning } from "symmetric-parser";
 
 export function parseTemplates(file: Template) {
     // need to parse out `...`

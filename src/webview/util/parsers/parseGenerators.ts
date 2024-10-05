@@ -13,12 +13,9 @@ import {
     multiply,
     FoldMode,
     divide,
+    Template,
   } from "symmetric-parser";
   
-  import {
-    Template,
-  } from "symmetric-parser/dist/src/templator/template-group";
-
   export function parseGenerators(generatorFile: string) {
     const cleaned = stringCleaning(generatorFile);
     const file = { file: () => cleaned };
