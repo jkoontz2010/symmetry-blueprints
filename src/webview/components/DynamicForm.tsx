@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Controller, set, useFieldArray, useForm } from "react-hook-form";
 import { BuilderGenerator, BuilderTemplate, Schema, Types } from "../hooks/useWordBuilder";
-import { useHotkeys } from "react-hotkeys-hook";
+import { useHotkeys } from "../hooks/useHotkeys";
 import { hotKeyToItem } from "../util/hotKeyBuilder";
 import { Box, Chip, ChipDelete, Sheet } from "@mui/joy";
 import { FocusableElements } from "./BuilderAccordion";

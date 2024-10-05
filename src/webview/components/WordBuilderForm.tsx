@@ -14,7 +14,7 @@ import ClearIcon from "@mui/icons-material/Clear";
 import DynamicForm from "./DynamicForm";
 import { useForm } from "react-hook-form";
 import Chip from "@mui/joy/Chip";
-import { useHotkeys } from "react-hotkeys-hook";
+import { useHotkeys } from "../hooks/useHotkeys";
 import {
   getHotkeyMapForOutputItems,
   hotKeyToItem,
