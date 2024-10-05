@@ -25,6 +25,9 @@ export const useHotkeys = (hotkeysArray, callback, options = { enabled: true }) 
         // Update the sequence with the new key
         setKeySequence(newSequence);
       }
+      if(newSequence.length>hotkeysArray[0].length){
+        setKeySequence('');
+      }
     },
     [keySequence, hotkeysArray, callback, options.enabled]
   );
