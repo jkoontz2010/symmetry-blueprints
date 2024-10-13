@@ -1,153 +1,240 @@
-import { sortTemplateByDeps, Template, applyToGenericHomomorphism, collapseAllBelowChildrenOfKey, FoldMode, genTemplateWithVars, joiner, joinOnSameValue, orderedFold, performIfHasTemplates, performOnNodes, recursiveFold, replaceWithAllIsomorphic, swapValuesForGenericKeysWithCb } from "symmetric-parser";
+import { collapseAllBelowChildrenOfKey, sortTemplateByDeps, FoldMode, genTemplateWithVars, joiner, joinOnSameValue, orderedFold, performIfHasTemplates, performOnNodes, recursiveFold, replaceWithAllIsomorphic, swapValuesForGenericKeysWithCb, generateTemplateFromTemplate, multiply, mapIndexOfKey1AndValueOfKey2ToKey3, performIfGenericKeyIsTemplate, performIfHasGenericKey, tts } from "symmetric-parser";
+import { Template } from "symmetric-parser/dist/src/templator/template-group";
+
+
 
 export function parseSteps(steps: string) {
-    const file = { file: () => steps };
-    const stepOf = orderedFold(file, [stepBody],{mode:FoldMode.Strict});
-    if(stepOf == null) throw new Error("null fold");
-    const stepOfResult = { ...stepOf.result, ...stepOf.divisors };
-    const sortedByDeps = sortTemplateByDeps(stepOfResult)
-    // /console.log("OFRESULT", tts(sortedByDeps,false));
-    const stepFunctions = performOnNodes("stepElement", sortedByDeps, createFunctionCodeFromStep);
-    //console.log("STEP FUNCTIONS", tts(stepFunctions,false));
-    const word = joiner(stepFunctions, "stepExpression", "word", "\n");
-    //console.log("FINAL WORD", tts(word,false))
-    return word;
-  }
-  
-  function createFunctionCodeFromStep(stepTemplate: Template, index: number) {
-    // console.log("STEP TEMPLATE", tts(stepTemplate, false));
+  const file = { file: () => steps };
+  const stepOf = orderedFold(file, [stepBody], { mode: FoldMode.Strict });
+  if (stepOf == null) throw new Error("null fold");
+  const stepOfResult = { ...stepOf.result, ...stepOf.divisors };
+  const sortedByDeps = sortTemplateByDeps(stepOfResult);
+  // console.log("OFRESULT", tts(sortedByDeps, false));
+  const stepFunctions = performOnNodes(
+    "stepElement",
+    sortedByDeps,
+    createFunctionCodeFromStep
+  );
+ // console.log("STEP FUNCTIONS", tts(stepFunctions, false));
+  const word = joiner(stepFunctions, "stepExpression", "word", "\n");
+  console.log("FINAL WORD", tts(word, false));
+  console.log("what else?", tts(stepFunctions,false))
+  return word;
+}
+
+function createFunctionCodeFromStep(stepTemplate: Template, index: number) {
+  // console.log("STEP TEMPLATE", tts(stepTemplate, false));
+  const of = recursiveFold(
+    stepTemplate,
+    [outputNameSchema, templNameSchema, inputSchemaTempl, inputValuesTempl],
+    [],
+    { scope: () => `\n` },
+    "  ",
+    1
+  );
+  const ofResult = { ...of.result, ...of.divisors };
+
+  const typed = performOnNodes("inputSchema", ofResult, (t: Template) => {
+    // TODO: ADD cb TEMPLATE
     const of = recursiveFold(
-      stepTemplate,
-      [outputNameSchema, templNameSchema, inputSchemaTempl, inputValuesTempl],
+      t,
+      [
+        inputSchemaObjectBody,
+        quotedSchemaKeyVal,
+        inputSchemaArrayKeyVal, //save for last
+        endingSchemaKeyVal,
+      ],
       [],
       { scope: () => `\n` },
       "  ",
-      1
+      6
     );
-    const ofResult = { ...of.result, ...of.divisors };
-  
-    const typed = performOnNodes("inputSchema", ofResult, (t: Template) => {
-      // TODO: ADD cb TEMPLATE
-      const of = recursiveFold(
+    if (of == null) throw new Error("null fold");
+    const allOf = { ...of.result, ...of.divisors };
+    // NEW: create code template from the schema stuff
+    // console.log("ALL OF", tts(allOf, false));
+    return allOf;
+  });
+
+  const valuesParsed = performOnNodes("inputValues", typed, (t: Template) => {
+    const of = recursiveFold(
+      t,
+      [
+        inputValueObjectBody,
+        quotedValueKeyVal, //save for last
+        inputValueArrayKeyVal,
+        endingValueKeyVal,
+      ],
+      [],
+      { scope: () => `\n` },
+      "  ",
+      6
+    );
+    if (of == null) throw new Error("null fold");
+    const allOf = { ...of.result, ...of.divisors };
+
+    return allOf;
+  });
+  const templateTypeTempl = {
+    templateType: () => `Template`,
+  };
+
+  const stringTypeTempl = {
+    stringType: () => `String`,
+  };
+
+  const stringArrayTypeTempl = {
+    stringArrayType: () => `StringArray`,
+  };
+
+  const templateArrayTypeTempl = {
+    templateArrayType: () => `TemplateArray`,
+  };
+
+  const numberTypeTempl = {
+    numberType: () => `Number`,
+  };
+
+  const joinedOnValue = joinOnSameValue(
+    "schemaInputKey",
+    "valueInputKey",
+    (t: Template) => {
+      //console.log("JOIN ON VALUE", tts(t, false));
+      // we leave strings as is, so don't bother transforming them.
+      // stick to Template and Number.
+      // ONLY DO THIS on the schemaInputKey. If you check valueInputKey for these templates, it'll snag the wrong ones.
+      const t1 = performIfGenericKeyIsTemplate(
         t,
-        [
-          inputSchemaObjectBody,
-          quotedSchemaKeyVal,
-          inputSchemaArrayKeyVal, //save for last
-          endingSchemaKeyVal,
-        ],
-        [],
-        { scope: () => `\n` },
-        "  ",
-        6
-      );
-      if (of == null) throw new Error("null fold");
-      const allOf = { ...of.result, ...of.divisors };
-      return allOf;
-    });
-  
-    const valuesParsed = performOnNodes("inputValues", typed, (t: Template) => {
-      const of = recursiveFold(
-        t,
-        [
-          inputValueObjectBody,
-          quotedValueKeyVal,
-          inputValueArrayKeyVal, //save for last
-          endingValueKeyVal,
-        ],
-        [],
-        { scope: () => `\n` },
-        "  ",
-        6
-      );
-      if (of == null) throw new Error("null fold");
-      const allOf = { ...of.result, ...of.divisors };
-  
-      return allOf;
-    });
-    const templateTypeTempl = {
-      templateType: () => `Template`,
-    };
-  
-    const stringTypeTempl = {
-      stringType: () => `String`,
-    };
-  
-    const stringArrayTypeTempl = {
-      stringArrayType: () => `StringArray`,
-    };
-  
-    const templateArrayTypeTempl = {
-      templateArrayType: () => `TemplateArray`,
-    };
-  
-    const numberTypeTempl = {
-      numberType: () => `Number`,
-    };
-  
-    const joinedOnValue = joinOnSameValue(
-      "valueInputKey",
-      "schemaInputKey",
-      (t: Template) => {
-        // we leave strings as is, so don't bother transforming them.
-        // stick to Template and Number.
-        const t2 = performIfHasTemplates(
-          t,
-          [templateTypeTempl],
-          (t: Template) => {
-            // the beautiful replaceWithAllIsomorphic
-            const iso = replaceWithAllIsomorphic(t, [quotedKeyUnquotedValue]);
-            return iso;
-          }
-        );
-        const t3 = performIfHasTemplates(t2, [numberTypeTempl], (t: Template) => {
+        "schemaInputValue",
+        templateTypeTempl,
+        (t: Template) => {
+          // the beautiful replaceWithAllIsomorphic
           const iso = replaceWithAllIsomorphic(t, [quotedKeyUnquotedValue]);
           return iso;
-        });
-        return t3;
-      },
-      valuesParsed
-    );
+        }
+      );
+
+      const t2 = performIfGenericKeyIsTemplate(
+        t1,
+        "schemaInputValue",
+        templateArrayTypeTempl,
+        (t: Template) => {
+          // you can flip and flop and do a bunch of gymnastics
+          // but sometime the quickest path is just a string replace.
+          const newlyArrayed = swapValuesForGenericKeysWithCb(t, [
+            {
+              key: "valueInputValue",
+              newValue: (str: string) => `[${str.split(`"`).join("")}]`,
+            },
+          ]);
+
+          return newlyArrayed;
+        }
+      );
+
+      const t3 = performIfHasTemplates(t2, [numberTypeTempl], (t: Template) => {
+        const iso = replaceWithAllIsomorphic(t, [quotedKeyUnquotedValue]);
+        return iso;
+      });
+
+      
+      return t3;
+    },
+    valuesParsed,
+    undefined
+  );
+
+  // this will come home to bite us.
+  // it only collapses the arrays.
+  // what when there's an object to pass?
+  // ...actually I guess you'd just pass the object.
+  // ......huh.
+  const collapsedAtArray = collapseAllBelowChildrenOfKey(
+    joinedOnValue,
+    "inputValueArrayKeyVal"
+  );
+  const collapsedSchema = collapseAllBelowChildrenOfKey(
+    collapsedAtArray,
+    "inputSchemaArrayKeyVal"
+  )
+  //console.log("COLLAPSEATARRY", tts(collapsedSchema, false));
+  const joinedOnValueAfterCollapse = joinOnSameValue(
+    "valueInputKey",
+    "schemaInputKey",
+    (t: Template) => {
+    //  console.log("NEXT JOIN ON VALUE", tts(t, false));
+      // we leave strings as is, so don't bother transforming them.
+      // stick to Template and Number.
+      const t0 = performIfHasGenericKey(t, 'inputSchemaArrayKeyVal', (t: Template) => {
+      //  console.log("OBJECT WORK", tts(t,false))
+        const newlyArrayed = swapValuesForGenericKeysWithCb(t, [
+          {
+            key: "valueInputValue",
+            newValue: (str: string) => `[${str}]`,
+          },
+        ]);
+        return newlyArrayed;
+      })
+      //console.log("__________________________________________")
+      const t1 = performIfGenericKeyIsTemplate(t0, "schemaInputValue", stringTypeTempl, (t: Template) => {
+        // the beautiful replaceWithAllIsomorphic
+        const swapped = swapValuesForGenericKeysWithCb(t, [
+          { key: "valueInputValue", newValue: (s) => `"${s}"` },
+        ]);
+        return swapped;
+      });
+      // what I want from this is {arg232: () => viv}
+      const t2= mapIndexOfKey1AndValueOfKey2ToKey3(t1, "schemaInputKey", "valueInputValue", "arg");
+      //console.log("WHAT IS t2", tts(t2, false), t2);
+      return t2;
+    },
+    collapsedSchema,
+    "schemaInputKey"
+  );
+ // console.log("POST COLLAPDS", tts(joinedOnValueAfterCollapse, false));
+
+  const wordTemplate = generateTemplateFromTemplate(
+    joinedOnValueAfterCollapse,
+    "stepExpression"+index,
+    `const varNameForOutput = templName(arg);`,
+    ["varNameForOutput", "templName", "arg"],
+    [{ key: "arg", delimiter: ", " }]
+  );
+
   
-    // this will come home to bite us.
-    // it only collapses the arrays.
-    // what when there's an object to pass?
-    // ...actually I guess you'd just pass the object.
-    // ......huh.
-    const collapsedAtArray = collapseAllBelowChildrenOfKey(joinedOnValue, "inputValueArrayKeyVal");
-    const joinedOnValueAfterCollapse = joinOnSameValue(
-      "valueInputKey",
-      "schemaInputKey",
-      (t: Template) => {
-        // we leave strings as is, so don't bother transforming them.
-        // stick to Template and Number.
-        const t1 = performIfHasTemplates(
-          t,
-          [stringTypeTempl],
-          (t: Template) => {
-            // the beautiful replaceWithAllIsomorphic
-            const swapped = swapValuesForGenericKeysWithCb(t, [
-              { key: "valueInputValue", newValue: (s) => `"${s}"` },
-            ]);
-            return swapped;
-          }
-        );
-        return t1;
-      }, collapsedAtArray)
-    //console.log("POST JOINED", tts(joinedOnValueAfterCollapse, false));
-    const joinedValues = joiner(joinedOnValueAfterCollapse, "valueInputValue", "stepArgs", ", ");
-    //console.log("ALL JOINED", tts(joinedValues,false));
+  const step = multiply(wordTemplate,joinedOnValueAfterCollapse);
+ // console.log("step TEMPLATE", tts(step, false));
+  return step;
+  /*
+  const sortedJoinedOnValueAfterCollapse = sortTemplateByDeps(
+    joinedOnValueAfterCollapse
+  );
+  //console.log("SORTED", tts(sortedJoinedOnValueAfterCollapse, false));
+  const joinedValues = joiner(
+    sortedJoinedOnValueAfterCollapse,
+    "valueInputValue",
+    "stepArgs",
+    ", "
+  );
+  //console.log("ALL JOINED", tts(joinedValues, false));
+
+  const stepTempl = genTemplateWithVars(
+    {
+      ["stepExpression" + index]: () =>
+        `const varNameForOutput = templName(stepArgs);\n`,
+    },
+    ["varNameForOutput", "templName", "stepArgs"]
+  );
+
+  const step = applyToGenericHomomorphism(
+    { ...collapsedAtArray, ...joinedValues },
+    stepTempl
+  );
   
-    const stepTempl = genTemplateWithVars(
-      {
-        ["stepExpression"+index]: () => `const varNameForOutput = templName(stepArgs);\n`,
-      },
-      ["varNameForOutput", "templName", "stepArgs"]
-    );
-  
-    const step = applyToGenericHomomorphism({...collapsedAtArray, ...joinedValues}, stepTempl);
-    return step;
-  }
+  console.log("STEP FINAL", tts(step,false))
+  return step;
+  */
+}
 
 
 const inputSchemaArrayKeyVal = genTemplateWithVars(

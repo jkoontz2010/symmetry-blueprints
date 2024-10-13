@@ -8,6 +8,10 @@ export const useHotkeys = (hotkeysArray, callback, options = { enabled: true }) 
     (event) => {
       if (!options.enabled) return;
 
+      if (event.target.tagName === 'INPUT') {
+        return;
+      }
+
       const key = event.key.toLowerCase();
 
       // Append the new key to the sequence
