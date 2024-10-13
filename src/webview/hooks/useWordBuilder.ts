@@ -5,7 +5,7 @@ import { Template } from "symmetric-parser/dist/src/templator/template-group";
 
 import { cloneDeep } from "lodash";
 import { setKeyValue } from "./util";
-import { parseSteps } from "../util/parsers/createWordFromJson";
+import { buildWordBodyFromSteps, buildWordFromNameAndBody } from "../util/parsers/createWordFromJson";
 
 export type BuilderWord = {
   name: string;
@@ -148,9 +148,13 @@ export function useWordBuilder({
       // put step values from formStep into step
       return { ...step, inputValues: formStep };
     });
-    console.log("NEW STESP", JSON.stringify(newSteps, null, 2));
-    const parsedSteps = parseSteps(JSON.stringify(newSteps));
-    console.log("PARSED STEPS", parsedSteps);
+    
+    console.log("NEW WORD", JSON.stringify(newSteps, null, 2));
+
+    const parsedSteps = buildWordBodyFromSteps(JSON.stringify(newSteps, null, 2));
+    const fullWord = buildWordFromNameAndBody(formSubmission.wordName, parsedSteps);
+    
+    console.log("PARSED STEPS", fullWord);
   }
 
   function setAllStepInputsToPriorStepOutput(steps) {
