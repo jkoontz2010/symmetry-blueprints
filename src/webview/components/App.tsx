@@ -30,6 +30,7 @@ const App = () => {
           generatorsFileText={generatorsFileText} 
           templatesFileText={templatesFileText} 
           wordsFileText={wordsFileText} 
+          postMessage={vscode.postMessage}
         />
       </CssVarsProvider>
     </div>

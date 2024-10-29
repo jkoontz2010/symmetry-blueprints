@@ -121,6 +121,7 @@ export const WordBuilderForm = ({
   focusedWord,
   isStepHotKeysEnabled,
   isTemplateHotKeysEnabled,
+  postMessage
 }: {
   stepHotKeys: Map<string, any>;
   wordsMeta: BuilderWord[];
@@ -133,6 +134,7 @@ export const WordBuilderForm = ({
   focusedWord: number;
   isStepHotKeysEnabled: boolean;
   isTemplateHotKeysEnabled: boolean;
+  postMessage:any;
 }) => {
   const {
     newWord,
@@ -142,7 +144,7 @@ export const WordBuilderForm = ({
     runWord,
     removeStepFromWord,
     submitWord,
-  } = useWordBuilder({ wordsMeta, templatesMeta, generatorsMeta });
+  } = useWordBuilder({ wordsMeta, templatesMeta, generatorsMeta, postMessage });
   const isFocused = wordIdx === focusedWord;
   useHotkeys(
     Array.from(stepHotKeys.keys()),

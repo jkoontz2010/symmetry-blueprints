@@ -5,7 +5,10 @@ import { Template } from "symmetric-parser/dist/src/templator/template-group";
 
 import { cloneDeep } from "lodash";
 import { setKeyValue } from "./util";
-import { buildWordBodyFromSteps, buildWordFromNameAndBody } from "../util/parsers/createWordFromJson";
+import {
+  buildWordBodyFromSteps,
+  buildWordFromNameAndBody,
+} from "../util/parsers/createWordFromJson";
 
 export type BuilderWord = {
   name: string;
@@ -103,10 +106,12 @@ export function useWordBuilder({
   wordsMeta,
   templatesMeta,
   generatorsMeta,
+  postMessage,
 }: {
   wordsMeta: BuilderWord[];
   templatesMeta: BuilderTemplate[];
   generatorsMeta: BuilderGenerator[];
+  postMessage: any;
 }) {
   const [newWord, setNewWord] = useState<BuilderNewWord>({
     wordName: "new", // handled by form now, sorry for the tech debt!
@@ -148,13 +153,26 @@ export function useWordBuilder({
       // put step values from formStep into step
       return { ...step, inputValues: formStep };
     });
-    
+
     console.log("NEW WORD", JSON.stringify(newSteps, null, 2));
 
-    const parsedSteps = buildWordBodyFromSteps(JSON.stringify(newSteps, null, 2));
-    const fullWord = buildWordFromNameAndBody(formSubmission.wordName, parsedSteps);
-    
+    const parsedSteps = buildWordBodyFromSteps(
+      JSON.stringify(newSteps, null, 2)
+    );
+    const fullWord = buildWordFromNameAndBody(
+      formSubmission.wordName,
+      parsedSteps
+    );
+    // TODO: MAKE CONFIGURABLE
+
     console.log("PARSED STEPS", fullWord);
+    postMessage({
+      command: "save_word",
+      word: fullWord.fullWord(),
+      pathToConfig:
+        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig",
+    });
+    console.log("POSTED MESSAGE");
   }
 
   function setAllStepInputsToPriorStepOutput(steps) {

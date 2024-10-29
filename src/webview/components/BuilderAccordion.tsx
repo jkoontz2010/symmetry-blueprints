@@ -92,10 +92,12 @@ const BuilderAccordion = ({
   generatorsFileText,
   templatesFileText,
   wordsFileText,
+  postMessage,
 }: {
   generatorsFileText: string;
   templatesFileText: string;
   wordsFileText: string;
+  postMessage:any;
 }) => {
   if (
     generatorsFileText == null ||
@@ -170,6 +172,7 @@ const BuilderAccordion = ({
           focusedWord={focusedWord}
           isStepHotKeysEnabled={isStepHotKeysEnabled}
           isTemplateHotKeysEnabled={isTemplateHotKeysEnabled}
+          postMessage={postMessage}
         />
         <WordBuilderForm
           stepHotKeys={stepHotKeys}
@@ -183,6 +186,7 @@ const BuilderAccordion = ({
           focusedWord={focusedWord}
           isStepHotKeysEnabled={isStepHotKeysEnabled}
           isTemplateHotKeysEnabled={isTemplateHotKeysEnabled}
+          postMessage={postMessage}
         />
       </Sheet>
     </div>

@@ -1,3 +1,4 @@
 GENERATOR_FILE=/Users/jaykoontz/Documents/GitHub/react-for-code/src/templator/utility-templates.ts
-TEMPLATE_FILE=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/src/parser/template-pool.parse
-WORDS_FILE=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/src/parser/word-pool.parse
+TEMPLATE_FILE=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/playground/src/template-pool.ts
+WORDS_FILE=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/playground/src/word-pool.ts
+PROJECT_DIR=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/playground

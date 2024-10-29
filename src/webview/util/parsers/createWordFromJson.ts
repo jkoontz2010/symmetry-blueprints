@@ -26,7 +26,7 @@ import { Template } from "symmetric-parser/dist/src/templator/template-group";
 
 const fullWord = genTemplateWithVars(
   {
-    fullWord: () => `const wordName = (wordInput: Template) => {
+    fullWord: () => `export function wordName(wordInput: Template) {
   wordBody
 }`,
   },

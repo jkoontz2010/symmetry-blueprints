@@ -1,10 +1,12 @@
 import * as vscode from "vscode";
 import { getNonce } from "./getNonce";
 import * as fs from "fs";
+import { runIndexFile, saveWord } from "./compiler";
+import { readFromConfig } from "./configReader";
 
 function readFromFile(file) {
   return new Promise((resolve, reject) => {
-    fs.readFile(file, 'utf8', function (err, data) {
+    fs.readFile(file, "utf8", function (err, data) {
       if (err) {
         console.log(err);
         reject(err);
@@ -72,6 +74,7 @@ export default class PanelClass {
     //Listen to messages
     this._panel.webview.onDidReceiveMessage(
       async (msg: any) => {
+        console.log("DID RECEIVE MSG", msg);
         switch (msg.command) {
           case "startup":
             console.log("message received");
@@ -80,46 +83,80 @@ export default class PanelClass {
             console.log("reachedBrain");
             this._panel!.webview.postMessage({ command: "refactor" });
             break;
+          case "build_project":
+            break;
+          case "save_word": {
+            const { word, pathToConfig } = msg;
+            const wordsFile = await readFromConfig("WORDS_FILE", pathToConfig);
+            // save to word file
+            const result = await saveWord(word, wordsFile);
+            break;
+          }
+          case "run_word": {
+            const { name, onFile, pathToConfig } = msg;
+            console.log("DONIG IT", name, onFile, pathToConfig);
+            const projectDir = await readFromConfig(
+              "PROJECT_DIR",
+              pathToConfig
+            );
+            // in parallel, compile and run the project
+            const runResult = await runIndexFile(projectDir);
+            //const readFromFilePromise = readFromFile(onFile)
+            //const [compileResult, fileContents] = await Promise.all([compilePromise, readFromFilePromise])
+            // in parallel, read file
+            console.log("COMPILE RESULT", runResult);
+            //console.log("FILE CONTENTS", fileContents);
+            // clean contents
+
+            // after both parallels are complete:
+            // run word
+            // Example usage: Provide the directory with TypeScript files
+
+            this._panel!.webview.postMessage({
+              command: "word_output",
+              data: {},
+            });
+            break;
+          }
           case "fetch_from_config":
             try {
               const { pathToConfig } = msg;
-              fs.readFile(pathToConfig, "utf8", (err, data) => {
-                if (err) {
-                  console.error(err);
-                  return;
-                }
-                // data will equal:
-                // GENERATOR_FILE=src/generators/wordBuilder.ts
-                // TEMPLATE_FILE=src/templates/wordBuilder.ts
-                // WORDS_FILE=src/words/wordBuilder.ts
-                // we want to parse each file path and send it back to the webview
-                const lines = data.split("\n");
-                const generatorPath = lines
-                  .find((line) => line.includes("GENERATOR_FILE"))
-                  .split("=")[1];
-                const templatePath = lines
-                  .find((line) => line.includes("TEMPLATE_FILE"))
-                  .split("=")[1];
-                const wordsPath = lines
-                  .find((line) => line.includes("WORDS_FILE"))
-                  .split("=")[1];
-                console.log(generatorPath, templatePath, wordsPath);
-                const promises = [
-                  readFromFile(generatorPath),
-                  readFromFile(templatePath),
-                  readFromFile(wordsPath),
-                ];
 
-                Promise.all(promises).then((data) => {
-                  const [generators, templates, words] = data;
-                  this._panel!.webview.postMessage({
-                    command: "config_data",
-                    data: { generators, templates, words },
-                  });
+              // data will equal:
+              // GENERATOR_FILE=src/generators/wordBuilder.ts
+              // TEMPLATE_FILE=src/templates/wordBuilder.ts
+              // WORDS_FILE=src/words/wordBuilder.ts
+              // we want to parse each file path and send it back to the webview
+
+              const generatorPath = await readFromConfig(
+                "GENERATOR_FILE",
+                pathToConfig
+              );
+
+              const templatePath = await readFromConfig(
+                "TEMPLATE_FILE",
+                pathToConfig
+              );
+              const wordsPath = await readFromConfig(
+                "WORDS_FILE",
+                pathToConfig
+              );
+              console.log(generatorPath, templatePath, wordsPath);
+              const promises = [
+                readFromFile(generatorPath),
+                readFromFile(templatePath),
+                readFromFile(wordsPath),
+              ];
+
+              Promise.all(promises).then((data) => {
+                const [generators, templates, words] = data;
+                this._panel!.webview.postMessage({
+                  command: "config_data",
+                  data: { generators, templates, words },
                 });
-
-                //this._panel!.webview.postMessage({ command: 'config_data', data });
               });
+
+              //this._panel!.webview.postMessage({ command: 'config_data', data });
             } catch (e) {
               console.error(e);
             }
