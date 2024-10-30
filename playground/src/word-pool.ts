@@ -1,11 +1,4 @@
-import {
-  bgRule,
-  cssDecl,
-  genTempl,
-  selectorFinTempl,
-  selectorTempl,
-  gen2Templ
-} from "./template-pool";
+import * as templPool from "./template-pool";
 
 import {
   Template,
@@ -46,13 +39,13 @@ export function cbGen(input: Template): Template {
 
 export function someWord(input: Template): Template {
   const replaceAllAWithB_tO4T = replaceAllAWithB(
-    genTempl,
-    selectorTempl,
-    selectorFinTempl
+    templPool.genTempl,
+    templPool.selectorTempl,
+    templPool.selectorFinTempl
   );
   const replaceWithAllIsomorphic_s7mG = replaceWithAllIsomorphic(
     replaceAllAWithB_tO4T,
-    [selectorFinTempl, selectorTempl, cssDecl]
+    [templPool.selectorFinTempl, templPool.selectorTempl, templPool.cssDecl]
   );
   const joiner_gAlt = joiner(
     replaceWithAllIsomorphic_s7mG,
@@ -65,11 +58,11 @@ export function someWord(input: Template): Template {
 
 export function wcb(wordInput: Template): Template {
   const replaceWithAllIsomorphic_ScYm = replaceWithAllIsomorphic(wordInput, [
-        bgRule,
-        gen2Templ,
-        cssDecl,
-        selectorTempl,
-        bgRule
+    templPool.bgRule,
+    templPool.genTempl,
+    templPool.cssDecl,
+    templPool.selectorTempl,
+    templPool.bgRule
 ]);
 return replaceWithAllIsomorphic_ScYm;
 }
@@ -77,7 +70,7 @@ return replaceWithAllIsomorphic_ScYm;
 export function w1(input: Template): Template {
   const fr = recursiveFold(
     input,
-    [cssDecl, bgRule],
+    [templPool.cssDecl, templPool.bgRule],
     [],
     { scope: () => `\n` },
     "  ",

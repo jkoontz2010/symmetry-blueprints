@@ -1,4 +1,3 @@
-
 import {
   collapseAllBelowChildrenOfKey,
   sortTemplateByDeps,
@@ -21,8 +20,10 @@ import {
   makeTemplateGenericAtKey,
   findFirst,
   findLast,
+  performIfNotGenericKeyHasValue
 } from "symmetric-parser";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
+
 
 const fullWord = genTemplateWithVars(
   {
@@ -34,7 +35,7 @@ const fullWord = genTemplateWithVars(
 );
 
 export function buildWordFromNameAndBody(name: string, body: Template) {
-  const nameTempl = {wordName:()=> `${name}`}
+  const nameTempl = { wordName: () => `${name}` };
   const word = multiply(multiply(fullWord, body), nameTempl);
   return word;
 }
@@ -55,7 +56,7 @@ export function buildWordBodyFromSteps(steps: string) {
   // console.log("STEP FUNCTIONS", tts(stepFunctions, false));
 
   const word = buildWordBody(stepFunctions);
- //console.log("FINAL WORD", tts(word, false));
+  //console.log("FINAL WORD", tts(word, false));
 
   return word;
 }
@@ -78,7 +79,7 @@ function buildWordBody(stepExpressions: Template) {
     ["name"]
   );
   const returnStmt = multiply(generic, retStepExpr);
-  const combined = {...stepExpressions, ...returnStmt};
+  const combined = { ...stepExpressions, ...returnStmt };
   return joiner(combined, "stepExpression", "wordBody", "\n");
 }
 
@@ -93,7 +94,7 @@ function createFunctionCodeFromStep(stepTemplate: Template, index: number) {
     1
   );
   const ofResult = { ...of.result, ...of.divisors };
-console.log("OF RESULT W#@@@", ofResult)
+  console.log("OF RESULT W#@@@", ofResult);
   const typed = performOnNodes("inputSchema", ofResult, (t: Template) => {
     // TODO: ADD cb TEMPLATE
     const of = recursiveFold(
@@ -112,7 +113,7 @@ console.log("OF RESULT W#@@@", ofResult)
     if (of == null) throw new Error("null fold");
     const allOf = { ...of.result, ...of.divisors };
     // NEW: create code template from the schema stuff
-     console.log("ALL OF", tts(allOf, false));
+    console.log("ALL OF", tts(allOf, false));
     return allOf;
   });
 
@@ -169,7 +170,12 @@ console.log("OF RESULT W#@@@", ofResult)
         templateTypeTempl,
         (t: Template) => {
           // the beautiful replaceWithAllIsomorphic
-          const iso = replaceWithAllIsomorphic(t, [quotedKeyUnquotedValue]);
+          // DO THE THING HERE WHERE WE REPLACE THE STRING
+          console.log("THIS IS WHERE WE DO IT", t);
+          const iso = replaceWithAllIsomorphic(t, [
+            quotedKeyUnquotedValueTemplPool,
+          ]);
+          console.log("AND THEN ISO", iso);
           return iso;
         }
       );
@@ -184,7 +190,12 @@ console.log("OF RESULT W#@@@", ofResult)
           const newlyArrayed = swapValuesForGenericKeysWithCb(t, [
             {
               key: "valueInputValue",
-              newValue: (str: string) => `[${str.split(`"`).join("")}]`,
+              newValue: (str: string) => {
+                return `[${str
+                  .split('"')
+                  .map((s) => (s.includes("\n") ? s : "templPool." + s))
+                  .join("")}]`;
+              },
             },
           ]);
 
@@ -251,15 +262,36 @@ console.log("OF RESULT W#@@@", ofResult)
           return swapped;
         }
       );
-      // what I want from this is {arg232: () => viv}
-      const t2 = mapIndexOfKey1AndValueOfKey2ToKey3(
+      const t2 = performIfGenericKeyIsTemplate(
         t1,
+        "schemaInputValue",
+        templateTypeTempl,
+        (t: Template) => {
+          // performIfHasValue(t, "schemaInputKey", "input", (t: Template) => { })
+          const res = performIfNotGenericKeyHasValue(
+            t,
+            "schemaInputKey",
+            "input",
+            (t: Template) => {
+              console.log("I THINK THIS IS IT", t);
+              const swapped = swapValuesForGenericKeysWithCb(t, [
+                { key: "valueInputValue", newValue: (s) => `templPool.${s}` },
+              ]);
+              return swapped;
+            }
+          );
+          return res;
+        }
+      );
+      // what I want from this is {arg232: () => viv}
+      const t3 = mapIndexOfKey1AndValueOfKey2ToKey3(
+        t2,
         "schemaInputKey",
         "valueInputValue",
         "arg"
       );
-      console.log("WHAT IS t2",  t2);
-      return t2;
+      console.log("WHAT IS t2", t3);
+      return t3;
     },
     collapsedSchema,
     "schemaInputKey"
@@ -391,6 +423,13 @@ const quotedValueKeyVal = genTemplateWithVars(
 const quotedKeyUnquotedValue = genTemplateWithVars(
   {
     inputValueKeyVal: () => `\n    "valueInputKey": valueInputValue,`,
+  },
+  ["valueInputKey", "valueInputValue"]
+);
+
+const quotedKeyUnquotedValueTemplPool = genTemplateWithVars(
+  {
+    inputValueKeyVal: () => `\n    "valueInputKey": templPool.valueInputValue,`,
   },
   ["valueInputKey", "valueInputValue"]
 );

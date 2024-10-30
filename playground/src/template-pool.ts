@@ -1,6 +1,6 @@
 import { genTemplateWithVars, run } from "symmetric-parser";
 
-export const gen2Templ = {
+export const DONT_USE = {
   "genTemplate/templName,templateDesc,keys": ({
     templName,
     templateDesc,
