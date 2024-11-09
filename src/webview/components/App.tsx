@@ -3,7 +3,23 @@ import { Template } from "symmetric-parser/dist/src/templator/template-group";
 import BuilderAccordion from "./BuilderAccordion";
 import { CssVarsProvider } from "@mui/joy";
 import { useFileSystem } from "../hooks/useFileSystem";
+import TemplateDirect from "./v2";
+import { TemplateEditors, TemplateTree } from "./TemplateTree";
 
+export function run(func: () => string, keyName: string) {
+  try {
+    if (func == null) {
+      return "${run(" + keyName + ", '" + keyName + "')}";
+    }
+    if (typeof func === "string") {
+      throw new Error("func is string");
+    }
+    const result = func();
+    return result;
+  } catch (e) {
+    return "${run(" + keyName + ", '" + keyName + "')}";
+  }
+}
 interface vscode {
   postMessage(message: any): void;
 }
@@ -18,20 +34,39 @@ const firsty: Template = {
   firsty: () => `this is where we do it`,
 };
 
+const playTemplate = `({ 
+    'shop1/would1,test1': ({would1, test1})=>\`how \${run(would1, 'would1')} you \${run(test1, 'test1')} this too\`, 
+    'shop2/would2,test2': ({would2, test2})=>\`how \${run(would2, 'would2')} you \${run(test2, 'test2')} this too\`, 
+    'shop3/would3,test3': ({would3, test3})=>\`how \${run(would3, 'would3')} you \${run(test3, 'test3')} this too\`, 
+    'something1': ()=>\`some value\`, 
+    'something2': ()=>\`another one!\` 
+  })`;
+
 const App = () => {
-  const { readAllFiles, generatorsFileText, templatesFileText, wordsFileText } = useFileSystem(vscode.postMessage, "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig");
+  const { readAllFiles, generatorsFileText, templatesFileText, wordsFileText } =
+    useFileSystem(
+      vscode.postMessage,
+      "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig"
+    );
   React.useEffect(() => {
     readAllFiles();
   }, []);
   return (
     <div>
       <CssVarsProvider>
-        <BuilderAccordion 
+        <TemplateEditors
+          templateDefinitions={[
+            { name: "input", templateString: playTemplate },
+            { name: "something", templateString: playTemplate },
+            { name: "something2", templateString: playTemplate },
+          ]}
+        />
+        {/*<BuilderAccordion 
           generatorsFileText={generatorsFileText} 
           templatesFileText={templatesFileText} 
           wordsFileText={wordsFileText} 
           postMessage={vscode.postMessage}
-        />
+        />*/}
       </CssVarsProvider>
     </div>
   );
