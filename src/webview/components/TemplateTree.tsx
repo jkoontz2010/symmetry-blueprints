@@ -5,19 +5,23 @@ import {
   rsCompact,
   tts,
   sortTemplateByDeps,
+  genTemplateWithVars,
+  argsAndTemplateToFunction,
 } from "symmetric-parser";
 
 import { useTemplate } from "../hooks/useTemplate";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
-
+import { useRunner } from "../hooks/useRunner";
+import { add, set } from "lodash";
 
 export const TemplateEditors = ({
   templateDefinitions,
 }: {
   templateDefinitions: { name: string; templateString: string }[];
 }) => {
-    
+  const { templateModule, generatorModule, wordModule } = useRunner();
+
   return (
     <PanelGroup direction="horizontal">
       {templateDefinitions.map((def, i) => {
@@ -26,6 +30,9 @@ export const TemplateEditors = ({
             <TemplateEditor
               templateString={def.templateString}
               name={def.name}
+              templateModule={templateModule}
+              generatorModule={generatorModule}
+              wordModule={wordModule}
             />
           </>
         );
@@ -44,29 +51,75 @@ const filterTemplateToKey = (input: Template, rootKey: string) => {
   return sortTemplateByDeps(newTemplate);
 };
 
-export const SkeletonPanel = () => {
-    return (
-        <Panel defaultSize={10} minSize={5}>
-            <div>Someting</div>
-            <div>Sometinge</div>
-            <div>Someting</div>
-            <div>Someting</div>
-            <div>Someting</div>
-            <div>Someting</div>
-            <div>Someting</div>
-            <div>Someting</div>
-            <div>Someting</div>
-        </Panel>
-    );
-}
+export const SkeletonPanel = ({
+  templateModule,
+  handleTemplateClick,
+  handleAddDefinition,
+}: {
+  templateModule: any;
+  handleTemplateClick: (templateName: string) => void;
+  handleAddDefinition: (key: string, value: string) => void;
+}) => {
+  if (templateModule == null) return <div>loading templates...</div>;
+  const [defKeyName, setDefKeyName] = useState("");
+  const [defValue, setDefValue] = useState("");
+  return (
+    <Panel defaultSize={15} minSize={15}>
+      <div>
+        key:
+        <input
+          value={defKeyName}
+          onChange={(e) => setDefKeyName(e.target.value)}
+          placeholder="key name"
+        />
+        value:
+        <input
+          value={defValue}
+          onChange={(e) => setDefValue(e.target.value)}
+          placeholder="value"
+        />
+        <button
+          onClick={() => {
+            handleAddDefinition(defKeyName, defValue);
+            setDefKeyName("");
+            setDefValue("");
+          }}
+        >
+          Add
+        </button>
+      </div>
+      {Object.keys(templateModule)?.map((k) => {
+        return (
+          <div
+            style={{
+              cursor: "pointer",
+              color: "blue",
+              textDecoration: "underline",
+            }}
+            onClick={() => handleTemplateClick(k)}
+          >
+            {k}
+          </div>
+        );
+      })}
+    </Panel>
+  );
+};
 export const TemplateEditor = ({
   templateString,
   name,
+  templateModule,
+  generatorModule,
+  wordModule,
 }: {
   templateString: string;
   name: string;
+  templateModule: any;
+  generatorModule: any;
+  wordModule: any;
 }) => {
-  const { template, addKey, addKeyToNumerator } = useTemplate(templateString);
+  const { template, addKey, addKeyToNumerator, insertTemplateIntoTemplate } =
+    useTemplate(templateString);
   const [insertMode, setInsertMode] = React.useState(false);
   const [insertToKey, setInsertToKey] = React.useState("");
 
@@ -83,13 +136,31 @@ export const TemplateEditor = ({
     newFilteredTemplates.splice(idx, 1);
     setFilteredTemplates(newFilteredTemplates);
   }
+  function handleTemplateClick(templateName: string) {
+    console.log("CLICKED", templateName);
+    const newTemplate = templateModule[templateName];
+    console.log("NEW TEMPLATE", newTemplate);
+    insertTemplateIntoTemplate(newTemplate);
+    if (insertMode) {
+      //   addKeyToNumerator("cssDecl1", insertToKey);
+    }
+  }
+  function handleAddDefinition(key: string, value: string) {
+    const funcPart = argsAndTemplateToFunction([], value);
+    const newTemplate = { [key]: funcPart };
+    insertTemplateIntoTemplate(newTemplate);
+  }
   const templates = [template, ...filteredTemplates];
   return (
     <>
       {templates.map((template, i) => {
         return (
           <>
-          {insertMode && <SkeletonPanel/>}
+            <SkeletonPanel
+              handleTemplateClick={handleTemplateClick}
+              templateModule={templateModule}
+              handleAddDefinition={handleAddDefinition}
+            />
             <Panel
               defaultSize={30}
               minSize={20}

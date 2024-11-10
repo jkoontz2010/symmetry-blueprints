@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   appendKeyToKey,
   dumbCombine,
+  insertIntoTemplate,
   sortTemplateByDeps,
 } from "symmetric-parser";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
@@ -33,9 +34,16 @@ export function useTemplate(templateString: string) {
     setTemplate(sortTemplateByDeps(sortTemplateByDeps(newTemplate)));
   }
 
+  function insertTemplateIntoTemplate(templateToInsert: Template) {
+    console.log("inserting template into template", templateToInsert);
+    let newTemplate = insertIntoTemplate(template, templateToInsert);
+    setTemplate(sortTemplateByDeps(sortTemplateByDeps(newTemplate)));
+  }
+
   return {
     template,
     addKey,
-    addKeyToNumerator
+    addKeyToNumerator,
+    insertTemplateIntoTemplate
   };
 }

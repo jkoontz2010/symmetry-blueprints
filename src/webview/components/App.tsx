@@ -52,7 +52,6 @@ const App = () => {
   React.useEffect(() => {
     readAllFiles();
   }, []);
-  const {runTemplate, runGenerator} = useRunner()
 
   return (
     <div>
@@ -61,7 +60,6 @@ const App = () => {
           templateDefinitions={[
             { name: "input", templateString: playTemplate },
             { name: "something", templateString: playTemplate },
-            { name: "something2", templateString: playTemplate },
           ]}
         />
         {/*<BuilderAccordion 
