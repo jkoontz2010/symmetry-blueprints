@@ -55,24 +55,27 @@ export const SkeletonPanel = ({
   templateModule,
   handleTemplateClick,
   handleAddDefinition,
+  handleAddSkeleton
 }: {
   templateModule: any;
   handleTemplateClick: (templateName: string) => void;
   handleAddDefinition: (key: string, value: string) => void;
+  handleAddSkeleton: (key: string, value: string, args: string[]) => void;
 }) => {
   if (templateModule == null) return <div>loading templates...</div>;
   const [defKeyName, setDefKeyName] = useState("");
   const [defValue, setDefValue] = useState("");
+  const [gtKey, setGtKey] = useState("");
+  const [gtValue, setGtValue] = useState("");
+  const [gtArgs, setGtArgs] = useState("");
   return (
     <Panel defaultSize={15} minSize={15}>
       <div>
-        key:
         <input
           value={defKeyName}
           onChange={(e) => setDefKeyName(e.target.value)}
-          placeholder="key name"
+          placeholder="key"
         />
-        value:
         <input
           value={defValue}
           onChange={(e) => setDefValue(e.target.value)}
@@ -85,8 +88,32 @@ export const SkeletonPanel = ({
             setDefValue("");
           }}
         >
-          Add
+          Add Definition
         </button>
+      </div>
+      <div>
+        <input
+          value={gtKey}
+          onChange={(e) => setGtKey(e.target.value)}
+          placeholder="key"
+        />
+        <input
+          value={gtValue}
+          onChange={(e) => setGtValue(e.target.value)}
+          placeholder="value"
+        />
+        <input
+          value={gtArgs}
+          onChange={(e) => setGtArgs(e.target.value)}
+          placeholder="args"
+        />
+        <button
+          onClick={() => {
+            handleAddSkeleton(gtKey, gtValue, gtArgs.split(","));
+            setGtKey("");
+            setGtValue("");
+            setGtArgs("");
+          }}>Gen Templ</button>
       </div>
       {Object.keys(templateModule)?.map((k) => {
         return (
@@ -150,6 +177,12 @@ export const TemplateEditor = ({
     const newTemplate = { [key]: funcPart };
     insertTemplateIntoTemplate(newTemplate);
   }
+  function handleAddSkeleton(key: string, value: string, args: string[]) {
+    const funcPart = argsAndTemplateToFunction([], value);
+    const templ = { [key]: funcPart };
+    const newTemplate = genTemplateWithVars(templ, args);
+    insertTemplateIntoTemplate(newTemplate);
+  }
   const templates = [template, ...filteredTemplates];
   return (
     <>
@@ -160,6 +193,7 @@ export const TemplateEditor = ({
               handleTemplateClick={handleTemplateClick}
               templateModule={templateModule}
               handleAddDefinition={handleAddDefinition}
+              handleAddSkeleton={handleAddSkeleton}
             />
             <Panel
               defaultSize={30}
