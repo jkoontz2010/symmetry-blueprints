@@ -1,3 +1,4 @@
+import { difference } from "lodash";
 import { useState } from "react";
 import {
   appendKeyToKey,
@@ -39,11 +40,25 @@ export function useTemplate(templateString: string) {
     let newTemplate = insertIntoTemplate(template, templateToInsert);
     setTemplate(sortTemplateByDeps(sortTemplateByDeps(newTemplate)));
   }
+  function insertTemplateIntoTemplateAtKey(templateToInsert: Template, toKey: string) {
+    console.log("inserting template into template AT KEY", templateToInsert, toKey);
+    const oldKeys = Object.keys(template);
+    let newTemplate = insertIntoTemplate(template, templateToInsert);
+    const newKeys = Object.keys(newTemplate);
+    // SHOULD ONLY BE ONE NEWEST KEY!!!
+    console.log("oldKeys", oldKeys, "newKeys",newKeys);
+    const newestKey = newKeys.filter(k=>!oldKeys.includes(k))[0];
+    console.log("NEWEST", newestKey)
+    let appendedTemplate = appendKeyToKey(newTemplate, newestKey, toKey);
+    console.log("appendedTemplate", appendedTemplate);
+    setTemplate(sortTemplateByDeps(sortTemplateByDeps(appendedTemplate)));
+  }
 
   return {
     template,
     addKey,
     addKeyToNumerator,
-    insertTemplateIntoTemplate
+    insertTemplateIntoTemplate,
+    insertTemplateIntoTemplateAtKey
   };
 }

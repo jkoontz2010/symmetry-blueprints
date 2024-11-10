@@ -55,7 +55,7 @@ export const SkeletonPanel = ({
   templateModule,
   handleTemplateClick,
   handleAddDefinition,
-  handleAddSkeleton
+  handleAddSkeleton,
 }: {
   templateModule: any;
   handleTemplateClick: (templateName: string) => void;
@@ -113,7 +113,10 @@ export const SkeletonPanel = ({
             setGtKey("");
             setGtValue("");
             setGtArgs("");
-          }}>Gen Templ</button>
+          }}
+        >
+          Gen Templ
+        </button>
       </div>
       {Object.keys(templateModule)?.map((k) => {
         return (
@@ -145,8 +148,13 @@ export const TemplateEditor = ({
   generatorModule: any;
   wordModule: any;
 }) => {
-  const { template, addKey, addKeyToNumerator, insertTemplateIntoTemplate } =
-    useTemplate(templateString);
+  const {
+    template,
+    addKey,
+    addKeyToNumerator,
+    insertTemplateIntoTemplate,
+    insertTemplateIntoTemplateAtKey,
+  } = useTemplate(templateString);
   const [insertMode, setInsertMode] = React.useState(false);
   const [insertToKey, setInsertToKey] = React.useState("");
 
@@ -164,18 +172,23 @@ export const TemplateEditor = ({
     setFilteredTemplates(newFilteredTemplates);
   }
   function handleTemplateClick(templateName: string) {
-    console.log("CLICKED", templateName);
     const newTemplate = templateModule[templateName];
-    console.log("NEW TEMPLATE", newTemplate);
-    insertTemplateIntoTemplate(newTemplate);
-    if (insertMode) {
-      //   addKeyToNumerator("cssDecl1", insertToKey);
+
+    if (!insertMode) {
+      insertTemplateIntoTemplate(newTemplate);
+    } else if (insertMode) {
+      insertTemplateIntoTemplateAtKey(newTemplate, insertToKey);
     }
   }
   function handleAddDefinition(key: string, value: string) {
     const funcPart = argsAndTemplateToFunction([], value);
     const newTemplate = { [key]: funcPart };
-    insertTemplateIntoTemplate(newTemplate);
+
+    if (insertMode) {
+      insertTemplateIntoTemplateAtKey(newTemplate, insertToKey);
+    } else {
+      insertTemplateIntoTemplate(newTemplate);
+    }
   }
   function handleAddSkeleton(key: string, value: string, args: string[]) {
     const funcPart = argsAndTemplateToFunction([], value);
