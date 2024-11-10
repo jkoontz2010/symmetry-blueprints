@@ -10,13 +10,14 @@ import {
 import { useTemplate } from "../hooks/useTemplate";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
-import { set } from "lodash";
+
 
 export const TemplateEditors = ({
   templateDefinitions,
 }: {
   templateDefinitions: { name: string; templateString: string }[];
 }) => {
+    
   return (
     <PanelGroup direction="horizontal">
       {templateDefinitions.map((def, i) => {

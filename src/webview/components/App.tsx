@@ -5,6 +5,7 @@ import { CssVarsProvider } from "@mui/joy";
 import { useFileSystem } from "../hooks/useFileSystem";
 import TemplateDirect from "./v2";
 import { TemplateEditors, TemplateTree } from "./TemplateTree";
+import { useRunner } from "../hooks/useRunner";
 
 export function run(func: () => string, keyName: string) {
   try {
@@ -51,6 +52,8 @@ const App = () => {
   React.useEffect(() => {
     readAllFiles();
   }, []);
+  const {runTemplate, runGenerator} = useRunner()
+
   return (
     <div>
       <CssVarsProvider>

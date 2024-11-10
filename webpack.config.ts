@@ -16,6 +16,7 @@ const extConfig: webpack.Configuration = {
 
 const webviewConfig: webpack.Configuration = {
   target: "web",
+  mode:"development",
   entry: "./src/webview/index.tsx",
   output: {
     filename: "[name].wv.js",

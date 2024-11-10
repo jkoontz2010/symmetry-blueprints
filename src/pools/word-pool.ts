@@ -16,6 +16,7 @@ import {
   replaceWithAllIsomorphic,
   swapValuesForGenericKeysWithCb,
   combine,
+  orderedFold,
 } from "symmetric-parser";
 
 
@@ -90,48 +91,4 @@ export function w1(input: Template): Template {
   );
 
   return filledSkeleton;
-}
-
-export function updateOrAppendNewWord(t: Template): Template {
-  const wordTempls = orderedFold(t, [fullWord], {
-    mode: FoldMode.AllOrNothing,
-  });
-  if (wordTempls == null) {
-    throw new Error("Could not parse word file for some reason");
-  }
-  const { result, divisors } = wordTempls;
-  const input = { ...result, ...divisors };
-  //console.log("STARTING WITH", tts(input, false));
-
-  const ifNotMatching = performIfNotHasMatchingValuesAtKey(
-    input,
-    "wordName",
-    (t: Template) => {
-      //console.log("NOT MATCHING", tts(t, false));
-      const skeleton = applyToSkeleton(
-        t,
-        wordSkeleton,
-        [{ key: "fullWord", toKey: "words" }],
-        "\n"
-      );
-      //console.log("SKELETON", tts(skeleton, false));
-      return skeleton;
-    }
-  );
-  const ifMatching = performIfHasMatchingValuesAtKey(
-    ifNotMatching,
-    "wordName",
-    (t: Template) => {
-      const withDupe = swapValuesWhenChildHasMatchingValue(
-        t,
-        "fullWord",
-        "wordName"
-      );
-
-      return withDupe;
-    }
-  );
-  const sortedWD = sortTemplateByDeps(ifMatching);
-  const fin = multiply(sortedWD, {});
-  return fin;
 }
