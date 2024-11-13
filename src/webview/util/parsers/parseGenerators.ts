@@ -13,19 +13,75 @@ import {
   multiply,
   divide,
   FoldMode,
+  tts,
+  argsAndTemplateToFunction,
+  findFirst,
+  makeTemplateGenericAtKey,
+  insertIntoTemplate,
 } from "symmetric-parser";
 
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
 
+const generator = genTemplateWithVars(
+  {
+    generator: () => `export function genName(genArgs): Template {genBody\n}`,
+  },
+  ["genName", "genArgs", "genBody"]
+);
+export function buildAllGeneratorsTemplate(generatorFile: string) {
+  const cleaned = stringCleaning(generatorFile);
+  const file = { allGenerators1: () => cleaned };
+  const fr = recursiveFold(
+    file,
+    [generator],
+    [],
+    { scope: () => `\n` },
+    "  ",
+    1
+  );
+
+  const frAll = {
+    ...fr.result,
+    ...fr.divisors,
+  };
+
+  const generatorParseTree = buildGeneratorParseTree(frAll);
+  let newTemplate = {};
+
+  performOnNodes("generator", generatorParseTree, (t: Template) => {
+    const genSkel = genTemplateWithVars(
+      {
+        generator: () => `genName(genArgs)`,
+      },
+      ["genName", "genArgs"]
+    );
+    const nameTempl = makeTemplateGenericAtKey(
+      findFirst(t, "genName"),
+      "genName"
+    );
+    // console.log("NAME TEMPL", nameTempl);
+    const argsTempl = makeTemplateGenericAtKey(
+      collapseTemplateAtKey(t, "genArgs"),
+      "genArgs"
+    );
+    //console.log("ARGS TEMPL", argsTempl);
+
+    // console.log("ALL", multiply(genSkel, multiply(nameTempl, argsTempl)));
+    newTemplate = insertIntoTemplate(
+      newTemplate,
+      multiply(genSkel, multiply(nameTempl, argsTempl))
+    );
+    return t;
+  });
+  return newTemplate;
+  const stringTree = tts(generatorParseTree, false);
+  const uncleaned = stringUnCleaning(stringTree);
+  return eval(uncleaned);
+}
 export function parseGenerators(generatorFile: string) {
   const cleaned = stringCleaning(generatorFile);
   const file = { file: () => cleaned };
-  const generator = genTemplateWithVars(
-    {
-      generator: () => `export function genName(genArgs): Template {genBody\n}`,
-    },
-    ["genName", "genArgs", "genBody"]
-  );
+
   const fr = recursiveFold(
     file,
     [generator],
@@ -47,7 +103,7 @@ export function parseGenerators(generatorFile: string) {
   const generatorString = stringUnCleaning(
     "[" + generatorMeta["metas"]() + "]"
   );
-  console.log("EVAL THIS", generatorString);
+  // console.log("EVAL THIS", generatorString);
   const final = eval(generatorString);
   return final;
 }
@@ -119,7 +175,7 @@ function buildMeta(template: Template, index: number): Template {
     ]);
     if (folded == null) throw new Error("null fold");
     const all = { ...folded.result, ...folded.divisors };
-   // console.log("ALL", tts(all,false));
+    // console.log("ALL", tts(all,false));
     return all;
   });
 
@@ -130,7 +186,7 @@ function buildMeta(template: Template, index: number): Template {
     { key: "schemaTemplArrType", newValue: () => "'TemplateArray'" },
     { key: "schemaNumType", newValue: () => "'Number'" },
   ]);
-  console.log("SWAPPEd", swapped);
+  // console.log("SWAPPEd", swapped);
   // what do we want this structure to be again..?
   // g1:()=>`{name:"identity",inputSchema:{template:Template}}`
 
@@ -218,7 +274,6 @@ function parseGenArgs(template: Template, index: number): Template {
 
   return all;
 }
-
 
 const typesTempl = genTemplateWithVars(
   {

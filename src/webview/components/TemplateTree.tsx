@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   getDescendentsOfKey,
   rs,
@@ -7,37 +7,66 @@ import {
   sortTemplateByDeps,
   genTemplateWithVars,
   argsAndTemplateToFunction,
+  multiply,
 } from "symmetric-parser";
 
-import { useTemplate } from "../hooks/useTemplate";
+import { useTemplate, WordStep } from "../hooks/useTemplate";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
 import { useRunner } from "../hooks/useRunner";
-import { add, set } from "lodash";
 
 export const TemplateEditors = ({
   templateDefinitions,
 }: {
-  templateDefinitions: { name: string; templateString: string }[];
+  templateDefinitions: {
+    name: string;
+    templateInit: Template;
+    meta?: Record<string, any>;
+  }[];
 }) => {
   const { templateModule, generatorModule, wordModule } = useRunner();
+  const [runnableSteps, setRunnableSteps] = useState<string[]>([]);
+  const [stepsForPanel, setStepsForPanel] = useState<
+    Record<string, WordStep[]>
+  >({});
 
   return (
-    <PanelGroup direction="horizontal">
-      {templateDefinitions.map((def, i) => {
-        return (
-          <>
-            <TemplateEditor
-              templateString={def.templateString}
-              name={def.name}
-              templateModule={templateModule}
-              generatorModule={generatorModule}
-              wordModule={wordModule}
-            />
-          </>
-        );
-      })}
-    </PanelGroup>
+    <div>
+      <PanelGroup direction="horizontal">
+        {templateDefinitions.map((def, i) => {
+          const generatorsTemplate = def.meta?.generators ?? {};
+
+          return (
+            <>
+              <TemplateEditor
+                templateInit={def.templateInit}
+                name={def.name}
+                templateModule={templateModule}
+                generatorModule={generatorModule}
+                generatorsTemplate={generatorsTemplate}
+                wordModule={wordModule}
+                setStepsForPanel={setStepsForPanel}
+                setRunnableSteps={setRunnableSteps}
+                runnableSteps={runnableSteps}
+              />
+            </>
+          );
+        })}
+      </PanelGroup>
+      <div>
+        {Object.keys(stepsForPanel)?.map((k) => {
+          //console.log("steps for panel", stepsForPanel, k, stepsForPanel?.[k]);
+          return (
+            <div>
+              Tree: {k}{" "}
+              {stepsForPanel?.[k]?.map((step) => {
+                return <div>{step.name}---[result]</div>;
+              })}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 };
 
@@ -51,16 +80,37 @@ const filterTemplateToKey = (input: Template, rootKey: string) => {
   return sortTemplateByDeps(newTemplate);
 };
 
+function getGeneratorSignatureFromKey(
+  key: string,
+  generatorsTemplate: Template
+) {
+  for (const v of Object.values(generatorsTemplate)) {
+    const str = v();
+    if (str.indexOf(key + "(") === 0) {
+      return str;
+    }
+  }
+}
 export const SkeletonPanel = ({
   templateModule,
+  generatorModule,
   handleTemplateClick,
   handleAddDefinition,
   handleAddSkeleton,
+  handleGeneratorClick,
+  generatorsTemplate,
+  runnableSteps,
+  handleRunStep,
 }: {
   templateModule: any;
+  generatorModule: any;
   handleTemplateClick: (templateName: string) => void;
   handleAddDefinition: (key: string, value: string) => void;
   handleAddSkeleton: (key: string, value: string, args: string[]) => void;
+  handleGeneratorClick: (generatorName: string) => void;
+  generatorsTemplate: Template;
+  runnableSteps: string[];
+  handleRunStep: any;
 }) => {
   if (templateModule == null) return <div>loading templates...</div>;
   const [defKeyName, setDefKeyName] = useState("");
@@ -68,6 +118,7 @@ export const SkeletonPanel = ({
   const [gtKey, setGtKey] = useState("");
   const [gtValue, setGtValue] = useState("");
   const [gtArgs, setGtArgs] = useState("");
+  const [lastClickedGenerator, setLastClickedGenerator] = useState("");
   return (
     <Panel defaultSize={15} minSize={15}>
       <div>
@@ -118,6 +169,20 @@ export const SkeletonPanel = ({
           Gen Templ
         </button>
       </div>
+      {runnableSteps?.map((rs) => {
+        return (
+          <div
+            style={{
+              cursor: "pointer",
+              color: "blue",
+              textDecoration: "underline",
+            }}
+            onClick={() => handleRunStep(rs)}
+          >
+            {rs}
+          </div>
+        );
+      })}
       {Object.keys(templateModule)?.map((k) => {
         return (
           <div
@@ -132,21 +197,55 @@ export const SkeletonPanel = ({
           </div>
         );
       })}
+      <div style={{ color: "black" }}>Generators</div>
+      {lastClickedGenerator != null && (
+        <div style={{ color: "red", textDecoration: "none" }}>
+          {getGeneratorSignatureFromKey(
+            lastClickedGenerator,
+            generatorsTemplate
+          )}
+        </div>
+      )}
+      {Object.keys(generatorModule)?.map((k) => {
+        return (
+          <div
+            style={{
+              cursor: "pointer",
+              color: "blue",
+              textDecoration: "underline",
+            }}
+            onClick={() => {
+              handleGeneratorClick(k);
+              setLastClickedGenerator(k);
+            }}
+          >
+            {k}{" "}
+          </div>
+        );
+      })}
     </Panel>
   );
 };
 export const TemplateEditor = ({
-  templateString,
+  templateInit,
   name,
   templateModule,
   generatorModule,
   wordModule,
+  setStepsForPanel,
+  generatorsTemplate,
+  setRunnableSteps,
+  runnableSteps,
 }: {
-  templateString: string;
+  templateInit: Template;
   name: string;
   templateModule: any;
   generatorModule: any;
   wordModule: any;
+  setStepsForPanel: any;
+  generatorsTemplate: Template;
+  setRunnableSteps: any;
+  runnableSteps: string[];
 }) => {
   const {
     template,
@@ -154,9 +253,16 @@ export const TemplateEditor = ({
     addKeyToNumerator,
     insertTemplateIntoTemplate,
     insertTemplateIntoTemplateAtKey,
-  } = useTemplate(templateString);
+    wordSteps,
+    applyGeneratorString,
+    removeKey,
+  } = useTemplate(templateInit, templateModule, generatorModule, wordModule);
   const [insertMode, setInsertMode] = React.useState(false);
   const [insertToKey, setInsertToKey] = React.useState("");
+
+  useEffect(() => {
+    setStepsForPanel((prev) => ({ ...prev, [name]: wordSteps }));
+  }, [wordSteps]);
 
   const [filteredTemplates, setFilteredTemplates] = useState([]);
   function handleOpenFilter(key: string) {
@@ -166,10 +272,16 @@ export const TemplateEditor = ({
     ];
     setFilteredTemplates(newFilteredTemplates);
   }
+  function handleRemoveKey(key: string) {
+    removeKey(key);
+  }
   function handleClosePanel(idx: number) {
     const newFilteredTemplates = [...filteredTemplates];
     newFilteredTemplates.splice(idx, 1);
     setFilteredTemplates(newFilteredTemplates);
+  }
+  function handleRunStep(stepString: string) {
+    applyGeneratorString(stepString);
   }
   function handleTemplateClick(templateName: string) {
     const newTemplate = templateModule[templateName];
@@ -178,6 +290,20 @@ export const TemplateEditor = ({
       insertTemplateIntoTemplate(newTemplate);
     } else if (insertMode) {
       insertTemplateIntoTemplateAtKey(newTemplate, insertToKey);
+    }
+  }
+  function handleGeneratorClick(generatorName: string) {
+    // create the insertion template based off name, finding it in generators string, etc
+    const genTempl = genTemplateWithVars(
+      {
+        step: () => `${generatorName}(template, genArgs)`,
+      },
+      ["genArgs"]
+    );
+    if (!insertMode) {
+      insertTemplateIntoTemplate(genTempl);
+    } else if (insertMode) {
+      insertTemplateIntoTemplateAtKey(genTempl, insertToKey);
     }
   }
   function handleAddDefinition(key: string, value: string) {
@@ -190,6 +316,7 @@ export const TemplateEditor = ({
       insertTemplateIntoTemplate(newTemplate);
     }
   }
+
   function handleAddSkeleton(key: string, value: string, args: string[]) {
     const funcPart = argsAndTemplateToFunction([], value);
     const templ = { [key]: funcPart };
@@ -205,8 +332,13 @@ export const TemplateEditor = ({
             <SkeletonPanel
               handleTemplateClick={handleTemplateClick}
               templateModule={templateModule}
+              generatorModule={generatorModule}
+              handleGeneratorClick={handleGeneratorClick}
               handleAddDefinition={handleAddDefinition}
               handleAddSkeleton={handleAddSkeleton}
+              generatorsTemplate={generatorsTemplate}
+              runnableSteps={runnableSteps}
+              handleRunStep={handleRunStep}
             />
             <Panel
               defaultSize={30}
@@ -226,7 +358,18 @@ export const TemplateEditor = ({
                 setInsertMode={setInsertMode}
                 insertToKey={insertToKey}
                 setInsertToKey={setInsertToKey}
+                handleRemoveKey={handleRemoveKey}
               />
+              <button
+                onClick={() =>
+                  setRunnableSteps((prev) => [
+                    ...prev,
+                    multiply(sortTemplateByDeps(template), {})["step1"](),
+                  ])
+                }
+              >
+                SAVE step1
+              </button>
             </Panel>
             <PanelResizeHandle
               style={{ border: "1px solid black", marginRight: "6px" }}
@@ -244,6 +387,7 @@ export const TemplateTree = ({
   addKeyToNumerator,
   addKey,
   handleOpenFilter,
+  handleRemoveKey,
   insertMode,
   setInsertMode,
   insertToKey,
@@ -253,6 +397,7 @@ export const TemplateTree = ({
   addKeyToNumerator: any;
   template: Template;
   handleOpenFilter: any;
+  handleRemoveKey: any;
   insertMode: boolean;
   setInsertMode: any;
   insertToKey: string;
@@ -279,7 +424,7 @@ export const TemplateTree = ({
       setInsertToKey(numerator);
     }
   };
-  console.log("TEMPLATE", template);
+  //console.log("TEMPLATE", template);
   const handleCompile = () => {
     setCompiledTemplate(tts(template));
   };
@@ -331,6 +476,7 @@ export const TemplateTree = ({
                 handleRsClick={handleRsClick}
                 denoms={denoms}
                 handleOpenFilter={handleOpenFilter}
+                handleRemoveKey={handleRemoveKey}
               />
             );
           } else {
@@ -353,6 +499,7 @@ export const TemplateTree = ({
               handleRsClick={handleRsClick}
               denoms={denoms}
               handleOpenFilter={handleOpenFilter}
+              handleRemoveKey={handleRemoveKey}
             />
             {peekTreeNodes?.map((node) => node)}
           </>
@@ -382,6 +529,7 @@ const TreeNode = ({
   denoms,
   indentionMultiplier,
   handleOpenFilter,
+  handleRemoveKey,
 }) => {
   const numerator = tKey.split("/")[0];
 
@@ -405,6 +553,12 @@ const TreeNode = ({
         {numerator}
       </span>
       <button onClick={() => handleOpenFilter(tKey)}>I</button>
+      <button
+        style={{ marginLeft: "14px" }}
+        onClick={() => handleRemoveKey(tKey)}
+      >
+        R
+      </button>
 
       {collapsedSet.has(tKey) ? (
         <span

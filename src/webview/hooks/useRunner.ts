@@ -23,7 +23,7 @@ export function useRunner() {
     fetchWords();
   }, []);
 
-  console.log("here we are", generatorModule, templateModule, wordModule);
+  //console.log("here we are", generatorModule, templateModule, wordModule);
 
   return {
     templateModule,

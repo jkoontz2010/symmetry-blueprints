@@ -6,6 +6,8 @@ import { useFileSystem } from "../hooks/useFileSystem";
 import TemplateDirect from "./v2";
 import { TemplateEditors, TemplateTree } from "./TemplateTree";
 import { useRunner } from "../hooks/useRunner";
+import { tts } from "symmetric-parser";
+import { buildAllGeneratorsTemplate } from "../util/parsers/parseGenerators";
 
 export function run(func: () => string, keyName: string) {
   try {
@@ -52,16 +54,31 @@ const App = () => {
   React.useEffect(() => {
     readAllFiles();
   }, []);
-
+  const templ = new Function("return " + playTemplate)();
+  //console.log("generatorsFileText", generatorsFileText);
   return (
     <div>
       <CssVarsProvider>
-        <TemplateEditors
-          templateDefinitions={[
-            { name: "input", templateString: playTemplate },
-            { name: "something", templateString: playTemplate },
-          ]}
-        />
+        {generatorsFileText != null && (
+          <TemplateEditors
+            templateDefinitions={[
+              {
+                name: "input",
+                templateInit: templ,
+                meta: {
+                  generators: buildAllGeneratorsTemplate(generatorsFileText),
+                },
+              },
+              {
+                name: "generators",
+                templateInit: {},
+                meta: {
+                  generators: buildAllGeneratorsTemplate(generatorsFileText),
+                },
+              },
+            ]}
+          />
+        )}
         {/*<BuilderAccordion 
           generatorsFileText={generatorsFileText} 
           templatesFileText={templatesFileText} 
