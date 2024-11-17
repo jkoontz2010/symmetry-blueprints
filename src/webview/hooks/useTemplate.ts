@@ -97,10 +97,10 @@ export function useTemplate(
   function applyGeneratorString(generatorString: string) {
     function evalInScope(js, contextAsScope) {
       return new Function(
-        `with (this) { console.log("CONTEXT IS",template, findFirst); return (${js}); }`
+        `with (this) { console.log("CONTEXT IS",this); return (${js}); }`
       ).call(contextAsScope);
     }
-
+console.log("WHATS IN TEMPLATE MODULE", templateModule)
     const result = evalInScope(generatorString, {
       template,
       ...templateModule,

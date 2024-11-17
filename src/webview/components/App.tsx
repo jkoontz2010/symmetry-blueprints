@@ -45,11 +45,12 @@ const playTemplate = `({
     'something2': ()=>\`another one!\` 
   })`;
 
+  const CONFIG_PATH ="/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig"
 const App = () => {
   const { readAllFiles, generatorsFileText, templatesFileText, wordsFileText } =
     useFileSystem(
       vscode.postMessage,
-      "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig"
+      CONFIG_PATH
     );
   React.useEffect(() => {
     readAllFiles();
@@ -61,6 +62,8 @@ const App = () => {
       <CssVarsProvider>
         {generatorsFileText != null && (
           <TemplateEditors
+          postMessage={vscode.postMessage}
+          configPath={CONFIG_PATH}
             templateDefinitions={[
               {
                 name: "input",

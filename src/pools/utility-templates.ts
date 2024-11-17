@@ -1415,11 +1415,10 @@ export function insertIntoTemplate(
   input: Template,
   toInsert: Template
 ): Template {
-  // console.log("TO INSERT", tts(toInsert, false), "INPUT", tts(input, false));
+  //console.log("TO INSERT", tts(toInsert, false), "INPUT", tts(input, false));
   // get all the keys in toInsert and make sure they have unique indexes before being inserted into input
   const allInputKeys = getAllKeys(input);
   let finalToInsert = cloneDeep(toInsert);
-
 
   const allToInsertKeys = getAllKeys(toInsert);
   allToInsertKeys.forEach((k) => {
@@ -1428,7 +1427,7 @@ export function insertIntoTemplate(
       // add a number to it, changeKeyName and move on.
       const newKey = k + 1;
       finalToInsert = changeKeyName(finalToInsert, k, newKey);
-      //console.log("NEW FINAL", tts(finalToInsert, false));
+      // console.log("NEW FINAL", tts(finalToInsert, false));
     }
   });
   const finalToInsertKeys = getAllKeys(finalToInsert);
@@ -1438,7 +1437,7 @@ export function insertIntoTemplate(
 
   // now re-write any keys with matching indices btwn input and toInsert
   matchingInputKeys.forEach((ik) => {
-    //console.log("MATCHING KEY", ik);
+    // console.log("MATCHING KEY", ik);
     // guess what the dumb way is? add random number to index, recheck for existence
     // and repeat until it's unique
     let newKey = ik;
@@ -1447,7 +1446,7 @@ export function insertIntoTemplate(
     let isUnique = false;
     while (!isUnique) {
       newKey = keyName + currentIndex;
-      //console.log("NEW KEY", newKey);
+      // console.log("NEW KEY", newKey);
       if (
         !allInputKeys.includes(newKey) &&
         !finalToInsertKeys.includes(newKey)
@@ -1458,6 +1457,7 @@ export function insertIntoTemplate(
       currentIndex++;
     }
   });
+  // console.log("returning")
   // combining this way means the input indices come first in the object for some reason
   return { ...finalToInsert, ...input };
 }
@@ -1465,19 +1465,57 @@ export function insertIntoTemplate(
 // when it's mapped, we don't swap out the value.
 // we say { key1: ({mappedKey1})=>`${mappedKey1}` }
 // but we error out if emptyKey is not actually empty
-export function appendKeyToKey(input: Template, appendKey: string, toKey: string): Template {
+export function appendKeyToKey(
+  input: Template,
+  appendKey: string,
+  toKey: string
+): Template {
   const result = cloneDeep(input);
-  const fullToKey = Object.keys(input).find(k=>getKeyNumerator(k)===toKey)
-console.log("fulltoKey", fullToKey, "Tokey", toKey)
-  const currentDenoms = fullToKey!= null ? getKeyDenominators(fullToKey) ?? [] : [];
+  const fullToKey = Object.keys(input).find(
+    (k) => getKeyNumerator(k) === toKey
+  );
+  // console.log("fulltoKey", fullToKey, "Tokey", toKey)
+  const currentDenoms =
+    fullToKey != null ? (getKeyDenominators(fullToKey) ?? []) : [];
 
-  const args = [...currentDenoms, appendKey]
+  const args = [...currentDenoms, appendKey];
 
-  const template = fullToKey!= null? getTemplateTextFromFunc(input[fullToKey]) + rsCompact(appendKey) : rsCompact(appendKey);
+  const template =
+    fullToKey != null
+      ? getTemplateTextFromFunc(input[fullToKey]) + rsCompact(appendKey)
+      : rsCompact(appendKey);
   const newKey = `${toKey}/${args.join(",")}`;
   const templatePart = argsAndTemplateToFunction(args, template);
   //console.log("NEW KEY", newKey, "TEMPL PART", templatePart.toString())
-  result[newKey] = templatePart
-  if(fullToKey!=null) delete result[fullToKey]
+  result[newKey] = templatePart;
+  if (fullToKey != null) delete result[fullToKey];
   return result;
+}
+
+export function orderedParse(
+  input: Template,
+  orderedParseTemplates: Template[]
+): Template {
+  const of = orderedFold(input, orderedParseTemplates, {
+    mode: FoldMode.AllOrNothing,
+  });
+  if (of == null) throw new Error("orderedParse failed");
+  return { ...of.result, ...of.divisors };
+}
+
+export function nestedParse(
+  input: Template,
+  orderedParseTemplates: Template[],
+  nestCount: number
+): Template {
+  const rf = recursiveFold(
+    input,
+    orderedParseTemplates,
+    [],
+    { scope: () => `\n` },
+    "  ",
+    nestCount
+  );
+
+  return { ...rf.result, ...rf.divisors };
 }

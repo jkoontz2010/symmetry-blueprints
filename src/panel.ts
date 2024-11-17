@@ -3,6 +3,7 @@ import { getNonce } from "./getNonce";
 import * as fs from "fs";
 import { runIndexFile, saveWord } from "./compiler";
 import { readFromConfig } from "./configReader";
+import { argsAndTemplateToFunction, genTemplateWithVars, tts } from "symmetric-parser";
 
 function readFromFile(file) {
   return new Promise((resolve, reject) => {
@@ -90,6 +91,25 @@ export default class PanelClass {
             const wordsFile = await readFromConfig("WORDS_FILE", pathToConfig);
             // save to word file
             const result = await saveWord(word, wordsFile);
+            break;
+          }
+          case "add_template": {
+            const { key, args, value, pathToConfig } = msg;
+            const funcPart = argsAndTemplateToFunction([], value);
+            const templ = { [key]: funcPart };
+            const templateString = `genTemplateWithVars(${tts(templ,false)}, ${args});`
+            const templatesFilePath = await readFromConfig("TEMPLATE_FILE", pathToConfig);
+            const templatesFile = await readFromFile(templatesFilePath);
+            console.log("CURR TEMPLATES FILE", templatesFile)
+            // write template to templates file
+            const newTemplatesFile = templatesFile + "\n" + `export const ${key} = ${templateString}`;
+            console.log("NEW TEMPLATES FILE", newTemplatesFile);
+            fs.writeFile(templatesFilePath, newTemplatesFile, (err) => {
+              if (err) {
+                console.error(err);
+              }
+              console.log("success")
+            });
             break;
           }
           case "run_word": {

@@ -17,14 +17,18 @@ import { useRunner } from "../hooks/useRunner";
 
 export const TemplateEditors = ({
   templateDefinitions,
+  postMessage,
+  configPath
 }: {
   templateDefinitions: {
     name: string;
     templateInit: Template;
     meta?: Record<string, any>;
   }[];
+  postMessage: any;
+  configPath: string;
 }) => {
-  const { templateModule, generatorModule, wordModule } = useRunner();
+  const { templateModule, generatorModule, wordModule, addToTemplatePool } = useRunner(postMessage, configPath);
   const [runnableSteps, setRunnableSteps] = useState<string[]>([]);
   const [stepsForPanel, setStepsForPanel] = useState<
     Record<string, WordStep[]>
@@ -48,6 +52,7 @@ export const TemplateEditors = ({
                 setStepsForPanel={setStepsForPanel}
                 setRunnableSteps={setRunnableSteps}
                 runnableSteps={runnableSteps}
+                addToTemplatePool={addToTemplatePool}
               />
             </>
           );
@@ -206,7 +211,7 @@ export const SkeletonPanel = ({
           )}
         </div>
       )}
-      {Object.keys(generatorModule)?.map((k) => {
+      {Object.keys(generatorModule)?.sort()?.map((k) => {
         return (
           <div
             style={{
@@ -236,6 +241,7 @@ export const TemplateEditor = ({
   generatorsTemplate,
   setRunnableSteps,
   runnableSteps,
+  addToTemplatePool
 }: {
   templateInit: Template;
   name: string;
@@ -246,6 +252,7 @@ export const TemplateEditor = ({
   generatorsTemplate: Template;
   setRunnableSteps: any;
   runnableSteps: string[];
+  addToTemplatePool: (name: string, template: string, args:string[]) => void;
 }) => {
   const {
     template,
@@ -285,7 +292,6 @@ export const TemplateEditor = ({
   }
   function handleTemplateClick(templateName: string) {
     const newTemplate = templateModule[templateName];
-
     if (!insertMode) {
       insertTemplateIntoTemplate(newTemplate);
     } else if (insertMode) {
@@ -309,7 +315,6 @@ export const TemplateEditor = ({
   function handleAddDefinition(key: string, value: string) {
     const funcPart = argsAndTemplateToFunction([], value);
     const newTemplate = { [key]: funcPart };
-
     if (insertMode) {
       insertTemplateIntoTemplateAtKey(newTemplate, insertToKey);
     } else {
@@ -321,6 +326,7 @@ export const TemplateEditor = ({
     const funcPart = argsAndTemplateToFunction([], value);
     const templ = { [key]: funcPart };
     const newTemplate = genTemplateWithVars(templ, args);
+    addToTemplatePool(key, value, args)
     insertTemplateIntoTemplate(newTemplate);
   }
   const templates = [template, ...filteredTemplates];

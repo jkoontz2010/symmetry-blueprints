@@ -56,8 +56,10 @@ export const bgRule = genTemplateWithVars(
   ["bgValue"]
 );
 
-const all = {
-  bgRule,cssDecl,genTempl
-}
 
-export default all
+export const random = genTemplateWithVars({
+'random': ()=>`some thing here`
+}, ["thing"]);
+export const randomParser = genTemplateWithVars({
+'randomParser': ()=>`we have so much to parse`
+}, ["so","to"]);
