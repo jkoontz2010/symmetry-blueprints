@@ -39,3 +39,18 @@ export async function saveWord(wordContents: string, wordsFilePath: string) {
   console.log("result", tts(result,false), "divisors", tts(divisors,false))
   
 }
+
+export async function saveFile(filePath:string,fileContents:string) {
+  return fs.writeFile(filePath, fileContents);
+}
+
+export async function runTs(generatorFilePath: string) {
+  try {
+    const { stdout, stderr } = await execAsync(`bun run ${generatorFilePath}`);
+    console.log("generator FROM STDOUT", stdout);
+    if (stderr) console.error(stderr);
+    return stdout;
+  } catch (error) {
+    console.error(`Execution error: ${error}`);
+  }
+}

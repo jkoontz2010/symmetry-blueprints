@@ -53,6 +53,7 @@ export const TemplateEditors = ({
                 setRunnableSteps={setRunnableSteps}
                 runnableSteps={runnableSteps}
                 addToTemplatePool={addToTemplatePool}
+                postMessage={postMessage}
               />
             </>
           );
@@ -241,7 +242,8 @@ export const TemplateEditor = ({
   generatorsTemplate,
   setRunnableSteps,
   runnableSteps,
-  addToTemplatePool
+  addToTemplatePool,
+  postMessage
 }: {
   templateInit: Template;
   name: string;
@@ -253,6 +255,7 @@ export const TemplateEditor = ({
   setRunnableSteps: any;
   runnableSteps: string[];
   addToTemplatePool: (name: string, template: string, args:string[]) => void;
+  postMessage: any;
 }) => {
   const {
     template,
@@ -263,7 +266,7 @@ export const TemplateEditor = ({
     wordSteps,
     applyGeneratorString,
     removeKey,
-  } = useTemplate(templateInit, templateModule, generatorModule, wordModule);
+  } = useTemplate(templateInit, templateModule, generatorModule, wordModule,postMessage);
   const [insertMode, setInsertMode] = React.useState(false);
   const [insertToKey, setInsertToKey] = React.useState("");
 

@@ -1,5 +1,5 @@
-import { cloneDeep, difference } from "lodash";
-import { useState } from "react";
+import { cloneDeep, difference, uniqueId } from "lodash";
+import { useEffect, useState } from "react";
 import {
   appendKeyToKey,
   dumbCombine,
@@ -7,6 +7,9 @@ import {
   sortTemplateByDeps,
 } from "symmetric-parser";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
+import { formGeneratorFile } from "./hgcgUtil";
+import { CONFIG_PATH } from "../components/App";
+import { customAlphabet } from "nanoid";
 
 export type WordStep = {
   name: string;
@@ -18,17 +21,24 @@ export function useTemplate(
   templateInit: Template,
   templateModule: any,
   generatorModule: any,
-  wordModule: any
+  wordModule: any,
+  postMessage: any
 ) {
+  const alphabet =
+  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+const nanoid = customAlphabet(alphabet, 4);
+
+const [msgId,setMsgId] = useState(nanoid());
   let [template, setTemplate] = useState<Template>(templateInit);
   const [wordSteps, setWordSteps] = useState<WordStep[]>([
     { name: "init", args: [], result: template },
   ]);
-  function logStep(name, args, result) {
+  function logStep(name, args, result, files = {}) {
     const wordStep = {
       name: name,
       args: args,
       result: cloneDeep(result),
+      files,
     };
     setWordSteps([...wordSteps, wordStep]);
   }
@@ -80,41 +90,73 @@ export function useTemplate(
     templateToInsert: Template,
     toKey: string
   ) {
-    console.log("insertTemplateIntoTemplateAtKey", templateToInsert, toKey, template)
+    console.log(
+      "insertTemplateIntoTemplateAtKey",
+      templateToInsert,
+      toKey,
+      template
+    );
     const oldKeys = Object.keys(template);
     let newTemplate = insertIntoTemplate(template, templateToInsert);
     logStep("insertIntoTemplate", [template, templateToInsert], newTemplate);
 
     const newKeys = Object.keys(newTemplate);
-    const newestKey = newKeys.filter((k) => !oldKeys.includes(k))[0]?.split("/")[0];
-    console.log("NEWEST KEY", newestKey)
+    const newestKey = newKeys
+      .filter((k) => !oldKeys.includes(k))[0]
+      ?.split("/")[0];
+    console.log("NEWEST KEY", newestKey);
     let appendedTemplate = appendKeyToKey(newTemplate, newestKey, toKey);
     const result = sortTemplateByDeps(sortTemplateByDeps(appendedTemplate));
     logStep("appendKeyToKey", [newTemplate, newestKey, toKey], result);
     setTemplate(result);
   }
+  useEffect(() => {
+    window.addEventListener("message", (event) => {
+      if(event.data.data.msgId!==msgId) return;
+      const message = event.data; // The json data that the extension sent
+      switch (message.command) {
+        case "generator_result":
+          console.log("MESSAGE DATA", message.data);
+          const { generatorFilePath, resultFilePath, result, generatorString } =
+            message.data;
+          console.log("generator_result", result);
+          const name = generatorString.substring(
+            0,
+            generatorString.indexOf("(")
+          );
 
-  function applyGeneratorString(generatorString: string) {
-    function evalInScope(js, contextAsScope) {
-      return new Function(
-        `with (this) { console.log("CONTEXT IS",this); return (${js}); }`
-      ).call(contextAsScope);
-    }
-console.log("WHATS IN TEMPLATE MODULE", templateModule)
-    const result = evalInScope(generatorString, {
-      template,
-      ...templateModule,
-      ...generatorModule,
-      ...wordModule,
+          const args = generatorString
+            .substring(
+              generatorString.indexOf("(") + 1,
+              generatorString.indexOf(")")
+            )
+            .split(",")
+
+          logStep(name, args, result, {
+            generatorFilePath,
+            resultFilePath,
+          });
+          setTemplate(new Function("return " + result)());
+          break;
+      }
     });
-
-    const name = generatorString.substring(0, generatorString.indexOf("("));
-    const args = generatorString
-      .substring(generatorString.indexOf("(") + 1, generatorString.indexOf(")"))
-      .split(",")
-      .map((arg) => eval(arg));
-    logStep(name, args, result);
-    setTemplate(result)
+  },[]);
+  function applyGeneratorString(generatorString: string) {
+    // form it and send it over
+    const generatorRunFile = formGeneratorFile(
+      generatorString,
+      template,
+      templateModule,
+      generatorModule
+    );
+    // send it over via postMessage
+    postMessage({
+      command: "run_generator",
+      generatorRunFile,
+      generatorString,
+      pathToConfig: CONFIG_PATH,
+      msgId
+    });
   }
   console.log("Word steps", wordSteps);
   return {

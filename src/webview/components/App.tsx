@@ -45,7 +45,7 @@ const playTemplate = `({
     'something2': ()=>\`another one!\` 
   })`;
 
-  const CONFIG_PATH ="/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig"
+  export const CONFIG_PATH ="/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig"
 const App = () => {
   const { readAllFiles, generatorsFileText, templatesFileText, wordsFileText } =
     useFileSystem(

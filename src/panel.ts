@@ -1,9 +1,13 @@
 import * as vscode from "vscode";
 import { getNonce } from "./getNonce";
 import * as fs from "fs";
-import { runIndexFile, saveWord } from "./compiler";
+import { runIndexFile, runTs, saveFile, saveWord } from "./compiler";
 import { readFromConfig } from "./configReader";
-import { argsAndTemplateToFunction, genTemplateWithVars, tts } from "symmetric-parser";
+import {
+  argsAndTemplateToFunction,
+  genTemplateWithVars,
+  tts,
+} from "symmetric-parser";
 
 function readFromFile(file) {
   return new Promise((resolve, reject) => {
@@ -79,6 +83,8 @@ export default class PanelClass {
         switch (msg.command) {
           case "startup":
             console.log("message received");
+            // ensure bun is set up for the thing
+
             break;
           case "testing":
             console.log("reachedBrain");
@@ -97,18 +103,63 @@ export default class PanelClass {
             const { key, args, value, pathToConfig } = msg;
             const funcPart = argsAndTemplateToFunction([], value);
             const templ = { [key]: funcPart };
-            const templateString = `genTemplateWithVars(${tts(templ,false)}, ${args});`
-            const templatesFilePath = await readFromConfig("TEMPLATE_FILE", pathToConfig);
+            const templateString = `genTemplateWithVars(${tts(
+              templ,
+              false
+            )}, ${args});`;
+            const templatesFilePath = await readFromConfig(
+              "TEMPLATE_FILE",
+              pathToConfig
+            );
             const templatesFile = await readFromFile(templatesFilePath);
-            console.log("CURR TEMPLATES FILE", templatesFile)
+            console.log("CURR TEMPLATES FILE", templatesFile);
             // write template to templates file
-            const newTemplatesFile = templatesFile + "\n" + `export const ${key} = ${templateString}`;
+            const newTemplatesFile =
+              templatesFile + "\n" + `export const ${key} = ${templateString}`;
             console.log("NEW TEMPLATES FILE", newTemplatesFile);
             fs.writeFile(templatesFilePath, newTemplatesFile, (err) => {
               if (err) {
                 console.error(err);
               }
-              console.log("success")
+              console.log("success");
+            });
+            break;
+          }
+          case "run_generator": {
+            const { generatorRunFile, generatorString, pathToConfig, msgId } =
+              msg;
+            console.log(
+              "RUNNING",
+              "msgId",
+              msgId,
+              "AND",
+              generatorRunFile,
+              generatorString,
+              pathToConfig
+            );
+            const projectDir = await readFromConfig(
+              "PROJECT_DIR",
+              pathToConfig
+            );
+            const filePrefix = Date.now();
+            const generatorFile = filePrefix + "_generator.ts";
+            const resultFile = filePrefix + "_result";
+            const genFilePath = projectDir + "/" + generatorFile;
+            const resultFilePath = projectDir + "/" + resultFile;
+            await saveFile(genFilePath, generatorRunFile);
+            const result = await runTs(genFilePath);
+            console.log("RESULTv,", result);
+            await saveFile(resultFilePath, result);
+
+            this._panel!.webview.postMessage({
+              command: "generator_result",
+              data: {
+                msgId,
+                generatorFilePath: genFilePath,
+                resultFilePath: resultFile,
+                result,
+                generatorString,
+              },
             });
             break;
           }
