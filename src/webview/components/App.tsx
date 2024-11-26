@@ -8,6 +8,7 @@ import { TemplateEditors, TemplateTree } from "./TemplateTree";
 import { useRunner } from "../hooks/useRunner";
 import { tts } from "symmetric-parser";
 import { buildAllGeneratorsTemplate } from "../util/parsers/parseGenerators";
+import { WordStep } from "../hooks/useTemplate";
 
 export function run(func: () => string, keyName: string) {
   try {
@@ -45,13 +46,17 @@ const playTemplate = `({
     'something2': ()=>\`another one!\` 
   })`;
 
-  export const CONFIG_PATH ="/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig"
+export const CONFIG_PATH =
+  "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig";
 const App = () => {
-  const { readAllFiles, generatorsFileText, templatesFileText, wordsFileText } =
-    useFileSystem(
-      vscode.postMessage,
-      CONFIG_PATH
-    );
+  const {
+    readAllFiles,
+    generatorsFileText,
+    templatesFileText,
+    wordsFileText,
+    loading,
+    filledGeneratorsFileText,
+  } = useFileSystem(vscode.postMessage, CONFIG_PATH);
   React.useEffect(() => {
     readAllFiles();
   }, []);
@@ -60,21 +65,22 @@ const App = () => {
   return (
     <div>
       <CssVarsProvider>
-        {generatorsFileText != null && (
+        {!loading && (
           <TemplateEditors
-          postMessage={vscode.postMessage}
-          configPath={CONFIG_PATH}
+            postMessage={vscode.postMessage}
+            configPath={CONFIG_PATH}
+            filledGeneratorsFileText={filledGeneratorsFileText}
             templateDefinitions={[
               {
                 name: "input",
-                templateInit: templ,
+                wordSteps: [{ result: templ }],
                 meta: {
                   generators: buildAllGeneratorsTemplate(generatorsFileText),
                 },
               },
               {
                 name: "generators",
-                templateInit: {},
+                wordSteps: [{ result: {} }],
                 meta: {
                   generators: buildAllGeneratorsTemplate(generatorsFileText),
                 },

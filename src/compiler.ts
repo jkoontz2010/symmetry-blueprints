@@ -44,6 +44,10 @@ export async function saveFile(filePath:string,fileContents:string) {
   return fs.writeFile(filePath, fileContents);
 }
 
+export async function readFile(filePath:string) {
+  return fs.readFile(filePath, { encoding: "utf8" });
+}
+
 export async function runTs(generatorFilePath: string) {
   try {
     const { stdout, stderr } = await execAsync(`bun run ${generatorFilePath}`);

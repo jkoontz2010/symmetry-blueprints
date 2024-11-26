@@ -1,4 +1,4 @@
-import { cloneDeep, difference, uniqueId } from "lodash";
+import { cloneDeep, difference, last, uniqueId } from "lodash";
 import { useEffect, useState } from "react";
 import {
   appendKeyToKey,
@@ -10,28 +10,31 @@ import { Template } from "symmetric-parser/dist/src/templator/template-group";
 import { formGeneratorFile } from "./hgcgUtil";
 import { CONFIG_PATH } from "../components/App";
 import { customAlphabet } from "nanoid";
+import { WordDefinition } from "../components/TemplateTree";
 
 export type WordStep = {
-  name: string;
-  args: any[];
+  name?: string;
+  args?: any[];
   result: Template;
 };
 
 export function useTemplate(
-  templateInit: Template,
+  definition: WordDefinition,
   templateModule: any,
   generatorModule: any,
   wordModule: any,
   postMessage: any
 ) {
   const alphabet =
-  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-const nanoid = customAlphabet(alphabet, 4);
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  const nanoid = customAlphabet(alphabet, 4);
 
-const [msgId,setMsgId] = useState(nanoid());
-  let [template, setTemplate] = useState<Template>(templateInit);
+  const [msgId, setMsgId] = useState(nanoid());
+  let [template, setTemplate] = useState<Template>(
+    last(definition.wordSteps).result
+  );
   const [wordSteps, setWordSteps] = useState<WordStep[]>([
-    { name: "init", args: [], result: template },
+    last(definition.wordSteps),
   ]);
   function logStep(name, args, result, files = {}) {
     const wordStep = {
@@ -112,7 +115,7 @@ const [msgId,setMsgId] = useState(nanoid());
   }
   useEffect(() => {
     window.addEventListener("message", (event) => {
-      if(event.data.data.msgId!==msgId) return;
+      if (event.data.data.msgId !== msgId) return;
       const message = event.data; // The json data that the extension sent
       switch (message.command) {
         case "generator_result":
@@ -130,7 +133,7 @@ const [msgId,setMsgId] = useState(nanoid());
               generatorString.indexOf("(") + 1,
               generatorString.indexOf(")")
             )
-            .split(",")
+            .split(",");
 
           logStep(name, args, result, {
             generatorFilePath,
@@ -140,7 +143,7 @@ const [msgId,setMsgId] = useState(nanoid());
           break;
       }
     });
-  },[]);
+  }, []);
   function applyGeneratorString(generatorString: string) {
     // form it and send it over
     const generatorRunFile = formGeneratorFile(
@@ -155,7 +158,7 @@ const [msgId,setMsgId] = useState(nanoid());
       generatorRunFile,
       generatorString,
       pathToConfig: CONFIG_PATH,
-      msgId
+      msgId,
     });
   }
   console.log("Word steps", wordSteps);

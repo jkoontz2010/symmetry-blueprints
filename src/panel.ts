@@ -1,13 +1,15 @@
 import * as vscode from "vscode";
 import { getNonce } from "./getNonce";
 import * as fs from "fs";
-import { runIndexFile, runTs, saveFile, saveWord } from "./compiler";
+import { readFile, runIndexFile, runTs, saveFile, saveWord } from "./compiler";
 import { readFromConfig } from "./configReader";
 import {
   argsAndTemplateToFunction,
   genTemplateWithVars,
+  insertIntoTemplate,
   tts,
 } from "symmetric-parser";
+import { Template } from "symmetric-parser/dist/src/templator/template-group";
 
 function readFromFile(file) {
   return new Promise((resolve, reject) => {
@@ -156,9 +158,47 @@ export default class PanelClass {
               data: {
                 msgId,
                 generatorFilePath: genFilePath,
-                resultFilePath: resultFile,
+                resultFilePath: resultFilePath,
                 result,
                 generatorString,
+              },
+            });
+            break;
+          }
+          case "add_filled_generator": {
+            const { msgId, filledGenerator, pathToConfig } = msg;
+
+            const projectDir = await readFromConfig(
+              "PROJECT_DIR",
+              pathToConfig
+            );
+            const filledGeneratorsPath = projectDir + "/filledGenerators.json";
+
+            let currentFilledGenerators;
+            try {
+              currentFilledGenerators = await readFile(filledGeneratorsPath);
+            } catch {
+              currentFilledGenerators = "{}";
+            }
+            const cfgTemplate: Template = new Function(
+              "return " + currentFilledGenerators
+            )();
+            const filledGeneratorTemplate: Template = new Function(
+              "return " + filledGenerator
+            )();
+            const newFilledGenerators = insertIntoTemplate(
+              cfgTemplate,
+              filledGeneratorTemplate
+            );
+            await saveFile(
+              filledGeneratorsPath,
+              tts(newFilledGenerators, false)
+            );
+            this._panel!.webview.postMessage({
+              command: "all_filled_generators",
+              data: {
+                msgId,
+                allFilledGenerators: tts(newFilledGenerators, false),
               },
             });
             break;
@@ -212,18 +252,25 @@ export default class PanelClass {
                 "WORDS_FILE",
                 pathToConfig
               );
+              const projectDir = await readFromConfig(
+                "PROJECT_DIR",
+                pathToConfig
+              );
+              const filledGeneratorsPath = projectDir + "/filledGenerators.json";
+
               console.log(generatorPath, templatePath, wordsPath);
               const promises = [
                 readFromFile(generatorPath),
                 readFromFile(templatePath),
                 readFromFile(wordsPath),
+                readFromFile(filledGeneratorsPath)
               ];
 
               Promise.all(promises).then((data) => {
-                const [generators, templates, words] = data;
+                const [generators, templates, words, filledGenerators] = data;
                 this._panel!.webview.postMessage({
                   command: "config_data",
-                  data: { generators, templates, words },
+                  data: { generators, templates, words, filledGenerators },
                 });
               });
 

@@ -1,0 +1,4 @@
+{
+'step1': ()=>`orderedParse(template, [randomParser])`,
+'step2': ()=>`orderedParse(template, [random])`
+}
