@@ -2,7 +2,6 @@ import * as vscode from "vscode";
 import { getNonce } from "./getNonce";
 import * as fs from "fs";
 import { readFile, runIndexFile, runTs, saveFile, saveWord } from "./compiler";
-import { readFromConfig } from "./configReader";
 import {
   argsAndTemplateToFunction,
   genTemplateWithVars,
@@ -10,6 +9,14 @@ import {
   tts,
 } from "symmetric-parser";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
+import {
+  getAllWordPathsByLastModified,
+  getWordContents,
+  getWordNamesFromWordPaths,
+  sortFilesByLastModified,
+  readFromConfig,
+  getWordPath
+} from "./commandService";
 
 function readFromFile(file) {
   return new Promise((resolve, reject) => {
@@ -99,6 +106,19 @@ export default class PanelClass {
             const wordsFile = await readFromConfig("WORDS_FILE", pathToConfig);
             // save to word file
             const result = await saveWord(word, wordsFile);
+            break;
+          }
+          case "get_word": {
+            const { wordName, pathToConfig } = msg;
+            const wordPath = await getWordPath(pathToConfig,wordName)
+            const wordContents = await getWordContents(wordPath)
+            this._panel!.webview.postMessage({
+              command: "word_contents",
+              data: {
+                wordName,
+                wordContents,
+              },
+            });
             break;
           }
           case "add_template": {
@@ -229,6 +249,26 @@ export default class PanelClass {
             });
             break;
           }
+          case "save_word_steps": {
+            const { wordSteps, wordName, pathToConfig, msgId } = msg;
+            if(wordSteps.length === 0 || wordSteps==="" || wordSteps==null) {
+              throw new Error("No steps to save")
+              break;
+            }
+            const projectDir = await readFromConfig(
+              "PROJECT_DIR",
+              pathToConfig
+            );
+            const wordFile = projectDir + "/word_" + wordName + ".json";
+            await saveFile(wordFile, wordSteps);
+            this._panel!.webview.postMessage({
+              command: "word_saved",
+              data: {
+                msgId,
+              },
+            });
+            break;
+          }
           case "fetch_from_config":
             try {
               const { pathToConfig } = msg;
@@ -256,21 +296,45 @@ export default class PanelClass {
                 "PROJECT_DIR",
                 pathToConfig
               );
-              const filledGeneratorsPath = projectDir + "/filledGenerators.json";
+              const filledGeneratorsPath =
+                projectDir + "/filledGenerators.json";
+              const allWordPaths = await getAllWordPathsByLastModified(
+                pathToConfig
+              );
+              const sortedWordPaths = await sortFilesByLastModified(
+                allWordPaths
+              );
 
               console.log(generatorPath, templatePath, wordsPath);
               const promises = [
                 readFromFile(generatorPath),
                 readFromFile(templatePath),
                 readFromFile(wordsPath),
-                readFromFile(filledGeneratorsPath)
+                readFromFile(filledGeneratorsPath),
+                getWordContents(sortedWordPaths[0]),
               ];
 
+              const wordNames = getWordNamesFromWordPaths(allWordPaths);
+              const currentWordName = sortedWordPaths[0].split("_")[1].replace(".json","");
               Promise.all(promises).then((data) => {
-                const [generators, templates, words, filledGenerators] = data;
+                const [
+                  generators,
+                  templates,
+                  words,
+                  filledGenerators,
+                  currentWord,
+                ] = data;
                 this._panel!.webview.postMessage({
                   command: "config_data",
-                  data: { generators, templates, words, filledGenerators },
+                  data: {
+                    generators,
+                    templates,
+                    words,
+                    filledGenerators,
+                    currentWord,
+                    currentWordName,
+                    wordNames: JSON.stringify(wordNames),
+                  },
                 });
               });
 

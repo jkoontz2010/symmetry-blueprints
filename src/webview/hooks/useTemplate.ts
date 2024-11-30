@@ -5,6 +5,7 @@ import {
   dumbCombine,
   insertIntoTemplate,
   sortTemplateByDeps,
+  tts,
 } from "symmetric-parser";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
 import { formGeneratorFile } from "./hgcgUtil";
@@ -16,6 +17,7 @@ export type WordStep = {
   name?: string;
   args?: any[];
   result: Template;
+  files?: { generatorFilePath?: string; resultFilePath?: string };
 };
 
 export function useTemplate(
@@ -33,22 +35,45 @@ export function useTemplate(
   let [template, setTemplate] = useState<Template>(
     last(definition.wordSteps).result
   );
-  const [wordSteps, setWordSteps] = useState<WordStep[]>([
-    last(definition.wordSteps),
-  ]);
+
+  const [wordSteps, setWordSteps] = useState<WordStep[]>(definition.wordSteps);
   function logStep(name, args, result, files = {}) {
+    console.log("PREV STEPS", wordSteps);
     const wordStep = {
       name: name,
       args: args,
       result: cloneDeep(result),
       files,
     };
-    setWordSteps([...wordSteps, wordStep]);
+
+    const newWordSteps = [...wordSteps, wordStep];
+    setWordSteps(newWordSteps);
+    const stringifiedSteps = newWordSteps.map((ws) => {
+      return {
+        name: ws.name,
+        args: ws.args,
+        result:
+          typeof ws.result === "string" ? ws.result : tts(ws.result, false),
+        files: ws.files,
+      };
+    });
+    console.log("STRINGIFIED STEPS", stringifiedSteps);
+    const wordName = definition.name;
+
+    postMessage({
+      command: "save_word_steps",
+      wordSteps: JSON.stringify(stringifiedSteps),
+      wordName,
+      pathToConfig: CONFIG_PATH,
+      msgId,
+    });
+
   }
 
   function removeKey(key: string) {
     const newTemplate = cloneDeep(template);
     delete newTemplate[key];
+    logStep("deleteKey", [key], newTemplate);
     setTemplate(newTemplate);
   }
   function addKey(key: string) {
@@ -113,37 +138,41 @@ export function useTemplate(
     logStep("appendKeyToKey", [newTemplate, newestKey, toKey], result);
     setTemplate(result);
   }
-  useEffect(() => {
-    window.addEventListener("message", (event) => {
-      if (event.data.data.msgId !== msgId) return;
-      const message = event.data; // The json data that the extension sent
-      switch (message.command) {
-        case "generator_result":
-          console.log("MESSAGE DATA", message.data);
-          const { generatorFilePath, resultFilePath, result, generatorString } =
-            message.data;
-          console.log("generator_result", result);
-          const name = generatorString.substring(
-            0,
-            generatorString.indexOf("(")
-          );
 
-          const args = generatorString
-            .substring(
-              generatorString.indexOf("(") + 1,
-              generatorString.indexOf(")")
-            )
-            .split(",");
+  const handleGeneratorResult = (message: any) => {
+    console.log("WORD STEPS ON MESSAGE", wordSteps);
 
-          logStep(name, args, result, {
-            generatorFilePath,
-            resultFilePath,
-          });
-          setTemplate(new Function("return " + result)());
-          break;
-      }
+    console.log("MESSAGE DATA", message.data);
+    const { generatorFilePath, resultFilePath, result, generatorString } =
+      message.data;
+    console.log("generator_result", result);
+    const name = generatorString.substring(0, generatorString.indexOf("("));
+
+    const args = generatorString
+      .substring(generatorString.indexOf("(") + 1, generatorString.indexOf(")"))
+      .split(",");
+
+    logStep(name, args, result, {
+      generatorFilePath,
+      resultFilePath,
     });
-  }, []);
+    setTemplate(new Function("return " + result)());
+  };
+  function handleMessage(event: MessageEvent) {
+    if (event.data.data.msgId !== msgId) return;
+    const message = event.data; // The json data that the extension sent
+    switch (message.command) {
+      case "generator_result":
+        handleGeneratorResult(message);
+        break;
+    }
+  }
+  useEffect(() => {
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [wordSteps]);
   function applyGeneratorString(generatorString: string) {
     // form it and send it over
     const generatorRunFile = formGeneratorFile(

@@ -2,7 +2,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { exec } from "child_process";
 import { promisify } from "util";
-import { readFromConfig } from "./configReader";
+import { readFromConfig } from "./commandService";
 import { FoldMode, genTemplateWithVars, orderedFold, stringCleaning, tts } from "symmetric-parser";
 
 const execAsync = promisify(exec);

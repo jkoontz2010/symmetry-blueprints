@@ -116,7 +116,6 @@ export const TemplateEditor = ({
   wordModule,
   setStepsForPanel,
   generatorsTemplate,
-
   runnableSteps,
   addToTemplatePool,
   postMessage,

@@ -9,6 +9,8 @@ import { useRunner } from "../hooks/useRunner";
 import { tts } from "symmetric-parser";
 import { buildAllGeneratorsTemplate } from "../util/parsers/parseGenerators";
 import { WordStep } from "../hooks/useTemplate";
+import { last } from "lodash";
+import Dropdown from "./Dropdown";
 
 export function run(func: () => string, keyName: string) {
   try {
@@ -56,24 +58,35 @@ const App = () => {
     wordsFileText,
     loading,
     filledGeneratorsFileText,
+    wordNames,
+    currentWord,
+    currentWordName,
+    setWord,
   } = useFileSystem(vscode.postMessage, CONFIG_PATH);
   React.useEffect(() => {
     readAllFiles();
   }, []);
-  const templ = new Function("return " + playTemplate)();
+  console.log("GUESS WHAT", wordNames, currentWord);
   //console.log("generatorsFileText", generatorsFileText);
   return (
     <div>
       <CssVarsProvider>
-        {!loading && (
+        <Dropdown
+          options={wordNames}
+          onSelect={(value) => {
+            console.log("VALUE", value);
+            setWord(value)
+            //vscode.postMessage({ command: "change_word", data: value });
+          }} />
+        {!loading && (<>
           <TemplateEditors
             postMessage={vscode.postMessage}
             configPath={CONFIG_PATH}
             filledGeneratorsFileText={filledGeneratorsFileText}
             templateDefinitions={[
               {
-                name: "input",
-                wordSteps: [{ result: templ }],
+                name: currentWordName,
+                wordSteps: currentWord,
                 meta: {
                   generators: buildAllGeneratorsTemplate(generatorsFileText),
                 },
@@ -87,7 +100,7 @@ const App = () => {
               },
             ]}
           />
-        )}
+        </>)}
         {/*<BuilderAccordion 
           generatorsFileText={generatorsFileText} 
           templatesFileText={templatesFileText} 
