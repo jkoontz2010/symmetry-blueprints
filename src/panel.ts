@@ -121,6 +121,29 @@ export default class PanelClass {
             });
             break;
           }
+          case "create_word": {
+            const { wordName, pathToConfig, template } = msg;
+            const projectDir = await readFromConfig(
+              "PROJECT_DIR",
+              pathToConfig
+            );
+            const wordFile = projectDir + "/word_" + wordName + ".json";
+            // eventually, result might be something more, like a file insertion
+            let wordTemplate = "{}";
+            if(template!=null) {
+              wordTemplate = template;
+            }
+            let wordContents =JSON.stringify([{ result: wordTemplate }])
+            await saveFile(wordFile, wordContents);
+            this._panel!.webview.postMessage({
+              command: "word_contents",
+              data: {
+                wordName,
+                wordContents,
+              },
+            });
+            break;
+          }
           case "add_template": {
             const { key, args, value, pathToConfig } = msg;
             const funcPart = argsAndTemplateToFunction([], value);

@@ -57,33 +57,53 @@ export function useFileSystem(postMessage, configPath) {
           const { wordName, wordContents } = message.data;
           console.log("WORD CONTENTS", message);
           setCurrentWordName(wordName);
-          const parsedCurrentWord = JSON.parse(wordContents).map((cw) => ({
-            ...cw,
-            result: new Function("return " + cw.result)(),
-          }));
+          let parsedCurrentWord
+          if (wordContents === "[]") {
+            parsedCurrentWord = [{ result: {} }];
+          } else {
+            parsedCurrentWord = JSON.parse(wordContents).map((cw) => ({
+              ...cw,
+              result: new Function("return " + cw.result)(),
+            }));
+          }
           setCurrentWord(parsedCurrentWord);
-          setLoading(false)
+          if (!wordNames.includes(wordName)) {
+            setWordNames([...wordNames, wordName]);
+          }
+
+          setLoading(false);
           break;
         }
       }
     });
-  },[]);
-  const readAllFiles = async () => {
+  }, []);
+  const readAllFiles = () => {
     postMessage({ command: "fetch_from_config", pathToConfig: configPath });
   };
-  const writeFile = async (path, data) => {
+  const writeFile = (path, data) => {
     postMessage({ command: "writeFile", path, data });
   };
-  const setWord = async (name) => {
+  const setWord = (name) => {
     postMessage({
       command: "get_word",
       wordName: name,
       pathToConfig: configPath,
     });
-    setLoading(true)
+
+    setLoading(true);
+  };
+  const createNewWord = (name) => {
+    // word_contents received in response
+    postMessage({
+      command: "create_word",
+      wordName: name,
+      pathToConfig: configPath,
+    });
+    setLoading(true);
   };
   return {
     readAllFiles,
+    createNewWord,
     writeFile,
     setWord,
     generatorsFileText,

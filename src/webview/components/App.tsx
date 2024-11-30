@@ -11,6 +11,7 @@ import { buildAllGeneratorsTemplate } from "../util/parsers/parseGenerators";
 import { WordStep } from "../hooks/useTemplate";
 import { last } from "lodash";
 import Dropdown from "./Dropdown";
+import { WordCreator } from "./WordCreator";
 
 export function run(func: () => string, keyName: string) {
   try {
@@ -62,6 +63,7 @@ const App = () => {
     currentWord,
     currentWordName,
     setWord,
+    createNewWord,
   } = useFileSystem(vscode.postMessage, CONFIG_PATH);
   React.useEffect(() => {
     readAllFiles();
@@ -75,32 +77,36 @@ const App = () => {
           options={wordNames}
           onSelect={(value) => {
             console.log("VALUE", value);
-            setWord(value)
+            setWord(value);
             //vscode.postMessage({ command: "change_word", data: value });
-          }} />
-        {!loading && (<>
-          <TemplateEditors
-            postMessage={vscode.postMessage}
-            configPath={CONFIG_PATH}
-            filledGeneratorsFileText={filledGeneratorsFileText}
-            templateDefinitions={[
-              {
-                name: currentWordName,
-                wordSteps: currentWord,
-                meta: {
-                  generators: buildAllGeneratorsTemplate(generatorsFileText),
+          }}
+        />
+        <WordCreator createNewWord={createNewWord} />
+        {!loading && (
+          <>
+            <TemplateEditors
+              postMessage={vscode.postMessage}
+              configPath={CONFIG_PATH}
+              filledGeneratorsFileText={filledGeneratorsFileText}
+              templateDefinitions={[
+                {
+                  name: currentWordName,
+                  wordSteps: currentWord,
+                  meta: {
+                    generators: buildAllGeneratorsTemplate(generatorsFileText),
+                  },
                 },
-              },
-              {
-                name: "generators",
-                wordSteps: [{ result: {} }],
-                meta: {
-                  generators: buildAllGeneratorsTemplate(generatorsFileText),
+                {
+                  name: "generators",
+                  wordSteps: [{ result: {} }],
+                  meta: {
+                    generators: buildAllGeneratorsTemplate(generatorsFileText),
+                  },
                 },
-              },
-            ]}
-          />
-        </>)}
+              ]}
+            />
+          </>
+        )}
         {/*<BuilderAccordion 
           generatorsFileText={generatorsFileText} 
           templatesFileText={templatesFileText} 

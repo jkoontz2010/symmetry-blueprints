@@ -63,3 +63,6 @@ export const random = genTemplateWithVars({
 export const randomParser = genTemplateWithVars({
 'randomParser': ()=>`we have so much to parse`
 }, ["so","to"]);
+export const firsty = genTemplateWithVars({
+'firsty': ()=>`big`
+}, [""]);
