@@ -256,8 +256,16 @@ export default class PanelClass {
               "PROJECT_DIR",
               pathToConfig
             );
-            const result = await runTs(projectDir + "/template-getter.ts");
-            console.log("RESULT", result);
+            const templateModule = await runTs(
+              projectDir + "/template-getter.ts"
+            );            
+            this._panel!.webview.postMessage({
+              command: "all_templates",
+              data: {
+                templateModule,
+              },
+            });
+
             break;
           }
           case "run_generator": {
@@ -425,7 +433,7 @@ export default class PanelClass {
               const templateModule = await runTs(
                 projectDir + "/template-getter.ts"
               );
-console.log("HOW DID IT DO", templateModule)
+
               const promises = [
                 readFromFile(generatorPath),
                 readFromFile(templatePath),

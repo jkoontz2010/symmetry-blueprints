@@ -2,6 +2,15 @@ import { set } from "lodash";
 import React from "react";
 import { WordStep } from "./useTemplate";
 
+function parseStringifiedTemplateModule(templateModule: string) {
+  const templModuleFirstParse = new Function("return " + templateModule)();
+  const templModule = Object.keys(templModuleFirstParse).reduce((acc, key) => {
+    acc[key] = new Function("return " + templModuleFirstParse[key])();
+    return acc;
+  }, {});
+  return templModule
+}
+
 export function useFileSystem(postMessage, configPath) {
   const [generatorsFileText, setGeneratorsFileText] =
     React.useState<string>(null);
@@ -15,9 +24,9 @@ export function useFileSystem(postMessage, configPath) {
   const [loading, setLoading] = React.useState<boolean>(true);
   const [currentWordName, setCurrentWordName] = React.useState<string>(null);
   const [templateModule, setTemplateModule] = React.useState<any>(null);
-  React.useEffect(()=> {
+  React.useEffect(() => {
     postMessage({ command: "set_config_path", pathToConfig: configPath });
-  },[configPath])
+  }, [configPath]);
   React.useEffect(() => {
     window.addEventListener("message", (event) => {
       const message = event.data; // The json data that the extension sent
@@ -32,7 +41,7 @@ export function useFileSystem(postMessage, configPath) {
             currentWord,
             wordNames,
             currentWordName,
-            templateModule
+            templateModule,
           }: {
             generators: string;
             words: string;
@@ -41,7 +50,7 @@ export function useFileSystem(postMessage, configPath) {
             currentWord: string;
             wordNames: string;
             currentWordName: string;
-            templateModule:string;
+            templateModule: string;
           } = message.data;
           setGeneratorsFileText(generators);
           setTemplatesFileText(templates);
@@ -55,13 +64,12 @@ export function useFileSystem(postMessage, configPath) {
           setCurrentWord(parsedCurrentWord);
           setWordNames(JSON.parse(wordNames));
           setCurrentWordName(currentWordName);
-          console.log("FROM FILE", templateModule);
-          const templModuleFirstParse = new Function("return " + templateModule)();
-          const templModule = Object.keys(templModuleFirstParse).reduce((acc, key) => {
-            acc[key] = new Function("return " + templModuleFirstParse[key])();
-            return acc;
-          }, {});
-          console.log("templModuletemplModuletemplModuleHOW DOES THIS LOOK", templModule); 
+
+          const templModule = parseStringifiedTemplateModule(templateModule);
+          console.log(
+            "templModuletemplModuletemplModuleHOW DOES THIS LOOK",
+            templModule
+          );
           setTemplateModule(templModule);
           setLoading(false);
           break;
@@ -70,7 +78,7 @@ export function useFileSystem(postMessage, configPath) {
           const { wordName, wordContents } = message.data;
           console.log("WORD CONTENTS", message);
           setCurrentWordName(wordName);
-          let parsedCurrentWord
+          let parsedCurrentWord;
           if (wordContents === "[]") {
             parsedCurrentWord = [{ result: {} }];
           } else {
@@ -86,11 +94,12 @@ export function useFileSystem(postMessage, configPath) {
 
           setLoading(false);
           break;
-        };
+        }
         case "all_templates": {
-          const { templatesModule } = message.data;
+          const { templateModule } = message.data;
+          const templModule = parseStringifiedTemplateModule(templateModule);
 
-         // setTemplatesFileText(templates);
+          setTemplateModule(templModule);
           break;
         }
       }
@@ -144,6 +153,6 @@ export function useFileSystem(postMessage, configPath) {
     currentWordName,
     wordNames,
     loading,
-    templateModule
+    templateModule,
   };
 }

@@ -87,3 +87,6 @@ export const testOne = genTemplateWithVars({
 export const firstyThisWay = genTemplateWithVars({
 'firstyThisWay': ()=>`export const funcName(funcArgs) {funcBody}`
 }, ["funcName","funcArgs","funcBody"]);
+export const theOne = genTemplateWithVars({
+'theOne': ()=>`this is the one for us`
+}, ["the","one"]);
