@@ -12,6 +12,11 @@ import { WordStep } from "../hooks/useTemplate";
 import { last } from "lodash";
 import Dropdown from "./Dropdown";
 import { WordCreator } from "./WordCreator";
+import { GTWVEditor } from "./GTWVEditor";
+
+import "ace-builds/src-noconflict/mode-java";
+import "ace-builds/src-noconflict/theme-github";
+import "ace-builds/src-noconflict/ext-language_tools";
 
 export function run(func: () => string, keyName: string) {
   try {
@@ -64,12 +69,15 @@ const App = () => {
     currentWordName,
     setWord,
     createNewWord,
+    addToTemplatePool,
+    templateModule
   } = useFileSystem(vscode.postMessage, CONFIG_PATH);
   React.useEffect(() => {
     readAllFiles();
   }, []);
   console.log("GUESS WHAT", wordNames, currentWord);
   //console.log("generatorsFileText", generatorsFileText);
+  const [showGTWVEditor, setShowGTWVEditor] = React.useState(false);
   return (
     <div>
       <CssVarsProvider>
@@ -78,16 +86,26 @@ const App = () => {
           onSelect={(value) => {
             console.log("VALUE", value);
             setWord(value);
-            //vscode.postMessage({ command: "change_word", data: value });
           }}
         />
         <WordCreator createNewWord={createNewWord} />
+        {showGTWVEditor && (
+          <GTWVEditor handleSubmit={(value) => {
+            console.log("VALUE", value)
+            setShowGTWVEditor(false)
+            addToTemplatePool(value.key, value.value, value.args);
+          }} />
+        )}<button onClick={() => {
+          setShowGTWVEditor(!showGTWVEditor)
+          
+          }}>toggle GTWV Editor</button>
         {!loading && (
           <>
             <TemplateEditors
               postMessage={vscode.postMessage}
               configPath={CONFIG_PATH}
               filledGeneratorsFileText={filledGeneratorsFileText}
+              templateModule={templateModule}
               templateDefinitions={[
                 {
                   name: currentWordName,

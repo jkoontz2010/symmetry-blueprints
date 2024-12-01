@@ -14,6 +14,7 @@ export function useFileSystem(postMessage, configPath) {
   const [wordNames, setWordNames] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [currentWordName, setCurrentWordName] = React.useState<string>(null);
+  const [templateModule, setTemplateModule] = React.useState<any>(null);
   React.useEffect(()=> {
     postMessage({ command: "set_config_path", pathToConfig: configPath });
   },[configPath])
@@ -31,6 +32,7 @@ export function useFileSystem(postMessage, configPath) {
             currentWord,
             wordNames,
             currentWordName,
+            templateModule
           }: {
             generators: string;
             words: string;
@@ -39,6 +41,7 @@ export function useFileSystem(postMessage, configPath) {
             currentWord: string;
             wordNames: string;
             currentWordName: string;
+            templateModule:string;
           } = message.data;
           setGeneratorsFileText(generators);
           setTemplatesFileText(templates);
@@ -52,7 +55,14 @@ export function useFileSystem(postMessage, configPath) {
           setCurrentWord(parsedCurrentWord);
           setWordNames(JSON.parse(wordNames));
           setCurrentWordName(currentWordName);
-          console.log("FROM FILE", filledGenerators);
+          console.log("FROM FILE", templateModule);
+          const templModuleFirstParse = new Function("return " + templateModule)();
+          const templModule = Object.keys(templModuleFirstParse).reduce((acc, key) => {
+            acc[key] = new Function("return " + templModuleFirstParse[key])();
+            return acc;
+          }, {});
+          console.log("templModuletemplModuletemplModuleHOW DOES THIS LOOK", templModule); 
+          setTemplateModule(templModule);
           setLoading(false);
           break;
         }
@@ -75,6 +85,12 @@ export function useFileSystem(postMessage, configPath) {
           }
 
           setLoading(false);
+          break;
+        };
+        case "all_templates": {
+          const { templatesModule } = message.data;
+
+         // setTemplatesFileText(templates);
           break;
         }
       }
@@ -104,11 +120,22 @@ export function useFileSystem(postMessage, configPath) {
     });
     setLoading(true);
   };
+  const addToTemplatePool = (key: string, value: string, args: string[]) => {
+    console.log("SENDING TO ADD TO TEMPLATE POOL", key, value, args);
+    postMessage({
+      command: "add_template",
+      key,
+      args: JSON.stringify(args),
+      value,
+      pathToConfig: configPath,
+    });
+  };
   return {
     readAllFiles,
     createNewWord,
     writeFile,
     setWord,
+    addToTemplatePool,
     generatorsFileText,
     templatesFileText,
     wordsFileText,
@@ -117,5 +144,6 @@ export function useFileSystem(postMessage, configPath) {
     currentWordName,
     wordNames,
     loading,
+    templateModule
   };
 }

@@ -28,15 +28,16 @@ export const TemplateEditors = ({
   templateDefinitions,
   postMessage,
   configPath,
-  filledGeneratorsFileText
+  filledGeneratorsFileText,
+  templateModule
 }: {
   templateDefinitions: WordDefinition[];
   postMessage: any;
   configPath: string;
   filledGeneratorsFileText:string;
+  templateModule:any
 }) => {
   const {
-    templateModule,
     generatorModule,
     wordModule,
     addToTemplatePool,
@@ -308,6 +309,8 @@ export const SkeletonPanel = ({
   const [gtValue, setGtValue] = useState("");
   const [gtArgs, setGtArgs] = useState("");
   const [lastClickedGenerator, setLastClickedGenerator] = useState("");
+  console.log("WHAT IS TEMPLATE MODULE HERE", templateModule)
+  console.log("is it null?",generatorModule)
   return (
     <Panel defaultSize={15} minSize={15}>
       <div>

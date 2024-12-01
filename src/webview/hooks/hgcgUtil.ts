@@ -7,6 +7,7 @@ export function formGeneratorFile(
   templateModule: any,
   generatorModule: any
 ): string {
+  console.log("formGeneratorFile", templateModule)
   // future, check if Object.keys etc includes words foundin generatorRun
   const templates = Object.keys(templateModule).filter(
     (k) => generatorString.indexOf(k) > -1

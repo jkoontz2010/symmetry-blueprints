@@ -1,1 +1,4 @@
 45008f01c7_firsty.ts=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/firsty.ts
+f0568b8430_Untitled-1=Untitled-1
+f0568b8430_Untitled-1=Untitled-1
+55bcd3d8a4_Untitled-1.ts=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/Untitled-1.ts

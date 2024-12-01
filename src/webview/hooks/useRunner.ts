@@ -1,4 +1,3 @@
-
 import { customAlphabet } from "nanoid";
 import React, { useEffect, useState } from "react";
 import {
@@ -8,20 +7,26 @@ import {
 } from "symmetric-parser";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
 
-export function useRunner(postMessage: any, configPath: string, filledGeneratorsFileText:string) {
+export function useRunner(
+  postMessage: any,
+  configPath: string,
+  filledGeneratorsFileText: string
+) {
   const alphabet =
-  "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-const nanoid = customAlphabet(alphabet, 4);
-//console.log("TEST??",filledGeneratorsFileText)
-const [msgId, setMsgId] = useState(nanoid());
-  const [generatorModule, setGeneratorModule] = React.useState<any>(null);
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  const nanoid = customAlphabet(alphabet, 4);
+  //console.log("TEST??",filledGeneratorsFileText)
+  const [msgId, setMsgId] = useState(nanoid());
+  const [generatorModule, setGeneratorModule] = React.useState<any>({});
   const [templateModule, setTemplateModule] = React.useState<any>(null);
   const [wordModule, setWordModule] = React.useState<any>(null);
-  const [filledGenerators, setFilledGenerators] = React.useState<Template>(new Function("return " + filledGeneratorsFileText)());  
-//console.log("FILLED GENERATORs", filledGenerators)
-useEffect(()=>{
-  setFilledGenerators(new Function("return " + filledGeneratorsFileText)())
-},[filledGeneratorsFileText])
+  const [filledGenerators, setFilledGenerators] = React.useState<Template>(
+    new Function("return " + filledGeneratorsFileText)()
+  );
+  //console.log("FILLED GENERATORs", filledGenerators)
+  useEffect(() => {
+    setFilledGenerators(new Function("return " + filledGeneratorsFileText)());
+  }, [filledGeneratorsFileText]);
   const fetchGenerators = async () => {
     const data = await import("../../pools/utility-templates");
     setGeneratorModule(data);
@@ -43,21 +48,21 @@ useEffect(()=>{
     fetchWords();
   }, []);
 
-  useEffect(()=>{
+  useEffect(() => {
     window.addEventListener("message", (event) => {
       if (event.data.data.msgId !== msgId) return;
       const message = event.data; // The json data that the extension sent
       switch (message.command) {
         case "all_filled_generators": {
           //console.log("all_filled_generators", message.data);
-          const {allFilledGenerators} = message.data;
-          setFilledGenerators(new Function("return " + allFilledGenerators)())
+          const { allFilledGenerators } = message.data;
+          setFilledGenerators(new Function("return " + allFilledGenerators)());
           //console.log("NEW ALL FILELD",new Function("return " + allFilledGenerators)())
           break;
         }
       }
     });
-  },[])
+  }, []);
 
   const addToTemplatePool = (key: string, value: string, args: string[]) => {
     const funcPart = argsAndTemplateToFunction([], value);
@@ -95,16 +100,15 @@ useEffect(()=>{
     }
   };
 
-  const handleSaveAllFiles = (template:Template) => {
+  const handleSaveAllFiles = (template: Template) => {
     postMessage({
       command: "save_all_files",
       pathToConfig: configPath,
       template: tts(template),
     });
+  };
 
-  }
-
-  //console.log("here we are", generatorModule, templateModule, wordModule);
+  console.log("here we are", generatorModule, templateModule, wordModule);
 
   return {
     templateModule,

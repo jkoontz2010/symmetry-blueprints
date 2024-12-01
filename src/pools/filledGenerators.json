@@ -2,5 +2,7 @@
 'step1': ()=>`orderedParse(template, [randomParser])`,
 'step2': ()=>`orderedParse(template, [random])`,
 'step3': ()=>`orderedParse(template, [funcDef])`,
-'step4': ()=>`orderedParse(template, [funcDefi])`
+'step4': ()=>`orderedParse(template, [funcDefi])`,
+'step5': ()=>`joiner(template, "arrayElements", "arrayElements", ",")`,
+'step6': ()=>`orderedParse(template, [genTempl])`
 }

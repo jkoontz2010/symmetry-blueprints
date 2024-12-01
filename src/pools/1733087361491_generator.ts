@@ -1,25 +1,19 @@
-
+import { genTempl } from "./template-pool";
+import { tts,
+run,
+orderedParse } from "symmetric-parser";
+const template = {
+'55bcd3d8a4_Untitled-1.ts': ()=>`
 import { genTemplateWithVars, run } from "symmetric-parser";
-
-export const DONT_USE = {
-  "genTemplate/templName,templateDesc,keys": ({
-    templName,
-    templateDesc,
-    keys,
-  }) => `
-const ${run(templName, "templName")} = genTemplateWithVars({
-  ${run(templateDesc, "templateDesc")}},
-  ${run(keys, "keys")})`,
-};
 
 // read this and then make a template pool from it
 export const genTempl = genTemplateWithVars(
   {
-    genTemplate: () => `
+    genTemplate: () => \`
 const templName = genTemplateWithVars({
   templateDesc},
   keys
-  )`,
+  )\`,
   },
   ["templName", "templateDesc","keys"]
 );
@@ -28,62 +22,63 @@ const templName = genTemplateWithVars({
 // I'd say not.
 export const selectorTempl = genTemplateWithVars(
   {
-    selectorPre: () => `\nselectorName,`,
+    selectorPre: () => \`\nselectorName,\`,
   },
   ["selectorName"]
 );
 
 export const selectorFinTempl = genTemplateWithVars(
   {
-    otherSelector: () => `\nselectorFinName`,
+    otherSelector: () => \`\nselectorFinName\`,
   },
   ["selectorFinName"]
 );
 
 export const cssDecl = genTemplateWithVars(
   {
-    cssDecl: () => `\ncssSelectors {
+    cssDecl: () => \`\ncssSelectors {
     cssRules
-  }`,
+  }\`,
   },
   ["cssSelectors", "cssRules"]
 );
 
 export const bgRule = genTemplateWithVars(
   {
-    cssBg: () => `background-color: bgValue;`,
+    cssBg: () => \`background-color: bgValue;\`,
   },
   ["bgValue"]
 );
 
 
 export const random = genTemplateWithVars({
-'random': ()=>`some thing here`
+'random': ()=>\`some thing here\`
 }, ["thing"]);
 export const randomParser = genTemplateWithVars({
-'randomParser': ()=>`we have so much to parse`
+'randomParser': ()=>\`we have so much to parse\`
 }, ["so","to"]);
 export const firsty = genTemplateWithVars({
-'firsty': ()=>`this is the way`
+'firsty': ()=>\`this is the way\`
 }, ["the"]);
 export const secondy = genTemplateWithVars({
-'secondy': ()=>`another one for me`
+'secondy': ()=>\`another one for me\`
 }, ["one"]);
 export const funcDef = genTemplateWithVars({
-'funcDef': ()=>`function name(args) { body }`
+'funcDef': ()=>\`function name(args) { body }\`
 }, ["name","args","body"]);
 export const funcDefi = genTemplateWithVars({
-'funcDefi': ()=>`export function name(args) {body}`
+'funcDefi': ()=>\`export function name(args) {body}\`
 }, ["name","args","body"]);
 export const arrayDef = genTemplateWithVars({
-'arrayDef': ()=>`[arrayElements]`
+'arrayDef': ()=>\`[arrayElements]\`
 }, ["arrayElements"]);
 export const arrayEl = genTemplateWithVars({
-'arrayEl': ()=>`element`
+'arrayEl': ()=>\`element\`
 }, ["element"]);
 export const testOne = genTemplateWithVars({
-'testOne': ()=>`test time for me`
-}, ["time"]);
-export const firstyThisWay = genTemplateWithVars({
-'firstyThisWay': ()=>`export const funcName(funcArgs) {funcBody}`
-}, ["funcName","funcArgs","funcBody"]);
+'testOne': ()=>\`test time for me\`
+}, ["time"]);`
+};
+// @ts-ignore
+const result = orderedParse(template, [genTempl]);
+console.log(tts(result,false));

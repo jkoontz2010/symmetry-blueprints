@@ -19,14 +19,14 @@ import {
   storeFileHash,
   getFilePathHashes,
   getFilePathFromHashes,
-  overwriteFile
+  overwriteFile,
 } from "./commandService";
 import { sha1 } from "js-sha1";
 
-function formFilePathHash(filePath:string) {
+function formFilePathHash(filePath: string) {
   const fileName = filePath.split("/").pop();
   const fileHash = sha1(filePath);
-  return `${fileHash.substring(0,10)}_${fileName}`;
+  return `${fileHash.substring(0, 10)}_${fileName}`;
 }
 
 function readFromFile(file) {
@@ -73,13 +73,13 @@ export default class PanelClass {
 
   public static insertFileIntoTemplate(extContext: vscode.ExtensionContext) {
     const activeTextEditor = vscode.window.activeTextEditor;
-    if(activeTextEditor==null) {
+    if (activeTextEditor == null) {
       return;
     }
     const activeEditorText = activeTextEditor.document.getText();
     const activeEditorFilePath = activeTextEditor.document.fileName;
     // we want to deterministically hash the filepath
-    
+
     const filePathHash = formFilePathHash(activeEditorFilePath);
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
@@ -98,15 +98,19 @@ export default class PanelClass {
     }
 
     // we also need to store this hash somewhere!
-    console.log("DO WE HAVE PATH ", PanelClass.currentPanel.pathToConfig)
-    storeFileHash(PanelClass.currentPanel.pathToConfig, filePathHash, activeEditorFilePath);
+    console.log("DO WE HAVE PATH ", PanelClass.currentPanel.pathToConfig);
+    storeFileHash(
+      PanelClass.currentPanel.pathToConfig,
+      filePathHash,
+      activeEditorFilePath
+    );
     PanelClass.currentPanel._panel.webview.postMessage({
-      command: 'file_insert',
+      command: "file_insert",
       data: {
         contents: activeEditorText,
-        filePath: filePathHash
-      }
-    })
+        filePath: filePathHash,
+      },
+    });
   }
   //temporarily setting extcontext to any type
   private constructor(
@@ -150,7 +154,9 @@ export default class PanelClass {
 
             const templ = new Function("return " + template)();
             // we expect a compiled template here, so no denoms for anything, or an error if so
-            const templFileKeys = Object.keys(templ).filter(k=>k.indexOf(".")>-1);
+            const templFileKeys = Object.keys(templ).filter(
+              (k) => k.indexOf(".") > -1
+            );
             //console.log("TEMPL FILE KEYS", templFileKeys);
             const filePathHashes = await getFilePathHashes(pathToConfig);
             //console.log("FILE PATH HASHES", filePathHashes);
@@ -186,8 +192,8 @@ export default class PanelClass {
           }
           case "get_word": {
             const { wordName, pathToConfig } = msg;
-            const wordPath = await getWordPath(pathToConfig,wordName)
-            const wordContents = await getWordContents(wordPath)
+            const wordPath = await getWordPath(pathToConfig, wordName);
+            const wordContents = await getWordContents(wordPath);
             this._panel!.webview.postMessage({
               command: "word_contents",
               data: {
@@ -206,10 +212,10 @@ export default class PanelClass {
             const wordFile = projectDir + "/word_" + wordName + ".json";
             // eventually, result might be something more, like a file insertion
             let wordTemplate = "{}";
-            if(template!=null) {
+            if (template != null) {
               wordTemplate = template;
             }
-            let wordContents =JSON.stringify([{ result: wordTemplate }])
+            let wordContents = JSON.stringify([{ result: wordTemplate }]);
             await saveFile(wordFile, wordContents);
             this._panel!.webview.postMessage({
               command: "word_contents",
@@ -244,6 +250,14 @@ export default class PanelClass {
               }
               console.log("success");
             });
+
+            // bun run the file and send the result to the frontend
+            const projectDir = await readFromConfig(
+              "PROJECT_DIR",
+              pathToConfig
+            );
+            const result = await runTs(projectDir + "/template-getter.ts");
+            console.log("RESULT", result);
             break;
           }
           case "run_generator": {
@@ -350,8 +364,12 @@ export default class PanelClass {
           }
           case "save_word_steps": {
             const { wordSteps, wordName, pathToConfig, msgId } = msg;
-            if(wordSteps.length === 0 || wordSteps==="" || wordSteps==null) {
-              throw new Error("No steps to save")
+            if (
+              wordSteps.length === 0 ||
+              wordSteps === "" ||
+              wordSteps == null
+            ) {
+              throw new Error("No steps to save");
               break;
             }
             const projectDir = await readFromConfig(
@@ -404,7 +422,10 @@ export default class PanelClass {
                 allWordPaths
               );
 
-              console.log(generatorPath, templatePath, wordsPath);
+              const templateModule = await runTs(
+                projectDir + "/template-getter.ts"
+              );
+console.log("HOW DID IT DO", templateModule)
               const promises = [
                 readFromFile(generatorPath),
                 readFromFile(templatePath),
@@ -414,7 +435,9 @@ export default class PanelClass {
               ];
 
               const wordNames = getWordNamesFromWordPaths(allWordPaths);
-              const currentWordName = sortedWordPaths[0].split("_")[1].replace(".json","");
+              const currentWordName = sortedWordPaths[0]
+                .split("_")[1]
+                .replace(".json", "");
               Promise.all(promises).then((data) => {
                 const [
                   generators,
@@ -433,6 +456,7 @@ export default class PanelClass {
                     currentWord,
                     currentWordName,
                     wordNames: JSON.stringify(wordNames),
+                    templateModule,
                   },
                 });
               });

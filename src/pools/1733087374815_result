@@ -1,25 +1,11 @@
-
+{
+'55bcd3d8a4_Untitled-1.ts/genTemplate01': ({ genTemplate01 }) => `
 import { genTemplateWithVars, run } from "symmetric-parser";
-
-export const DONT_USE = {
-  "genTemplate/templName,templateDesc,keys": ({
-    templName,
-    templateDesc,
-    keys,
-  }) => `
-const ${run(templName, "templName")} = genTemplateWithVars({
-  ${run(templateDesc, "templateDesc")}},
-  ${run(keys, "keys")})`,
-};
 
 // read this and then make a template pool from it
 export const genTempl = genTemplateWithVars(
   {
-    genTemplate: () => `
-const templName = genTemplateWithVars({
-  templateDesc},
-  keys
-  )`,
+    genTemplate: () => \`${run(genTemplate01, "genTemplate01")}\`,
   },
   ["templName", "templateDesc","keys"]
 );
@@ -28,62 +14,71 @@ const templName = genTemplateWithVars({
 // I'd say not.
 export const selectorTempl = genTemplateWithVars(
   {
-    selectorPre: () => `\nselectorName,`,
+    selectorPre: () => \`
+selectorName,\`,
   },
   ["selectorName"]
 );
 
 export const selectorFinTempl = genTemplateWithVars(
   {
-    otherSelector: () => `\nselectorFinName`,
+    otherSelector: () => \`
+selectorFinName\`,
   },
   ["selectorFinName"]
 );
 
 export const cssDecl = genTemplateWithVars(
   {
-    cssDecl: () => `\ncssSelectors {
+    cssDecl: () => \`
+cssSelectors {
     cssRules
-  }`,
+  }\`,
   },
   ["cssSelectors", "cssRules"]
 );
 
 export const bgRule = genTemplateWithVars(
   {
-    cssBg: () => `background-color: bgValue;`,
+    cssBg: () => \`background-color: bgValue;\`,
   },
   ["bgValue"]
 );
 
 
 export const random = genTemplateWithVars({
-'random': ()=>`some thing here`
+'random': ()=>\`some thing here\`
 }, ["thing"]);
 export const randomParser = genTemplateWithVars({
-'randomParser': ()=>`we have so much to parse`
+'randomParser': ()=>\`we have so much to parse\`
 }, ["so","to"]);
 export const firsty = genTemplateWithVars({
-'firsty': ()=>`this is the way`
+'firsty': ()=>\`this is the way\`
 }, ["the"]);
 export const secondy = genTemplateWithVars({
-'secondy': ()=>`another one for me`
+'secondy': ()=>\`another one for me\`
 }, ["one"]);
 export const funcDef = genTemplateWithVars({
-'funcDef': ()=>`function name(args) { body }`
+'funcDef': ()=>\`function name(args) { body }\`
 }, ["name","args","body"]);
 export const funcDefi = genTemplateWithVars({
-'funcDefi': ()=>`export function name(args) {body}`
+'funcDefi': ()=>\`export function name(args) {body}\`
 }, ["name","args","body"]);
 export const arrayDef = genTemplateWithVars({
-'arrayDef': ()=>`[arrayElements]`
+'arrayDef': ()=>\`[arrayElements]\`
 }, ["arrayElements"]);
 export const arrayEl = genTemplateWithVars({
-'arrayEl': ()=>`element`
+'arrayEl': ()=>\`element\`
 }, ["element"]);
 export const testOne = genTemplateWithVars({
-'testOne': ()=>`test time for me`
-}, ["time"]);
-export const firstyThisWay = genTemplateWithVars({
-'firstyThisWay': ()=>`export const funcName(funcArgs) {funcBody}`
-}, ["funcName","funcArgs","funcBody"]);
+'testOne': ()=>\`test time for me\`
+}, ["time"]);`,
+'genTemplate01/templName01,templateDesc01,keys01': ({templName01, templateDesc01, keys01})=>`
+const ${run(templName01,'templName01')} = genTemplateWithVars({
+  ${run(templateDesc01,'templateDesc01')}},
+  ${run(keys01,'keys01')}
+  )`,
+'keys01': () => "keys",
+'templName01': () => "templName",
+'templateDesc01': () => "templateDesc"
+}
