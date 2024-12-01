@@ -15,8 +15,19 @@ import {
   getWordNamesFromWordPaths,
   sortFilesByLastModified,
   readFromConfig,
-  getWordPath
+  getWordPath,
+  storeFileHash,
+  getFilePathHashes,
+  getFilePathFromHashes,
+  overwriteFile
 } from "./commandService";
+import { sha1 } from "js-sha1";
+
+function formFilePathHash(filePath:string) {
+  const fileName = filePath.split("/").pop();
+  const fileHash = sha1(filePath);
+  return `${fileHash.substring(0,10)}_${fileName}`;
+}
 
 function readFromFile(file) {
   return new Promise((resolve, reject) => {
@@ -40,6 +51,7 @@ export default class PanelClass {
   private readonly _extensionUri: vscode.Uri;
   private readonly _extContext: vscode.ExtensionContext;
   private _disposables: vscode.Disposable[] = [];
+  private pathToConfig: string;
 
   public static createOrShow(extContext: vscode.ExtensionContext) {
     const column = vscode.window.activeTextEditor
@@ -57,6 +69,44 @@ export default class PanelClass {
         vscode.ViewColumn.Two
       );
     }
+  }
+
+  public static insertFileIntoTemplate(extContext: vscode.ExtensionContext) {
+    const activeTextEditor = vscode.window.activeTextEditor;
+    if(activeTextEditor==null) {
+      return;
+    }
+    const activeEditorText = activeTextEditor.document.getText();
+    const activeEditorFilePath = activeTextEditor.document.fileName;
+    // we want to deterministically hash the filepath
+    
+    const filePathHash = formFilePathHash(activeEditorFilePath);
+    const column = vscode.window.activeTextEditor
+      ? vscode.window.activeTextEditor.viewColumn
+      : undefined;
+
+    // If we already have a panel, show it.
+    // Otherwise, create a new panel.
+    if (PanelClass.currentPanel) {
+      PanelClass.currentPanel._panel.reveal(column);
+    } else {
+      // ReactPanel.currentPanel = new ReactPanel(extensionPath, column || vscode.ViewColumn.One);
+      PanelClass.currentPanel = new PanelClass(
+        extContext,
+        vscode.ViewColumn.Two
+      );
+    }
+
+    // we also need to store this hash somewhere!
+    console.log("DO WE HAVE PATH ", PanelClass.currentPanel.pathToConfig)
+    storeFileHash(PanelClass.currentPanel.pathToConfig, filePathHash, activeEditorFilePath);
+    PanelClass.currentPanel._panel.webview.postMessage({
+      command: 'file_insert',
+      data: {
+        contents: activeEditorText,
+        filePath: filePathHash
+      }
+    })
   }
   //temporarily setting extcontext to any type
   private constructor(
@@ -90,6 +140,32 @@ export default class PanelClass {
       async (msg: any) => {
         console.log("DID RECEIVE MSG", msg);
         switch (msg.command) {
+          case "set_config_path": {
+            const { pathToConfig } = msg;
+            console.log("SET CONFIG PATH", pathToConfig);
+            this.pathToConfig = pathToConfig;
+          }
+          case "save_all_files": {
+            const { template, pathToConfig } = msg;
+
+            const templ = new Function("return " + template)();
+            // we expect a compiled template here, so no denoms for anything, or an error if so
+            const templFileKeys = Object.keys(templ).filter(k=>k.indexOf(".")>-1);
+            //console.log("TEMPL FILE KEYS", templFileKeys);
+            const filePathHashes = await getFilePathHashes(pathToConfig);
+            //console.log("FILE PATH HASHES", filePathHashes);
+            for (const filePathHash of templFileKeys) {
+              //console.log("filepathhash", filePathHash);
+              // we expect a compiled template here, so no denoms for anything, or an error if so
+              const filePath = filePathHashes[filePathHash];
+              //console.log("FILE PATH", filePath);
+              const fileContents = templ[filePathHash]();
+              //console.log("writing file", filePath, "\n<>CONTENTS<>\n",fileContents);
+              await overwriteFile(filePath, fileContents);
+            }
+
+            break;
+          }
           case "startup":
             console.log("message received");
             // ensure bun is set up for the thing

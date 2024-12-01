@@ -1,1 +1,1 @@
-[{"result":"{\n\n}"},{"name":"insertIntoTemplate","args":[{},{}],"result":"{\n'step1/genArgs1': ({genArgs1})=>`nestedParse(template, ${run(genArgs1, 'genArgs1')})`\n}","files":{}},{"name":"deleteKey","args":["step1/genArgs1"],"result":"{\n\n}","files":{}}]
+[{"result":"{\n\n}"},{"name":"insertIntoTemplate","args":[{},{}],"result":"{\n'funcDefi1/name1,args1,body1': ({name1, args1, body1})=>`export function ${run(name1, 'name1')}(${run(args1, 'args1')}) {${run(body1, 'body1')}}`\n}","files":{}}]

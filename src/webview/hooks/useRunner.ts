@@ -12,13 +12,13 @@ export function useRunner(postMessage: any, configPath: string, filledGenerators
   const alphabet =
   "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 const nanoid = customAlphabet(alphabet, 4);
-console.log("TEST??",filledGeneratorsFileText)
+//console.log("TEST??",filledGeneratorsFileText)
 const [msgId, setMsgId] = useState(nanoid());
   const [generatorModule, setGeneratorModule] = React.useState<any>(null);
   const [templateModule, setTemplateModule] = React.useState<any>(null);
   const [wordModule, setWordModule] = React.useState<any>(null);
   const [filledGenerators, setFilledGenerators] = React.useState<Template>(new Function("return " + filledGeneratorsFileText)());  
-console.log("FILLED GENERATORs", filledGenerators)
+//console.log("FILLED GENERATORs", filledGenerators)
 useEffect(()=>{
   setFilledGenerators(new Function("return " + filledGeneratorsFileText)())
 },[filledGeneratorsFileText])
@@ -28,9 +28,9 @@ useEffect(()=>{
   };
   const fetchTemplates = async () => {
     const data = await import("../../pools/template-pool");
-    console.log("AFTER IMPORT", data);
+    //console.log("AFTER IMPORT", data);
     // @ts-ignore
-    console.log("GOOD LUCK", data);
+    //console.log("GOOD LUCK", data);
     setTemplateModule(data);
   };
   const fetchWords = async () => {
@@ -49,10 +49,10 @@ useEffect(()=>{
       const message = event.data; // The json data that the extension sent
       switch (message.command) {
         case "all_filled_generators": {
-          console.log("all_filled_generators", message.data);
+          //console.log("all_filled_generators", message.data);
           const {allFilledGenerators} = message.data;
           setFilledGenerators(new Function("return " + allFilledGenerators)())
-          console.log("NEW ALL FILELD",new Function("return " + allFilledGenerators)())
+          //console.log("NEW ALL FILELD",new Function("return " + allFilledGenerators)())
           break;
         }
       }
@@ -63,7 +63,7 @@ useEffect(()=>{
     const funcPart = argsAndTemplateToFunction([], value);
     const templ = { [key]: funcPart };
     const template = genTemplateWithVars(templ, args);
-    console.log("addToTemplatePool", template);
+    //console.log("addToTemplatePool", template);
     if (templateModule[key] != null) {
       throw new Error("Template with this name already exists");
     }
@@ -95,10 +95,20 @@ useEffect(()=>{
     }
   };
 
+  const handleSaveAllFiles = (template:Template) => {
+    postMessage({
+      command: "save_all_files",
+      pathToConfig: configPath,
+      template: tts(template),
+    });
+
+  }
+
   //console.log("here we are", generatorModule, templateModule, wordModule);
 
   return {
     templateModule,
+    handleSaveAllFiles,
     generatorModule,
     wordModule,
     filledGenerators,

@@ -14,6 +14,9 @@ export function useFileSystem(postMessage, configPath) {
   const [wordNames, setWordNames] = React.useState<string[]>([]);
   const [loading, setLoading] = React.useState<boolean>(true);
   const [currentWordName, setCurrentWordName] = React.useState<string>(null);
+  React.useEffect(()=> {
+    postMessage({ command: "set_config_path", pathToConfig: configPath });
+  },[configPath])
   React.useEffect(() => {
     window.addEventListener("message", (event) => {
       const message = event.data; // The json data that the extension sent

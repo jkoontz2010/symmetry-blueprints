@@ -69,3 +69,9 @@ export const firsty = genTemplateWithVars({
 export const secondy = genTemplateWithVars({
 'secondy': ()=>`another one for me`
 }, ["one"]);
+export const funcDef = genTemplateWithVars({
+'funcDef': ()=>`function name(args) { body }`
+}, ["name","args","body"]);
+export const funcDefi = genTemplateWithVars({
+'funcDefi': ()=>`export function name(args) {body}`
+}, ["name","args","body"]);

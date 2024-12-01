@@ -42,6 +42,7 @@ export const TemplateEditors = ({
     addToTemplatePool,
     addToFilledGeneratorPool,
     filledGenerators,
+    handleSaveAllFiles
   } = useRunner(postMessage, configPath, filledGeneratorsFileText);
 
   const [stepsForPanel, setStepsForPanel] = useState<
@@ -67,6 +68,8 @@ export const TemplateEditors = ({
                 addToTemplatePool={addToTemplatePool}
                 postMessage={postMessage}
                 addToFilledGeneratorPool={addToFilledGeneratorPool}
+                isMainEditor={i === 0}
+                handleSaveAllFiles={handleSaveAllFiles}
               />
             </>
           );
@@ -122,6 +125,8 @@ export const TemplateEditor = ({
   addToTemplatePool,
   postMessage,
   addToFilledGeneratorPool,
+  isMainEditor,
+  handleSaveAllFiles
 }: {
   definition: WordDefinition;
   templateModule: any;
@@ -133,6 +138,8 @@ export const TemplateEditor = ({
   addToTemplatePool: (name: string, template: string, args: string[]) => void;
   postMessage: any;
   addToFilledGeneratorPool: (filledGenerator: Template) => void;
+  isMainEditor: boolean;
+  handleSaveAllFiles: (template: Template) => void;
 }) => {
   const {
     template,
@@ -148,7 +155,8 @@ export const TemplateEditor = ({
     templateModule,
     generatorModule,
     wordModule,
-    postMessage
+    postMessage,
+    isMainEditor
   );
   const [insertMode, setInsertMode] = React.useState(false);
   const [insertToKey, setInsertToKey] = React.useState("");
@@ -251,6 +259,7 @@ export const TemplateEditor = ({
                 insertToKey={insertToKey}
                 setInsertToKey={setInsertToKey}
                 handleRemoveKey={handleRemoveKey}
+                handleSaveAllFiles={handleSaveAllFiles}
               />
               <button
                 onClick={() =>
@@ -350,7 +359,7 @@ export const SkeletonPanel = ({
         </button>
       </div>
       {Object.keys(runnableSteps)?.map((rs) => {
-        console.log("HERE WE ARE WITH RUNNABLE STEPS", rs.toString(), rs);
+        //console.log("HERE WE ARE WITH RUNNABLE STEPS", rs.toString(), rs);
         const full = runnableSteps[rs]()
         return (
           <div
@@ -440,6 +449,7 @@ export const TemplateTree = ({
   setInsertMode,
   insertToKey,
   setInsertToKey,
+  handleSaveAllFiles,
 }: {
   addKey: any;
   addKeyToNumerator: any;
@@ -450,6 +460,7 @@ export const TemplateTree = ({
   setInsertMode: any;
   insertToKey: string;
   setInsertToKey: any;
+  handleSaveAllFiles: (template: Template) => void;
 }) => {
   const [compiledTemplate, setCompiledTemplate] = React.useState("");
   const [collapsedSet, setCollapsedSet] = React.useState(new Set<string>());
@@ -497,7 +508,7 @@ export const TemplateTree = ({
     setCollapsedSet(newCollapsedSet);
   };
   return (
-    <div>
+    <div><button onClick={()=>handleSaveAllFiles(template)}>Save All Files</button>
       {Object.keys(template).map((k, i) => {
         const denoms = k.split("/")[1]?.split(",");
 

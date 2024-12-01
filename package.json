@@ -24,7 +24,11 @@
     "commands": [
       {
         "command": "symmetric-blueprints.start",
-        "title": "Symmetric Blueprints: Start"
+        "title": "SymB: Start"
+      },
+      {
+        "command": "symmetric-blueprints.insertActiveEditorFile",
+        "title": "SymB: Insert File Into Blueprints"
       }
     ]
   },
@@ -62,6 +66,7 @@
     "@mui/material": "^5.16.4",
     "@types/lodash": "^4.17.7",
     "@types/vscode": "^1.75.0",
+    "js-sha1": "^0.7.0",
     "lodash": "^4.17.21",
     "nanoid": "^5.0.7",
     "path": "^0.12.7",

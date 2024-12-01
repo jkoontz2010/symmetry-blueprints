@@ -6,8 +6,9 @@ import {
   insertIntoTemplate,
   sortTemplateByDeps,
   tts,
+  argsAndTemplateToFunction
 } from "symmetric-parser";
-import { Template } from "symmetric-parser/dist/src/templator/template-group";
+import {  Template } from "symmetric-parser/dist/src/templator/template-group";
 import { formGeneratorFile } from "./hgcgUtil";
 import { CONFIG_PATH } from "../components/App";
 import { customAlphabet } from "nanoid";
@@ -25,7 +26,8 @@ export function useTemplate(
   templateModule: any,
   generatorModule: any,
   wordModule: any,
-  postMessage: any
+  postMessage: any,
+  isMainTemplate: boolean
 ) {
   const alphabet =
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -67,7 +69,6 @@ export function useTemplate(
       pathToConfig: CONFIG_PATH,
       msgId,
     });
-
   }
 
   function removeKey(key: string) {
@@ -158,6 +159,27 @@ export function useTemplate(
     });
     setTemplate(new Function("return " + result)());
   };
+
+  function handleGenericMessage(event: MessageEvent) {
+    const message = event.data; // The json data that the extension sent
+    switch (message.command) {
+      case "file_insert":
+        if (isMainTemplate) {
+          const { contents, filePath } = message.data;
+          const funcPart = argsAndTemplateToFunction([], contents);
+    const templ = { [filePath]: funcPart };
+          console.log("FILE INSERT", contents, filePath, templ);
+          insertTemplateIntoTemplate(templ);
+        }
+        break;
+    }
+  }
+  useEffect(() => {
+    window.addEventListener("message", handleGenericMessage);
+    return () => {
+      window.removeEventListener("message", handleGenericMessage);
+    };
+  }, [isMainTemplate]);
   function handleMessage(event: MessageEvent) {
     if (event.data.data.msgId !== msgId) return;
     const message = event.data; // The json data that the extension sent

@@ -1,4 +1,6 @@
 {
 'step1': ()=>`orderedParse(template, [randomParser])`,
-'step2': ()=>`orderedParse(template, [random])`
+'step2': ()=>`orderedParse(template, [random])`,
+'step3': ()=>`orderedParse(template, [funcDef])`,
+'step4': ()=>`orderedParse(template, [funcDefi])`
 }
