@@ -1,1 +1,1 @@
-[{"result":"{\n\n}"},{"name":"insertIntoTemplate","args":[{},{}],"result":"{\n'firsty1': ()=>`this is the big one`\n}","files":{}}]
+[{"result":"{\n\n}"},{"name":"insertIntoTemplate","args":[{},{}],"result":"{\n'firsty1': ()=>`this is the big one`\n}","files":{}},{"name":"insertIntoTemplate","args":[{},{}],"result":"{\n'firsty2/the1': ({the1})=>`this is ${run(the1, 'the1')} way`,\n'firsty1': ()=>`this is the big one`\n}","files":{}}]

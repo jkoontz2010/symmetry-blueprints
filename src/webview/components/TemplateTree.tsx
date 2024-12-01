@@ -22,6 +22,8 @@ export type WordDefinition = {
   meta?: Record<string, any>;
 };
 
+const FAVORITE_GENERATORS = ["orderedParse","nestedParse"];
+
 export const TemplateEditors = ({
   templateDefinitions,
   postMessage,
@@ -363,6 +365,7 @@ export const SkeletonPanel = ({
           </div>
         );
       })}
+      <div style={{ color: "black" }}>Templates:</div>
       {Object.keys(templateModule)?.map((k) => {
         return (
           <div
@@ -386,6 +389,24 @@ export const SkeletonPanel = ({
           )}
         </div>
       )}
+      {FAVORITE_GENERATORS.map((k) => {
+        return (
+          <div
+            style={{
+              cursor: "pointer",
+              color: "blue",
+              textDecoration: "underline",
+            }}
+            onClick={() => {
+              handleGeneratorClick(k);
+              setLastClickedGenerator(k);
+            }}
+          >
+            {k}
+          </div>
+        );
+      })}
+
       {Object.keys(generatorModule)
         ?.sort()
         ?.map((k) => {
