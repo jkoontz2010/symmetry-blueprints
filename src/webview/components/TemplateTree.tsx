@@ -22,20 +22,23 @@ export type WordDefinition = {
   meta?: Record<string, any>;
 };
 
-const FAVORITE_GENERATORS = ["orderedParse","nestedParse"];
-
+const FAVORITE_GENERATORS = ["orderedParse", "nestedParse"];
+const COMMON_CHARS = [
+  { name: "comma", value: "," },
+  { name: "newline", value: "\n" },
+];
 export const TemplateEditors = ({
   templateDefinitions,
   postMessage,
   configPath,
   filledGeneratorsFileText,
-  templateModule
+  templateModule,
 }: {
   templateDefinitions: WordDefinition[];
   postMessage: any;
   configPath: string;
-  filledGeneratorsFileText:string;
-  templateModule:any
+  filledGeneratorsFileText: string;
+  templateModule: any;
 }) => {
   const {
     generatorModule,
@@ -43,7 +46,7 @@ export const TemplateEditors = ({
     addToTemplatePool,
     addToFilledGeneratorPool,
     filledGenerators,
-    handleSaveAllFiles
+    handleSaveAllFiles,
   } = useRunner(postMessage, configPath, filledGeneratorsFileText);
 
   const [stepsForPanel, setStepsForPanel] = useState<
@@ -127,7 +130,7 @@ export const TemplateEditor = ({
   postMessage,
   addToFilledGeneratorPool,
   isMainEditor,
-  handleSaveAllFiles
+  handleSaveAllFiles,
 }: {
   definition: WordDefinition;
   templateModule: any;
@@ -224,6 +227,11 @@ export const TemplateEditor = ({
     addToTemplatePool(key, value, args);
     insertTemplateIntoTemplate(newTemplate);
   }
+
+  function handleInsertTemplateName(value: string) {
+    const funcPart = argsAndTemplateToFunction([], value);
+    insertTemplateIntoTemplateAtKey({ templateName: funcPart }, insertToKey);
+  }
   const templates = [template, ...filteredTemplates];
   return (
     <>
@@ -240,6 +248,7 @@ export const TemplateEditor = ({
               generatorsTemplate={generatorsTemplate}
               runnableSteps={runnableSteps}
               handleRunStep={handleRunStep}
+              handleTemplateNameClick={handleInsertTemplateName}
             />
             <Panel
               defaultSize={30}
@@ -291,6 +300,7 @@ export const SkeletonPanel = ({
   generatorsTemplate,
   runnableSteps,
   handleRunStep,
+  handleTemplateNameClick,
 }: {
   templateModule: any;
   generatorModule: any;
@@ -301,18 +311,16 @@ export const SkeletonPanel = ({
   generatorsTemplate: Template;
   runnableSteps: Template;
   handleRunStep: any;
+  handleTemplateNameClick: (key: string) => void;
 }) => {
   if (templateModule == null) return <div>loading templates...</div>;
   const [defKeyName, setDefKeyName] = useState("");
   const [defValue, setDefValue] = useState("");
-  const [gtKey, setGtKey] = useState("");
-  const [gtValue, setGtValue] = useState("");
-  const [gtArgs, setGtArgs] = useState("");
   const [lastClickedGenerator, setLastClickedGenerator] = useState("");
-  console.log("WHAT IS TEMPLATE MODULE HERE", templateModule)
-  console.log("is it null?",generatorModule)
+  console.log("WHAT IS TEMPLATE MODULE HERE", templateModule);
+  console.log("is it null?", generatorModule);
   return (
-    <Panel defaultSize={15} minSize={15}>
+    <Panel defaultSize={20} minSize={20} style={{ overflowX: "scroll" }}>
       <div>
         <input
           value={defKeyName}
@@ -334,36 +342,10 @@ export const SkeletonPanel = ({
           Add Definition
         </button>
       </div>
-      <div>
-        <input
-          value={gtKey}
-          onChange={(e) => setGtKey(e.target.value)}
-          placeholder="key"
-        />
-        <input
-          value={gtValue}
-          onChange={(e) => setGtValue(e.target.value)}
-          placeholder="value"
-        />
-        <input
-          value={gtArgs}
-          onChange={(e) => setGtArgs(e.target.value)}
-          placeholder="args"
-        />
-        <button
-          onClick={() => {
-            handleAddSkeleton(gtKey, gtValue, gtArgs.split(","));
-            setGtKey("");
-            setGtValue("");
-            setGtArgs("");
-          }}
-        >
-          Gen Templ
-        </button>
-      </div>
+
       {Object.keys(runnableSteps)?.map((rs) => {
         //console.log("HERE WE ARE WITH RUNNABLE STEPS", rs.toString(), rs);
-        const full = runnableSteps[rs]()
+        const full = runnableSteps[rs]();
         return (
           <div
             style={{
@@ -377,8 +359,8 @@ export const SkeletonPanel = ({
           </div>
         );
       })}
-      <div style={{ color: "black" }}>Templates:</div>
-      {Object.keys(templateModule)?.map((k) => {
+      <div style={{ color: "black" }}>Common:</div>
+      {COMMON_CHARS.map((k) => {
         return (
           <div
             style={{
@@ -386,9 +368,43 @@ export const SkeletonPanel = ({
               color: "blue",
               textDecoration: "underline",
             }}
-            onClick={() => handleTemplateClick(k)}
+            onClick={() => {
+              handleAddDefinition(k.name, k.value);
+            }}
           >
-            {k}
+            {k.name}
+          </div>
+        );
+      })}
+
+      <div style={{ color: "black" }}>Templates:</div>
+      {Object.keys(templateModule)?.map((k) => {
+        return (
+          <div>
+            <span
+              style={{
+                cursor: "pointer",
+                color: "blue",
+                textDecoration: "underline",
+              }}
+              onClick={() => handleTemplateClick(k)}
+            >
+              {k}
+            </span>
+            <span
+              onClick={() => handleTemplateNameClick(k)}
+              style={{
+                width: "8px",
+                height: "8px",
+                padding: "0px",
+                border: "1px solid black",
+                backgroundColor: "#eee",
+                color: "black",
+                cursor: "pointer",
+              }}
+            >
+              N
+            </span>
           </div>
         );
       })}
@@ -511,7 +527,10 @@ export const TemplateTree = ({
     setCollapsedSet(newCollapsedSet);
   };
   return (
-    <div><button onClick={()=>handleSaveAllFiles(template)}>Save All Files</button>
+    <div>
+      <button onClick={() => handleSaveAllFiles(template)}>
+        Save All Files
+      </button>
       {Object.keys(template).map((k, i) => {
         const denoms = k.split("/")[1]?.split(",");
 
