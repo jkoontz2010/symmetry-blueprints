@@ -1,4 +1,11 @@
 45008f01c7_firsty.ts=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/firsty.ts
-f0568b8430_Untitled-1=Untitled-1
-f0568b8430_Untitled-1=Untitled-1
-55bcd3d8a4_Untitled-1.ts=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/Untitled-1.ts
+968b1d77af_firsty.tsx=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/firsty.tsx
+968b1d77af_firsty.tsx=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/firsty.tsx
+968b1d77af_firsty.tsx=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/firsty.tsx
+968b1d77af_firsty.tsx=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/firsty.tsx
+fd07d61662_secondy.tsx=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/secondy.tsx
+fd07d61662_secondy.tsx=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/secondy.tsx
+65ca760ba0_fourthy.tsx=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/fourthy.tsx
+a4023e8966_fifth.tsx=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/fifth.tsx
+eccc1edee4_sixth.tsx=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/sixth.tsx
+94a30e0740_sev.tsx=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/sev.tsx

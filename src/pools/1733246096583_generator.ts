@@ -1,4 +1,11 @@
-import { cloneDeep, difference, last, uniqueId } from "lodash";
+import { argProperties,
+commandSend,
+nameProperty } from "./template-pool";
+import { tts,
+run,
+orderedParse } from "symmetric-parser";
+const template = {
+'eccc1edee4_sixth.tsx': ()=>`import { cloneDeep, difference, last, uniqueId } from "lodash";
 import { useEffect, useState } from "react";
 import {
   appendKeyToKey,
@@ -18,7 +25,6 @@ export type WordStep = {
   name?: string;
   args?: any[];
   result: Template;
-  full?: string;
   files?: { generatorFilePath?: string; resultFilePath?: string };
 };
 
@@ -41,10 +47,10 @@ export function useTemplate(
 
   const [wordSteps, setWordSteps] = useState<WordStep[]>(definition.wordSteps);
   function logStep(name, args, result, files = {}) {
+    console.log("PREV STEPS", wordSteps);
     const wordStep = {
       name: name,
       args: args,
-      full: `${name}(${args.map(a=>JSON.stringify(a)).join(",")})`,
       result: cloneDeep(result),
       files,
     };
@@ -60,6 +66,7 @@ export function useTemplate(
         files: ws.files,
       };
     });
+    console.log("STRINGIFIED STEPS", stringifiedSteps);
     const wordName = definition.name;
 
     postMessage({
@@ -82,7 +89,7 @@ export function useTemplate(
       return k.split("/")[0] === key;
     });
     if (templateHasNumerator) return;
-    let combineWith = { [key]: () => `` };
+    let combineWith = { [key]: () => \`\` };
     let newTemplate = dumbCombine(template, combineWith);
     let result = sortTemplateByDeps(sortTemplateByDeps(newTemplate));
     logStep("dumbCombine", [template, combineWith], result);
@@ -133,7 +140,7 @@ export function useTemplate(
     const newestKey = newKeys
       .filter((k) => !oldKeys.includes(k))[0]
       ?.split("/")[0];
-    //console.log("NEWEST KEY", newestKey);
+    console.log("NEWEST KEY", newestKey);
     let appendedTemplate = appendKeyToKey(newTemplate, newestKey, toKey);
     const result = sortTemplateByDeps(sortTemplateByDeps(appendedTemplate));
     logStep("appendKeyToKey", [newTemplate, newestKey, toKey], result);
@@ -141,9 +148,9 @@ export function useTemplate(
   }
 
   const handleGeneratorResult = (message: any) => {
-    //console.log("WORD STEPS ON MESSAGE", wordSteps);
+    console.log("WORD STEPS ON MESSAGE", wordSteps);
 
-    //console.log("MESSAGE DATA", message.data);
+    console.log("MESSAGE DATA", message.data);
     const { generatorFilePath, resultFilePath, result, generatorString } =
       message.data;
     console.log("generator_result", result);
@@ -168,7 +175,7 @@ export function useTemplate(
           const { contents, filePath } = message.data;
           const funcPart = argsAndTemplateToFunction([], contents);
           const templ = { [filePath]: funcPart };
-          //console.log("FILE INSERT", contents, filePath, templ);
+          console.log("FILE INSERT", contents, filePath, templ);
           insertTemplateIntoTemplate(templ);
         }
         break;
@@ -224,3 +231,8 @@ export function useTemplate(
     removeKey,
   };
 }
+`
+};
+// @ts-ignore
+const result = orderedParse(template, [commandSend,nameProperty,argProperties]);
+console.log(tts(result,false));

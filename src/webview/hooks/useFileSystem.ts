@@ -1,4 +1,4 @@
-import { set } from "lodash";
+
 import React from "react";
 import { WordStep } from "./useTemplate";
 
@@ -16,7 +16,6 @@ export function useFileSystem(postMessage, configPath) {
     React.useState<string>(null);
   const [templatesFileText, setTemplatesFileText] =
     React.useState<string>(null);
-  const [wordsFileText, setWordsFileText] = React.useState<string>(null);
   const [filledGeneratorsFileText, setFilledGeneratorsFileText] =
     React.useState<string>(null);
   const [currentWord, setCurrentWord] = React.useState<WordStep[]>(null);
@@ -24,6 +23,7 @@ export function useFileSystem(postMessage, configPath) {
   const [loading, setLoading] = React.useState<boolean>(true);
   const [currentWordName, setCurrentWordName] = React.useState<string>(null);
   const [templateModule, setTemplateModule] = React.useState<any>(null);
+  const [allFileTemplates, setAllFileTemplates] = React.useState<any>(null);
   React.useEffect(() => {
     postMessage({ command: "set_config_path", pathToConfig: configPath });
   }, [configPath]);
@@ -36,25 +36,27 @@ export function useFileSystem(postMessage, configPath) {
           const {
             generators,
             templates,
-            words,
+
             filledGenerators,
             currentWord,
             wordNames,
             currentWordName,
             templateModule,
+            fileTemplates
           }: {
             generators: string;
-            words: string;
+
             templates: string;
             filledGenerators: string;
             currentWord: string;
             wordNames: string;
             currentWordName: string;
             templateModule: string;
+            fileTemplates:string;
           } = message.data;
           setGeneratorsFileText(generators);
           setTemplatesFileText(templates);
-          setWordsFileText(words);
+
           setFilledGeneratorsFileText(filledGenerators);
           const parsedCurrentWord = JSON.parse(currentWord).map((cw) => ({
             ...cw,
@@ -64,6 +66,7 @@ export function useFileSystem(postMessage, configPath) {
           setCurrentWord(parsedCurrentWord);
           setWordNames(JSON.parse(wordNames));
           setCurrentWordName(currentWordName);
+          setAllFileTemplates(new Function("return " + fileTemplates)());
 
           const templModule = parseStringifiedTemplateModule(templateModule);
           console.log(
@@ -100,6 +103,11 @@ export function useFileSystem(postMessage, configPath) {
           const templModule = parseStringifiedTemplateModule(templateModule);
 
           setTemplateModule(templModule);
+          break;
+        }
+        case "all_file_templates": {
+          const { fileTemplates } = message.data;
+          setAllFileTemplates(new Function("return " + fileTemplates)());
           break;
         }
       }
@@ -147,12 +155,13 @@ export function useFileSystem(postMessage, configPath) {
     addToTemplatePool,
     generatorsFileText,
     templatesFileText,
-    wordsFileText,
+
     filledGeneratorsFileText,
     currentWord,
     currentWordName,
     wordNames,
     loading,
     templateModule,
+    allFileTemplates
   };
 }

@@ -1,8 +1,7 @@
 {
-'step1': ()=>`orderedParse(template, [randomParser])`,
-'step2': ()=>`orderedParse(template, [random])`,
-'step3': ()=>`orderedParse(template, [funcDef])`,
-'step4': ()=>`orderedParse(template, [funcDefi])`,
-'step5': ()=>`joiner(template, "arrayElements", "arrayElements", ",")`,
-'step6': ()=>`orderedParse(template, [genTempl])`
+'step1': ()=>`orderedParse(template, [commandSend])`,
+'step2': ()=>`orderedParse(template, [nameProperty])`,
+'step3': ()=>`orderedParse(template, [commandSend,nameProperty])`,
+'step4': ()=>`orderedParse(template, [commandSend,nameProperty,argProperties])`,
+'step7': ()=>`nestedParse(template, [elementTag],5)`
 }

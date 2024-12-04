@@ -31,7 +31,7 @@ export const GTWVEditor = ({ handleSubmit }) => {
         onChange={(e) => setArgs(e.target.value)}
         placeholder="args"
       />
-      <button onClick={() => handleSubmit({ value, args: args.split(",").map(a=>a.trim()), key })}>Submit</button>
+      <button disabled={key==null||key==""||value==null||value==""||args==null||args==""} onClick={() => handleSubmit({ value, args: args.split(",").map(a=>a.trim()), key })}>Submit</button>
     </div>
   );
 };

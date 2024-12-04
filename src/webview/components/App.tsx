@@ -61,7 +61,6 @@ const App = () => {
     readAllFiles,
     generatorsFileText,
     templatesFileText,
-    wordsFileText,
     loading,
     filledGeneratorsFileText,
     wordNames,
@@ -70,7 +69,8 @@ const App = () => {
     setWord,
     createNewWord,
     addToTemplatePool,
-    templateModule
+    templateModule,
+    allFileTemplates
   } = useFileSystem(vscode.postMessage, CONFIG_PATH);
   React.useEffect(() => {
     readAllFiles();
@@ -106,6 +106,7 @@ const App = () => {
               configPath={CONFIG_PATH}
               filledGeneratorsFileText={filledGeneratorsFileText}
               templateModule={templateModule}
+              allFileTemplates={allFileTemplates}
               templateDefinitions={[
                 {
                   name: currentWordName,

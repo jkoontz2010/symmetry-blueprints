@@ -33,12 +33,14 @@ export const TemplateEditors = ({
   configPath,
   filledGeneratorsFileText,
   templateModule,
+  allFileTemplates,
 }: {
   templateDefinitions: WordDefinition[];
   postMessage: any;
   configPath: string;
   filledGeneratorsFileText: string;
   templateModule: any;
+  allFileTemplates: Template;
 }) => {
   const {
     generatorModule,
@@ -74,6 +76,7 @@ export const TemplateEditors = ({
                 addToFilledGeneratorPool={addToFilledGeneratorPool}
                 isMainEditor={i === 0}
                 handleSaveAllFiles={handleSaveAllFiles}
+                allFileTemplates={allFileTemplates}
               />
             </>
           );
@@ -131,6 +134,7 @@ export const TemplateEditor = ({
   addToFilledGeneratorPool,
   isMainEditor,
   handleSaveAllFiles,
+  allFileTemplates,
 }: {
   definition: WordDefinition;
   templateModule: any;
@@ -144,6 +148,7 @@ export const TemplateEditor = ({
   addToFilledGeneratorPool: (filledGenerator: Template) => void;
   isMainEditor: boolean;
   handleSaveAllFiles: (template: Template) => void;
+  allFileTemplates: Template;
 }) => {
   const {
     template,
@@ -189,7 +194,14 @@ export const TemplateEditor = ({
     applyGeneratorString(stepString);
   }
   function handleTemplateClick(templateName: string) {
-    const newTemplate = templateModule[templateName];
+    const newTemplate = templateModule[templateName] ?? {
+      [templateName]: allFileTemplates[templateName],
+    };
+    if (newTemplate == null) {
+      throw new Error(
+        "template not found in templateModule or allFileTemplates"
+      );
+    }
     if (!insertMode) {
       insertTemplateIntoTemplate(newTemplate);
     } else if (insertMode) {
@@ -249,6 +261,7 @@ export const TemplateEditor = ({
               runnableSteps={runnableSteps}
               handleRunStep={handleRunStep}
               handleTemplateNameClick={handleInsertTemplateName}
+              allFileTemplates={allFileTemplates}
             />
             <Panel
               defaultSize={30}
@@ -301,6 +314,7 @@ export const SkeletonPanel = ({
   runnableSteps,
   handleRunStep,
   handleTemplateNameClick,
+  allFileTemplates,
 }: {
   templateModule: any;
   generatorModule: any;
@@ -312,13 +326,14 @@ export const SkeletonPanel = ({
   runnableSteps: Template;
   handleRunStep: any;
   handleTemplateNameClick: (key: string) => void;
+  allFileTemplates: Template;
 }) => {
   if (templateModule == null) return <div>loading templates...</div>;
   const [defKeyName, setDefKeyName] = useState("");
   const [defValue, setDefValue] = useState("");
   const [lastClickedGenerator, setLastClickedGenerator] = useState("");
-  console.log("WHAT IS TEMPLATE MODULE HERE", templateModule);
-  console.log("is it null?", generatorModule);
+  //console.log("WHAT IS TEMPLATE MODULE HERE", templateModule);
+  //console.log("is it null?", generatorModule);
   return (
     <Panel defaultSize={20} minSize={20} style={{ overflowX: "scroll" }}>
       <div>
@@ -379,6 +394,38 @@ export const SkeletonPanel = ({
 
       <div style={{ color: "black" }}>Templates:</div>
       {Object.keys(templateModule)?.map((k) => {
+        return (
+          <div>
+            <span
+              style={{
+                cursor: "pointer",
+                color: "blue",
+                textDecoration: "underline",
+              }}
+              onClick={() => handleTemplateClick(k)}
+            >
+              {k}
+            </span>
+            <span
+              onClick={() => handleTemplateNameClick(k)}
+              style={{
+                width: "8px",
+                height: "8px",
+                padding: "0px",
+                border: "1px solid black",
+                backgroundColor: "#eee",
+                color: "black",
+                cursor: "pointer",
+              }}
+            >
+              N
+            </span>
+          </div>
+        );
+      })}
+
+      <div style={{ color: "black" }}>File Templates:</div>
+      {Object.keys(allFileTemplates)?.map((k) => {
         return (
           <div>
             <span

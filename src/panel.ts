@@ -20,6 +20,7 @@ import {
   getFilePathHashes,
   getFilePathFromHashes,
   overwriteFile,
+  getAllFileTemplates,
 } from "./commandService";
 import { sha1 } from "js-sha1";
 
@@ -71,7 +72,7 @@ export default class PanelClass {
     }
   }
 
-  public static insertFileIntoTemplate(extContext: vscode.ExtensionContext) {
+  public static async insertFileIntoTemplate(extContext: vscode.ExtensionContext) {
     const activeTextEditor = vscode.window.activeTextEditor;
     if (activeTextEditor == null) {
       return;
@@ -104,11 +105,19 @@ export default class PanelClass {
       filePathHash,
       activeEditorFilePath
     );
-    PanelClass.currentPanel._panel.webview.postMessage({
+
+    /*PanelClass.currentPanel._panel.webview.postMessage({
       command: "file_insert",
       data: {
         contents: activeEditorText,
         filePath: filePathHash,
+      },
+    });*/
+    const fileTemplates=await getAllFileTemplates(PanelClass.currentPanel.pathToConfig)
+    PanelClass.currentPanel._panel.webview.postMessage({
+      command: "all_file_templates",
+      data: {
+        fileTemplates: tts(fileTemplates, false),
       },
     });
   }
@@ -437,10 +446,10 @@ export default class PanelClass {
               const promises = [
                 readFromFile(generatorPath),
                 readFromFile(templatePath),
-                readFromFile(wordsPath),
                 readFromFile(filledGeneratorsPath),
                 getWordContents(sortedWordPaths[0]),
               ];
+              const fileTemplates=await getAllFileTemplates(PanelClass.currentPanel.pathToConfig)
 
               const wordNames = getWordNamesFromWordPaths(allWordPaths);
               const currentWordName = sortedWordPaths[0]
@@ -450,7 +459,6 @@ export default class PanelClass {
                 const [
                   generators,
                   templates,
-                  words,
                   filledGenerators,
                   currentWord,
                 ] = data;
@@ -459,12 +467,12 @@ export default class PanelClass {
                   data: {
                     generators,
                     templates,
-                    words,
                     filledGenerators,
                     currentWord,
                     currentWordName,
                     wordNames: JSON.stringify(wordNames),
                     templateModule,
+                    fileTemplates: tts(fileTemplates, false),
                   },
                 });
               });

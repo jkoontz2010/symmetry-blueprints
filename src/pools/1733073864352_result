@@ -1,9 +1,0 @@
-{
-'funcDefi01/name01,args01,body01': ({name01, args01, body01})=>`export function ${run(name01,'name01')}(${run(args01,'args01')}) {${run(body01,'body01')}}`,
-'45008f01c7_firsty.ts/funcDefi01': ({funcDefi01})=>`${run(funcDefi01, 'funcDefi01')}`,
-'args01': ()=>`one:string, two:string`,
-'body01': ()=>`
-    return one + two;
-`,
-'name01': ()=>`firsty`
-}

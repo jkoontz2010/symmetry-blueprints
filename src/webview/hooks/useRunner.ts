@@ -38,14 +38,10 @@ export function useRunner(
     //console.log("GOOD LUCK", data);
     setTemplateModule(data);
   };
-  const fetchWords = async () => {
-    const data = await import("../../pools/word-pool");
-    setWordModule(data);
-  };
+
   useEffect(() => {
     fetchGenerators();
     fetchTemplates();
-    fetchWords();
   }, []);
 
   useEffect(() => {
@@ -108,7 +104,7 @@ export function useRunner(
     });
   };
 
-  console.log("here we are", generatorModule, templateModule, wordModule);
+  //console.log("here we are", generatorModule, templateModule, wordModule);
 
   return {
     templateModule,

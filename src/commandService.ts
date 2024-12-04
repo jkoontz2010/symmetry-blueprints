@@ -1,11 +1,12 @@
 import { promises as fs } from "fs";
+import { compact, uniq } from "lodash";
 import path from "path";
+import { argsAndTemplateToFunction } from "symmetric-parser";
 
 export async function appendToFile(filePath: string, data: string) {
   try {
     await fs.appendFile(filePath, data);
-  }
-  catch (error) {
+  } catch (error) {
     console.error(`Error appending to file: ${error.message}`);
     throw error;
   }
@@ -19,52 +20,110 @@ export async function readFromConfig(configVar: string, pathToConfig: string) {
 
   return result;
 }
-export  const getWordPath = async (pathToConfig: string, wordName:string) =>{
+export const getWordPath = async (pathToConfig: string, wordName: string) => {
   const projectDir = await readFromConfig("PROJECT_DIR", pathToConfig);
   const wordPaths = await getWordJsonFiles(projectDir);
   const wordNames = getWordNamesFromWordPaths(wordPaths);
   const wordIndex = wordNames.indexOf(wordName);
   return wordPaths[wordIndex];
-}
+};
 
-export const storeFileHash = async (pathToConfig: string, fileHash: string, filePath: string) => {
+const getHashFilePath = async (pathToConfig) => {
   const projectDir = await readFromConfig("PROJECT_DIR", pathToConfig);
   const hashFilePath = path.join(projectDir, "filePathHashes.txt");
+  return hashFilePath;
+};
+export const storeFileHash = async (
+  pathToConfig: string,
+  fileHash: string,
+  filePath: string
+) => {
+  const hashFilePath = await getHashFilePath(pathToConfig);
   const currentHashes = getFilePathHashes(pathToConfig);
-  if(currentHashes[fileHash] !== undefined){
+  if (currentHashes[fileHash] !== undefined) {
     return;
   }
   await fs.appendFile(hashFilePath, `${fileHash}=${filePath}\n`);
-}
-export const getFilePathHashes = async (pathToConfig: string): Promise<Record<string,string>> => {
-  const projectDir = await readFromConfig("PROJECT_DIR", pathToConfig);
-  const hashFilePath = path.join(projectDir, "filePathHashes.txt");
+};
+
+export const getAllFileTemplates = async (pathToConfig: string) => {
+  const currentHashes = await getFilePathHashes(pathToConfig);
+  const filePaths = new Set<string>();
+  for (const filePath of Object.values(currentHashes)) {
+    filePaths.add(filePath);
+  }
+  console.log("FILE PATHS", Array.from(filePaths));
+  const readPromises = Array.from(filePaths).map(async (filePath) => {
+    const data = await fs.readFile(filePath, { encoding: "utf8" });
+    return { filePath, data };
+  });
+  const allFiles = await Promise.all(readPromises);
+  console.log("ALL FILES", allFiles);
+  const allFileTemplates = {};
+  for (const file of allFiles) {
+    const { filePath, data } = file;
+    const fileHash = Object.keys(currentHashes).find(
+      (key) => currentHashes[key] === filePath
+    );
+    if (fileHash == null) {
+      throw new Error(
+        "file hash not found in getAllFileTemplates, it should exist!!"
+      );
+    }
+    const funcPart = argsAndTemplateToFunction([], data);
+    if (funcPart == null || !(funcPart instanceof Function)) {
+      throw new Error(
+        "funcPart is null or not a Function type in getAllFileTemplates, it should exist!!"
+      );
+    }
+    const readableFileHash = fileHash.split("_")[1]+fileHash.split("_")[0];
+    allFileTemplates[readableFileHash] = funcPart;
+  }
+  return allFileTemplates;
+};
+export const getRawFilePathHashes = async (pathToConfig: string) => {
+  const hashFilePath = await getHashFilePath(pathToConfig);
   const data = await fs.readFile(hashFilePath, { encoding: "utf8" });
   const lines = data.split("\n");
+  return lines;
+};
+export const getFilePathHashes = async (
+  pathToConfig: string
+): Promise<Record<string, string>> => {
+  const lines = await getRawFilePathHashes(pathToConfig);
   // go from "hash=file/path/thing.ts" to {[hash]: "file/path/thing.ts"} in one object
-  const result = lines.reduce((acc, line) => {
+  const cleanLines = uniq(compact(lines));
+  const result = cleanLines.reduce((acc, line) => {
     const [hash, filePath] = line.split("=");
     acc[hash] = filePath;
     return acc;
-  },{});
+  }, {});
   return result;
-}
-export const getFilePathFromHash = async (pathToConfig: string, fileHash: string) => {
+};
+export const getFilePathFromHash = async (
+  pathToConfig: string,
+  fileHash: string
+) => {
   const projectDir = await readFromConfig("PROJECT_DIR", pathToConfig);
   const hashFilePath = path.join(projectDir, "filePathHashes.txt");
   const data = await fs.readFile(hashFilePath, { encoding: "utf8" });
   const lines = data.split("\n");
   const result = lines.find((line) => line.includes(fileHash)).split("=")[1];
   return result;
-}
-export const getFilePathFromHashes = (hashes: Record<string,string>, fileHash: string) => {
+};
+export const getFilePathFromHashes = (
+  hashes: Record<string, string>,
+  fileHash: string
+) => {
   const result = hashes[fileHash];
   return result;
-}
+};
 export const getWordNamesFromWordPaths = (wordPaths: string[]) => {
-    const wordNames = wordPaths.map((wordPath) => path.basename(wordPath, ".json").split("_")[1]);
-    return wordNames;
-    }
+  const wordNames = wordPaths.map(
+    (wordPath) => path.basename(wordPath, ".json").split("_")[1]
+  );
+  return wordNames;
+};
 
 export const getWordContents = async (wordPath: string) => {
   const wordContents = await fs.readFile(wordPath, { encoding: "utf8" });
@@ -117,4 +176,4 @@ export const overwriteFile = async (filePath: string, data: string) => {
     console.error(`Error overwriting file: ${error.message}`);
     throw error;
   }
-}
+};
