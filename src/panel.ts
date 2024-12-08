@@ -23,6 +23,7 @@ import {
   getAllFileTemplates,
   saveRunnableWord,
   getAllRunnableWords,
+  createRunnableGeneratorFileContents,
 } from "./commandService";
 import { sha1 } from "js-sha1";
 import { formWordRunFile } from "./wordRunService";
@@ -302,14 +303,13 @@ export default class PanelClass {
             break;
           }
           case "run_generator": {
-            const { generatorRunFile, generatorString, pathToConfig, msgId } =
-              msg;
+            const { generatorString, template, pathToConfig, msgId } = msg;
             console.log(
               "RUNNING",
               "msgId",
               msgId,
               "AND",
-              generatorRunFile,
+
               generatorString,
               pathToConfig
             );
@@ -318,6 +318,11 @@ export default class PanelClass {
               pathToConfig
             );
             const filePrefix = Date.now();
+            const generatorRunFile = await createRunnableGeneratorFileContents(
+              pathToConfig,
+              generatorString,
+              template
+            );
             const generatorFile = filePrefix + "_generator.ts";
             const resultFile = filePrefix + "_result";
             const genFilePath = projectDir + "/" + generatorFile;
@@ -340,8 +345,7 @@ export default class PanelClass {
             break;
           }
           case "run_word": {
-            const { wordName, template, pathToConfig, msgId } =
-              msg;
+            const { wordName, template, pathToConfig, msgId } = msg;
             const projectDir = await readFromConfig(
               "PROJECT_DIR",
               pathToConfig

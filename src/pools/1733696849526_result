@@ -1,0 +1,287 @@
+{
+'argProperties225/commandArg225': ({commandArg225})=>`  ${run(commandArg225,'commandArg225')},
+`,
+'argProperties224/commandArg224': ({commandArg224})=>`  ${run(commandArg224,'commandArg224')},
+`,
+'argProperties223/commandArg223': ({commandArg223})=>`  ${run(commandArg223,'commandArg223')},
+`,
+'argProperties222/commandArg222': ({commandArg222})=>`  ${run(commandArg222,'commandArg222')},
+`,
+'argProperties221/commandArg221': ({commandArg221})=>`  ${run(commandArg221,'commandArg221')},
+`,
+'argProperties220/commandArg220': ({commandArg220})=>`  ${run(commandArg220,'commandArg220')},
+`,
+'argProperties219/commandArg219': ({commandArg219})=>`  ${run(commandArg219,'commandArg219')},
+`,
+'argProperties218/commandArg218': ({commandArg218})=>`  ${run(commandArg218,'commandArg218')},
+`,
+'argProperties217/commandArg217': ({commandArg217})=>`  ${run(commandArg217,'commandArg217')},
+`,
+'argProperties216/commandArg216': ({commandArg216})=>`  ${run(commandArg216,'commandArg216')},
+`,
+'argProperties215/commandArg215': ({commandArg215})=>`  ${run(commandArg215,'commandArg215')},
+`,
+'argProperties214/commandArg214': ({commandArg214})=>`  ${run(commandArg214,'commandArg214')},
+`,
+'argProperties213/commandArg213': ({commandArg213})=>`  ${run(commandArg213,'commandArg213')},
+`,
+'argProperties212/commandArg212': ({commandArg212})=>`  ${run(commandArg212,'commandArg212')},
+`,
+'argProperties211/commandArg211': ({commandArg211})=>`  ${run(commandArg211,'commandArg211')},
+`,
+'argProperties210/commandArg210': ({commandArg210})=>`  ${run(commandArg210,'commandArg210')},
+`,
+'argProperties29/commandArg29': ({commandArg29})=>`  ${run(commandArg29,'commandArg29')},
+`,
+'argProperties28/commandArg28': ({commandArg28})=>`  ${run(commandArg28,'commandArg28')},
+`,
+'argProperties24/commandArg24': ({commandArg24})=>`  ${run(commandArg24,'commandArg24')},
+`,
+'argProperties23/commandArg23': ({commandArg23})=>`  ${run(commandArg23,'commandArg23')},
+`,
+'argProperties22/commandArg22': ({commandArg22})=>`  ${run(commandArg22,'commandArg22')},
+`,
+'commandSend02/commandBody02': ({commandBody02})=>`postMessage({${run(commandBody02,'commandBody02')}});`,
+'commandSend01/commandBody01': ({commandBody01})=>`postMessage({${run(commandBody01,'commandBody01')}});`,
+'commandBody01/argProperties21,argProperties22,argProperties23,argProperties24': ({argProperties21, argProperties22, argProperties23, argProperties24})=>`
+${run(argProperties21, 'argProperties21')}${run(argProperties22, 'argProperties22')}${run(argProperties23, 'argProperties23')}${run(argProperties24, 'argProperties24')}    `,
+'commandBody02/argProperties21,argProperties25,argProperties26,argProperties27': ({argProperties21, argProperties25, argProperties26, argProperties27})=>`
+${run(argProperties21, 'argProperties21')}${run(argProperties25, 'argProperties25')}${run(argProperties26, 'argProperties26')}${run(argProperties27, 'argProperties27')}    `,
+'argProperties27/commandArg27': ({commandArg27})=>`  ${run(commandArg27,'commandArg27')},
+`,
+'argProperties26/commandArg26': ({commandArg26})=>`  ${run(commandArg26,'commandArg26')},
+`,
+'argProperties25/commandArg25': ({commandArg25})=>`  ${run(commandArg25,'commandArg25')},
+`,
+'argProperties21/commandArg21': ({commandArg21})=>`  ${run(commandArg21,'commandArg21')},
+`,
+'commandArg21/nameProperty11': ({nameProperty11})=>`    ${run(nameProperty11, 'nameProperty11')}
+      generatorRunFile`,
+'nameProperty11/commandName11': ({commandName11})=>`command: "${run(commandName11,'commandName11')}",`,
+'commandArg21/nameProperty12': ({nameProperty12})=>`    ${run(nameProperty12, 'nameProperty12')}
+      wordSteps: JSON.stringify(stringifiedSteps)`,
+'nameProperty12/commandName12': ({commandName12})=>`command: "${run(commandName12,'commandName12')}",`,
+'fifth.tsxa4023e8966/argProperties21,argProperties28,argProperties29,argProperties210,argProperties211,argProperties212,argProperties213,argProperties214,argProperties215,argProperties216,argProperties217,argProperties218,argProperties219,argProperties220,argProperties221,argProperties222,argProperties223,argProperties224,argProperties225,commandSend01,commandSend02': ({argProperties21, argProperties28, argProperties29, argProperties210, argProperties211, argProperties212, argProperties213, argProperties214, argProperties215, argProperties216, argProperties217, argProperties218, argProperties219, argProperties220, argProperties221, argProperties222, argProperties223, argProperties224, argProperties225, commandSend01, commandSend02})=>`import { cloneDeep, difference, last, uniqueId } from "lodash";
+import { useEffect, useState } from "react";
+import {
+${run(argProperties21, 'argProperties21')}${run(argProperties28, 'argProperties28')}${run(argProperties29, 'argProperties29')}${run(argProperties210, 'argProperties210')}${run(argProperties211, 'argProperties211')}${run(argProperties212, 'argProperties212')}} from "symmetric-parser";
+import { Template } from "symmetric-parser/dist/src/templator/template-group";
+import { formGeneratorFile } from "./hgcgUtil";
+import { CONFIG_PATH } from "../components/App";
+import { customAlphabet } from "nanoid";
+import { WordDefinition } from "../components/TemplateTree";
+
+export type WordStep = {
+${run(argProperties213, 'argProperties213')}${run(argProperties214, 'argProperties214')}${run(argProperties215, 'argProperties215')}${run(argProperties216, 'argProperties216')}${run(argProperties217, 'argProperties217')}${run(argProperties218, 'argProperties218')}${run(argProperties219, 'argProperties219')}${run(argProperties220, 'argProperties220')}${run(argProperties221, 'argProperties221')}${run(argProperties222, 'argProperties222')}${run(argProperties223, 'argProperties223')}${run(argProperties224, 'argProperties224')}${run(argProperties225, 'argProperties225')}      };
+    });
+    console.log("STRINGIFIED STEPS", stringifiedSteps);
+    const wordName = definition.name;
+
+    ${run(commandSend01, 'commandSend01')}
+  }
+
+  function removeKey(key: string) {
+    const newTemplate = cloneDeep(template);
+    delete newTemplate[key];
+    logStep("deleteKey", [key], newTemplate);
+    setTemplate(newTemplate);
+  }
+  function addKey(key: string) {
+    const templateHasNumerator = Object.keys(template).some((k) => {
+      return k.split("/")[0] === key;
+    });
+    if (templateHasNumerator) return;
+    let combineWith = { [key]: () => \`\` };
+    let newTemplate = dumbCombine(template, combineWith);
+    let result = sortTemplateByDeps(sortTemplateByDeps(newTemplate));
+    logStep("dumbCombine", [template, combineWith], result);
+    setTemplate(result);
+  }
+
+  function addKeyToNumerator(appendKey: string, toKey: string) {
+    const fullToKey = Object.keys(template).find(
+      (k) => k.split("/")[0] === toKey
+    );
+    if (fullToKey != null) {
+      // check that the appendKey isn't already in there
+      const denoms = fullToKey.split("/")[1]?.split(",");
+      if (denoms?.includes(appendKey)) {
+        return;
+      }
+    }
+    let newTemplate = appendKeyToKey(template, appendKey, toKey);
+    let result = sortTemplateByDeps(sortTemplateByDeps(newTemplate));
+    logStep("appendKeyToKey", [template, appendKey, toKey], result);
+
+    setTemplate(result);
+  }
+
+  function insertTemplateIntoTemplate(templateToInsert: Template) {
+    console.log("inserting template into template", templateToInsert);
+    let newTemplate = insertIntoTemplate(template, templateToInsert);
+    let result = sortTemplateByDeps(sortTemplateByDeps(newTemplate));
+    logStep("insertIntoTemplate", [template, templateToInsert], result);
+
+    setTemplate(result);
+  }
+  function insertTemplateIntoTemplateAtKey(
+    templateToInsert: Template,
+    toKey: string
+  ) {
+    console.log(
+      "insertTemplateIntoTemplateAtKey",
+      templateToInsert,
+      toKey,
+      template
+    );
+    const oldKeys = Object.keys(template);
+    let newTemplate = insertIntoTemplate(template, templateToInsert);
+    logStep("insertIntoTemplate", [template, templateToInsert], newTemplate);
+
+    const newKeys = Object.keys(newTemplate);
+    const newestKey = newKeys
+      .filter((k) => !oldKeys.includes(k))[0]
+      ?.split("/")[0];
+    console.log("NEWEST KEY", newestKey);
+    let appendedTemplate = appendKeyToKey(newTemplate, newestKey, toKey);
+    const result = sortTemplateByDeps(sortTemplateByDeps(appendedTemplate));
+    logStep("appendKeyToKey", [newTemplate, newestKey, toKey], result);
+    setTemplate(result);
+  }
+
+  const handleGeneratorResult = (message: any) => {
+    console.log("WORD STEPS ON MESSAGE", wordSteps);
+
+    console.log("MESSAGE DATA", message.data);
+    const { generatorFilePath, resultFilePath, result, generatorString } =
+      message.data;
+    console.log("generator_result", result);
+    const name = generatorString.substring(0, generatorString.indexOf("("));
+
+    const args = generatorString
+      .substring(generatorString.indexOf("(") + 1, generatorString.indexOf(")"))
+      .split(",");
+
+    logStep(name, args, result, {
+      generatorFilePath,
+      resultFilePath,
+    });
+    setTemplate(new Function("return " + result)());
+  };
+
+  function handleGenericMessage(event: MessageEvent) {
+    const message = event.data; // The json data that the extension sent
+    switch (message.command) {
+      case "file_insert":
+        if (isMainTemplate) {
+          const { contents, filePath } = message.data;
+          const funcPart = argsAndTemplateToFunction([], contents);
+          const templ = { [filePath]: funcPart };
+          console.log("FILE INSERT", contents, filePath, templ);
+          insertTemplateIntoTemplate(templ);
+        }
+        break;
+    }
+  }
+  useEffect(() => {
+    window.addEventListener("message", handleGenericMessage);
+    return () => {
+      window.removeEventListener("message", handleGenericMessage);
+    };
+  }, [isMainTemplate]);
+  function handleMessage(event: MessageEvent) {
+    if (event.data.data.msgId !== msgId) return;
+    const message = event.data; // The json data that the extension sent
+    switch (message.command) {
+      case "generator_result":
+        handleGeneratorResult(message);
+        break;
+    }
+  }
+  useEffect(() => {
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [wordSteps]);
+  function applyGeneratorString(generatorString: string) {
+    // form it and send it over
+    const generatorRunFile = formGeneratorFile(
+      generatorString,
+      template,
+      templateModule,
+      generatorModule
+    );
+    // send it over via postMessage
+    ${run(commandSend02, 'commandSend02')}
+  }
+  console.log("Word steps", wordSteps);
+  return {
+    template,
+    addKey,
+    addKeyToNumerator,
+    insertTemplateIntoTemplate,
+    insertTemplateIntoTemplateAtKey,
+    wordSteps,
+    applyGeneratorString,
+    removeKey,
+  };
+}
+`,
+'commandArg21': ()=>`appendKeyToKey`,
+'commandArg22': ()=>`    wordName`,
+'commandArg23': ()=>`    pathToConfig: CONFIG_PATH`,
+'commandArg24': ()=>`    msgId`,
+'commandArg25': ()=>`    generatorString`,
+'commandArg26': ()=>`    pathToConfig: CONFIG_PATH`,
+'commandArg27': ()=>`    msgId`,
+'commandArg28': ()=>`dumbCombine`,
+'commandArg29': ()=>`insertIntoTemplate`,
+'commandArg210': ()=>`sortTemplateByDeps`,
+'commandArg211': ()=>`tts`,
+'commandArg212': ()=>`argsAndTemplateToFunction`,
+'commandArg213': ()=>`name?: string;
+  args?: any[];
+  result: Template;
+  files?: { generatorFilePath?: string; resultFilePath?: string };
+};
+
+export function useTemplate(
+  definition: WordDefinition`,
+'commandArg214': ()=>`templateModule: any`,
+'commandArg215': ()=>`generatorModule: any`,
+'commandArg216': ()=>`wordModule: any`,
+'commandArg217': ()=>`postMessage: any`,
+'commandArg218': ()=>`isMainTemplate: boolean
+) {
+  const alphabet =
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  const nanoid = customAlphabet(alphabet, 4);
+
+  const [msgId, setMsgId] = useState(nanoid());
+  let [template, setTemplate] = useState<Template>(
+    last(definition.wordSteps).result
+  );
+
+  const [wordSteps, setWordSteps] = useState<WordStep[]>(definition.wordSteps);
+  function logStep(name, args, result, files = {}) {
+    console.log("PREV STEPS", wordSteps);
+    const wordStep = {
+      name: name`,
+'commandArg219': ()=>`    args: args`,
+'commandArg220': ()=>`    result: cloneDeep(result)`,
+'commandArg221': ()=>`    files`,
+'commandArg222': ()=>`  };
+
+    const newWordSteps = [...wordSteps, wordStep];
+    setWordSteps(newWordSteps);
+    const stringifiedSteps = newWordSteps.map((ws) => {
+      return {
+        name: ws.name`,
+'commandArg223': ()=>`      args: ws.args`,
+'commandArg224': ()=>`      result:
+          typeof ws.result === "string" ? ws.result : tts(ws.result, false)`,
+'commandArg225': ()=>`      files: ws.files`,
+'commandName11': ()=>`run_generator`,
+'commandName12': ()=>`save_word_steps`
+}

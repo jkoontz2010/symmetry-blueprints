@@ -6,6 +6,7 @@ import {
   genTemplateWithVars,
   orderedParse,
   stringCleaning,
+  tts,
 } from "symmetric-parser";
 
 export async function appendToFile(filePath: string, data: string) {
@@ -266,6 +267,38 @@ export const saveRunnableWord = async (pathToConfig: string, word: string) => {
   const wordContentsWithImports = `${templatesImport}\n${generatorsImport}\n${otherImports}\n${splitOldWord}\n${word}`;
 
   await overwriteFile(wordPath, wordContentsWithImports);
+};
+
+export const createRunnableGeneratorFileContents = async (pathToConfig: string, generatorString: string, template: string): Promise<string> => {
+  const wordPath = await readFromConfig("WORDS_FILE", pathToConfig);
+  const words = await getAllRunnableWords(pathToConfig);
+  const templates = await getAllTemplateExports(pathToConfig);
+  const generators = await getAllGeneratorsExports(pathToConfig);
+
+  const importedTemplates = templates.filter((t) =>
+    generatorString.includes(t)
+  );
+  const importedGenerators = generators.filter((g) =>
+    generatorString.includes(g)
+  );
+  const importedWords = words.filter((w) =>
+    generatorString.includes(w)
+  );
+  const templatesImport = importedTemplates.length > 0  ? `import { ${importedTemplates.join(
+    ",\n"
+  )} } from "./template-pool";\n` : ''
+  const generatorsImport = `import {  tts,\nrun,\n${importedGenerators.join(
+    ",\n"
+  )} } from "symmetric-parser";\n`
+  const wordsImport = importedWords.length > 0 ? `import { ${importedWords.join(
+    ",\n"
+  )} } from "./word-pool";\n` : ''
+
+const allImports = `${templatesImport}\n${generatorsImport}\n${wordsImport}`
+
+  const templateString = `const template = ${template};`;
+  const generatorRun = `// @ts-ignore\nconst result = ${generatorString};\nconsole.log(tts(result,false));`;
+  return `${allImports}\n${templateString}\n${generatorRun}`;
 };
 
 
