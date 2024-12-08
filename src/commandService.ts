@@ -270,7 +270,6 @@ export const saveRunnableWord = async (pathToConfig: string, word: string) => {
 };
 
 export const createRunnableGeneratorFileContents = async (pathToConfig: string, generatorString: string, template: string): Promise<string> => {
-  const wordPath = await readFromConfig("WORDS_FILE", pathToConfig);
   const words = await getAllRunnableWords(pathToConfig);
   const templates = await getAllTemplateExports(pathToConfig);
   const generators = await getAllGeneratorsExports(pathToConfig);
