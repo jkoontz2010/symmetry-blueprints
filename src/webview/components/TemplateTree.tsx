@@ -34,6 +34,7 @@ export const TemplateEditors = ({
   filledGeneratorsFileText,
   templateModule,
   allFileTemplates,
+  runnableWords,
 }: {
   templateDefinitions: WordDefinition[];
   postMessage: any;
@@ -41,6 +42,7 @@ export const TemplateEditors = ({
   filledGeneratorsFileText: string;
   templateModule: any;
   allFileTemplates: Template;
+  runnableWords: string[];
 }) => {
   const {
     generatorModule,
@@ -77,6 +79,7 @@ export const TemplateEditors = ({
                 isMainEditor={i === 0}
                 handleSaveAllFiles={handleSaveAllFiles}
                 allFileTemplates={allFileTemplates}
+                runnableWords={runnableWords}
               />
             </>
           );
@@ -135,6 +138,7 @@ export const TemplateEditor = ({
   isMainEditor,
   handleSaveAllFiles,
   allFileTemplates,
+  runnableWords,
 }: {
   definition: WordDefinition;
   templateModule: any;
@@ -149,6 +153,7 @@ export const TemplateEditor = ({
   isMainEditor: boolean;
   handleSaveAllFiles: (template: Template) => void;
   allFileTemplates: Template;
+  runnableWords: string[];
 }) => {
   const {
     template,
@@ -159,6 +164,8 @@ export const TemplateEditor = ({
     wordSteps,
     applyGeneratorString,
     removeKey,
+    handleConvertWordSteps,
+    handleRunnableWordClick,
   } = useTemplate(
     definition,
     templateModule,
@@ -244,6 +251,13 @@ export const TemplateEditor = ({
     const funcPart = argsAndTemplateToFunction([], value);
     insertTemplateIntoTemplateAtKey({ templateName: funcPart }, insertToKey);
   }
+
+  function handleRunnableWordNameClick(key: string) {
+    const funcPart = argsAndTemplateToFunction([], key);
+    insertTemplateIntoTemplateAtKey({ templateName: funcPart }, insertToKey);
+  }
+
+
   const templates = [template, ...filteredTemplates];
   return (
     <>
@@ -262,13 +276,23 @@ export const TemplateEditor = ({
               handleRunStep={handleRunStep}
               handleTemplateNameClick={handleInsertTemplateName}
               allFileTemplates={allFileTemplates}
+              runnableWords={runnableWords}
+              handleRunnableWordClick={handleRunnableWordClick}
+              handleRunnableWordNameClick={handleRunnableWordNameClick}
             />
             <Panel
               defaultSize={30}
               minSize={20}
               style={{ overflowX: "scroll" }}
             >
-              <h3 style={{ color: "black" }}>{definition.name}</h3>
+              <h3 style={{ color: "black" }}>{definition.name}</h3>{" "}
+              <button
+                onClick={() => {
+                  handleConvertWordSteps();
+                }}
+              >
+                Convert wordSteps
+              </button>
               {i > 0 && (
                 <button onClick={() => handleClosePanel(i - 1)}>Close</button>
               )}
@@ -315,6 +339,9 @@ export const SkeletonPanel = ({
   handleRunStep,
   handleTemplateNameClick,
   allFileTemplates,
+  runnableWords,
+  handleRunnableWordClick,
+  handleRunnableWordNameClick,
 }: {
   templateModule: any;
   generatorModule: any;
@@ -327,6 +354,9 @@ export const SkeletonPanel = ({
   handleRunStep: any;
   handleTemplateNameClick: (key: string) => void;
   allFileTemplates: Template;
+  runnableWords: string[];
+  handleRunnableWordClick: (key: string) => void;
+  handleRunnableWordNameClick: (key: string) => void;
 }) => {
   if (templateModule == null) return <div>loading templates...</div>;
   const [defKeyName, setDefKeyName] = useState("");
@@ -371,6 +401,37 @@ export const SkeletonPanel = ({
             onClick={() => handleRunStep(full)}
           >
             {full}
+          </div>
+        );
+      })}
+      <div style={{ color: "black" }}>Runnable Words:</div>
+      {runnableWords.map((k) => {
+        return (
+          <div>
+            <span
+              style={{
+                cursor: "pointer",
+                color: "blue",
+                textDecoration: "underline",
+              }}
+              onClick={() => handleRunnableWordClick(k)}
+            >
+              {k}
+            </span>
+            <span
+              onClick={() => handleRunnableWordNameClick(k)}
+              style={{
+                width: "8px",
+                height: "8px",
+                padding: "0px",
+                border: "1px solid black",
+                backgroundColor: "#eee",
+                color: "black",
+                cursor: "pointer",
+              }}
+            >
+              N
+            </span>
           </div>
         );
       })}

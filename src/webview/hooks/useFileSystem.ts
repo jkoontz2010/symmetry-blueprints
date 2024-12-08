@@ -24,6 +24,7 @@ export function useFileSystem(postMessage, configPath) {
   const [currentWordName, setCurrentWordName] = React.useState<string>(null);
   const [templateModule, setTemplateModule] = React.useState<any>(null);
   const [allFileTemplates, setAllFileTemplates] = React.useState<any>(null);
+  const [runnableWords, setRunnableWords] = React.useState<string[]>(null);
   React.useEffect(() => {
     postMessage({ command: "set_config_path", pathToConfig: configPath });
   }, [configPath]);
@@ -42,7 +43,8 @@ export function useFileSystem(postMessage, configPath) {
             wordNames,
             currentWordName,
             templateModule,
-            fileTemplates
+            fileTemplates,
+            runnableWords
           }: {
             generators: string;
 
@@ -53,10 +55,12 @@ export function useFileSystem(postMessage, configPath) {
             currentWordName: string;
             templateModule: string;
             fileTemplates:string;
+            runnableWords:string;
           } = message.data;
           setGeneratorsFileText(generators);
           setTemplatesFileText(templates);
-
+          const rw = JSON.parse(runnableWords);
+          setRunnableWords(rw);
           setFilledGeneratorsFileText(filledGenerators);
           const parsedCurrentWord = JSON.parse(currentWord).map((cw) => ({
             ...cw,
@@ -155,7 +159,7 @@ export function useFileSystem(postMessage, configPath) {
     addToTemplatePool,
     generatorsFileText,
     templatesFileText,
-
+    runnableWords,
     filledGeneratorsFileText,
     currentWord,
     currentWordName,

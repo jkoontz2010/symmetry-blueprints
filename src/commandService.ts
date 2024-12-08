@@ -1,7 +1,12 @@
 import { promises as fs } from "fs";
 import { compact, uniq } from "lodash";
 import path from "path";
-import { argsAndTemplateToFunction } from "symmetric-parser";
+import {
+  argsAndTemplateToFunction,
+  genTemplateWithVars,
+  orderedParse,
+  stringCleaning,
+} from "symmetric-parser";
 
 export async function appendToFile(filePath: string, data: string) {
   try {
@@ -13,12 +18,17 @@ export async function appendToFile(filePath: string, data: string) {
 }
 
 export async function readFromConfig(configVar: string, pathToConfig: string) {
-  const data = await fs.readFile(pathToConfig, { encoding: "utf8" });
+  try {
+    const data = await fs.readFile(pathToConfig, { encoding: "utf8" });
 
-  const lines = data.split("\n");
-  const result = lines.find((line) => line.includes(configVar)).split("=")[1];
+    const lines = data.split("\n");
+    const result = lines.find((line) => line.includes(configVar)).split("=")[1];
+    return result;
+  } catch (error) {
+    console.error("WRONG CONFIG VAR NAME PROVIDED");
 
-  return result;
+    throw error;
+  }
 }
 export const getWordPath = async (pathToConfig: string, wordName: string) => {
   const projectDir = await readFromConfig("PROJECT_DIR", pathToConfig);
@@ -76,7 +86,7 @@ export const getAllFileTemplates = async (pathToConfig: string) => {
         "funcPart is null or not a Function type in getAllFileTemplates, it should exist!!"
       );
     }
-    const readableFileHash = fileHash.split("_")[1]+fileHash.split("_")[0];
+    const readableFileHash = fileHash.split("_")[1] + fileHash.split("_")[0];
     allFileTemplates[readableFileHash] = funcPart;
   }
   return allFileTemplates;
@@ -177,3 +187,106 @@ export const overwriteFile = async (filePath: string, data: string) => {
     throw error;
   }
 };
+
+export const getAllGeneratorsExports = async (pathToConfig: string) => {
+  const generatorFilePath = await readFromConfig(
+    "GENERATOR_FILE",
+    pathToConfig
+  );
+  const generatorFileContents = await fs.readFile(generatorFilePath, {
+    encoding: "utf8",
+  });
+  // this will happen a lot. we'll need a good way to do it. IMO, find the exports via parsing
+  const exportTempl = genTemplateWithVars(
+    {
+      exportDef: () => `\nexport function exportName(`,
+    },
+    ["exportName"]
+  );
+  const fileTempl = {
+    file: argsAndTemplateToFunction([], stringCleaning(generatorFileContents)),
+  };
+  const parsed = orderedParse(fileTempl, [exportTempl]);
+  console.log("THIS IS PARSED", parsed);
+  const nameKeys = Object.keys(parsed).filter((k) =>
+    k.startsWith("exportName")
+  );
+  const nameValues = nameKeys.map((k) => parsed[k]());
+  console.log("FOLUND ALL EXPORTS", nameValues);
+  return nameValues;
+};
+
+export const getAllTemplateExports = async (pathToConfig: string) => {
+  const templateFilePath = await readFromConfig("TEMPLATE_FILE", pathToConfig);
+  const templateFileContents = await fs.readFile(templateFilePath, {
+    encoding: "utf8",
+  });
+
+  const exportTempl = genTemplateWithVars(
+    {
+      exportDef: () => `\nexport const exportName = `,
+    },
+    ["exportName"]
+  );
+  const fileTempl = {
+    file: argsAndTemplateToFunction([], templateFileContents),
+  };
+  const parsed = orderedParse(fileTempl, [exportTempl]);
+  console.log("templTHIS IS PARSED", parsed);
+  const nameKeys = Object.keys(parsed).filter((k) =>
+    k.startsWith("exportName")
+  );
+  const nameValues = nameKeys.map((k) => parsed[k]());
+  console.log("templFOLUND ALL EXPORTS", nameValues);
+  return nameValues;
+};
+
+export const saveRunnableWord = async (pathToConfig: string, word: string) => {
+  const wordPath = await readFromConfig("WORDS_FILE", pathToConfig);
+  const wordContents = await getWordContents(wordPath);
+  const templates = await getAllTemplateExports(pathToConfig);
+  const generators = await getAllGeneratorsExports(pathToConfig);
+  const fullWordContents = `${wordContents}\n${word}`;
+  const importedTemplates = templates.filter((t) =>
+    fullWordContents.includes(t)
+  );
+  const importedGenerators = generators.filter((g) =>
+    fullWordContents.includes(g)
+  );
+  const templatesImport = importedTemplates.length > 0  ? `import { ${importedTemplates.join(
+    ",\n"
+  )} } from "./template-pool";` : ''
+  const generatorsImport = importedGenerators.length > 0 ? `import { ${importedGenerators.join(
+    ",\n"
+  )} } from "symmetric-parser";`:''
+
+  const otherImports = `import flow from 'lodash/flow'`
+
+  const splitOldWord = wordContents.split(otherImports)[1];
+  const wordContentsWithImports = `${templatesImport}\n${generatorsImport}\n${otherImports}\n${splitOldWord}\n${word}`;
+
+  await overwriteFile(wordPath, wordContentsWithImports);
+};
+
+
+export const getAllRunnableWords = async (pathToConfig: string) => {
+  const wordFilePath = await readFromConfig("WORDS_FILE", pathToConfig);
+  const wordFileContents = await fs.readFile(wordFilePath, { encoding: "utf8" });
+  const wordTempl = genTemplateWithVars(
+    {
+      wordDef: () => `\nexport const wordName = flow(`,
+    },
+    ["wordName"]
+  );
+  const fileTempl = {
+    file: argsAndTemplateToFunction([], stringCleaning(wordFileContents)),
+  };
+  const parsed = orderedParse(fileTempl, [wordTempl]);
+  console.log("THIS IS PARSED", parsed);
+  const nameKeys = Object.keys(parsed).filter((k) =>
+    k.startsWith("wordName")
+  );
+  const nameValues = nameKeys.map((k) => parsed[k]());
+  console.log("FOLUND ALL WORDS", nameValues);
+  return nameValues;
+}

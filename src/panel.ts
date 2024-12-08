@@ -21,8 +21,11 @@ import {
   getFilePathFromHashes,
   overwriteFile,
   getAllFileTemplates,
+  saveRunnableWord,
+  getAllRunnableWords,
 } from "./commandService";
 import { sha1 } from "js-sha1";
+import { formWordRunFile } from "./wordRunService";
 
 function formFilePathHash(filePath: string) {
   const fileName = filePath.split("/").pop();
@@ -72,7 +75,9 @@ export default class PanelClass {
     }
   }
 
-  public static async insertFileIntoTemplate(extContext: vscode.ExtensionContext) {
+  public static async insertFileIntoTemplate(
+    extContext: vscode.ExtensionContext
+  ) {
     const activeTextEditor = vscode.window.activeTextEditor;
     if (activeTextEditor == null) {
       return;
@@ -113,7 +118,9 @@ export default class PanelClass {
         filePath: filePathHash,
       },
     });*/
-    const fileTemplates=await getAllFileTemplates(PanelClass.currentPanel.pathToConfig)
+    const fileTemplates = await getAllFileTemplates(
+      PanelClass.currentPanel.pathToConfig
+    );
     PanelClass.currentPanel._panel.webview.postMessage({
       command: "all_file_templates",
       data: {
@@ -199,6 +206,23 @@ export default class PanelClass {
             const result = await saveWord(word, wordsFile);
             break;
           }
+          case "store_runnable_word": {
+            const { word, pathToConfig } = msg;
+            console.log("STORING RUNNABLE WORD", word, pathToConfig);
+            try {
+              await saveRunnableWord(pathToConfig, word);
+              const runnableWords = await getAllRunnableWords(pathToConfig);
+              this._panel!.webview.postMessage({
+                command: "all_runnable_words",
+                data: {
+                  runnableWords: JSON.stringify(runnableWords),
+                },
+              });
+            } catch (e) {
+              console.error(e);
+            }
+            break;
+          }
           case "get_word": {
             const { wordName, pathToConfig } = msg;
             const wordPath = await getWordPath(pathToConfig, wordName);
@@ -267,7 +291,7 @@ export default class PanelClass {
             );
             const templateModule = await runTs(
               projectDir + "/template-getter.ts"
-            );            
+            );
             this._panel!.webview.postMessage({
               command: "all_templates",
               data: {
@@ -315,6 +339,36 @@ export default class PanelClass {
             });
             break;
           }
+          case "run_word": {
+            const { wordName, template, pathToConfig, msgId } =
+              msg;
+            const projectDir = await readFromConfig(
+              "PROJECT_DIR",
+              pathToConfig
+            );
+            const filePrefix = Date.now();
+            const wordRunFile = formWordRunFile(wordName, template);
+            const wordRunFileName = filePrefix + "_wordRun.ts";
+            const resultFile = filePrefix + "_result";
+            const wordRunFilePath = projectDir + "/" + wordRunFileName;
+            const resultFilePath = projectDir + "/" + resultFile;
+            await saveFile(wordRunFilePath, wordRunFile);
+            const result = await runTs(wordRunFilePath);
+            console.log("word run RESULTv,", result);
+            await saveFile(resultFilePath, result);
+
+            this._panel!.webview.postMessage({
+              command: "word_run_result",
+              data: {
+                msgId,
+                wordRunFilePath: wordRunFilePath,
+                resultFilePath: resultFilePath,
+                result,
+                wordString: `${wordName}(template)`,
+              },
+            });
+            break;
+          }
           case "add_filled_generator": {
             const { msgId, filledGenerator, pathToConfig } = msg;
 
@@ -350,32 +404,6 @@ export default class PanelClass {
                 msgId,
                 allFilledGenerators: tts(newFilledGenerators, false),
               },
-            });
-            break;
-          }
-          case "run_word": {
-            const { name, onFile, pathToConfig } = msg;
-            console.log("DONIG IT", name, onFile, pathToConfig);
-            const projectDir = await readFromConfig(
-              "PROJECT_DIR",
-              pathToConfig
-            );
-            // in parallel, compile and run the project
-            const runResult = await runIndexFile(projectDir);
-            //const readFromFilePromise = readFromFile(onFile)
-            //const [compileResult, fileContents] = await Promise.all([compilePromise, readFromFilePromise])
-            // in parallel, read file
-            console.log("COMPILE RESULT", runResult);
-            //console.log("FILE CONTENTS", fileContents);
-            // clean contents
-
-            // after both parallels are complete:
-            // run word
-            // Example usage: Provide the directory with TypeScript files
-
-            this._panel!.webview.postMessage({
-              command: "word_output",
-              data: {},
             });
             break;
           }
@@ -422,10 +450,7 @@ export default class PanelClass {
                 "TEMPLATE_FILE",
                 pathToConfig
               );
-              const wordsPath = await readFromConfig(
-                "WORDS_FILE",
-                pathToConfig
-              );
+              const runnableWords = await getAllRunnableWords(pathToConfig);
               const projectDir = await readFromConfig(
                 "PROJECT_DIR",
                 pathToConfig
@@ -449,19 +474,17 @@ export default class PanelClass {
                 readFromFile(filledGeneratorsPath),
                 getWordContents(sortedWordPaths[0]),
               ];
-              const fileTemplates=await getAllFileTemplates(PanelClass.currentPanel.pathToConfig)
+              const fileTemplates = await getAllFileTemplates(
+                PanelClass.currentPanel.pathToConfig
+              );
 
               const wordNames = getWordNamesFromWordPaths(allWordPaths);
               const currentWordName = sortedWordPaths[0]
                 .split("_")[1]
                 .replace(".json", "");
               Promise.all(promises).then((data) => {
-                const [
-                  generators,
-                  templates,
-                  filledGenerators,
-                  currentWord,
-                ] = data;
+                const [generators, templates, filledGenerators, currentWord] =
+                  data;
                 this._panel!.webview.postMessage({
                   command: "config_data",
                   data: {
@@ -473,6 +496,7 @@ export default class PanelClass {
                     wordNames: JSON.stringify(wordNames),
                     templateModule,
                     fileTemplates: tts(fileTemplates, false),
+                    runnableWords: JSON.stringify(runnableWords),
                   },
                 });
               });

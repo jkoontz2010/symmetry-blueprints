@@ -70,7 +70,8 @@ const App = () => {
     createNewWord,
     addToTemplatePool,
     templateModule,
-    allFileTemplates
+    allFileTemplates,
+    runnableWords
   } = useFileSystem(vscode.postMessage, CONFIG_PATH);
   React.useEffect(() => {
     readAllFiles();
@@ -99,6 +100,7 @@ const App = () => {
           setShowGTWVEditor(!showGTWVEditor)
           
           }}>toggle GTWV Editor</button>
+
         {!loading && (
           <>
             <TemplateEditors
@@ -107,6 +109,7 @@ const App = () => {
               filledGeneratorsFileText={filledGeneratorsFileText}
               templateModule={templateModule}
               allFileTemplates={allFileTemplates}
+              runnableWords={runnableWords}
               templateDefinitions={[
                 {
                   name: currentWordName,
