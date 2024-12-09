@@ -14,7 +14,7 @@ import { useTemplate, WordStep } from "../hooks/useTemplate";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
 import { useRunner } from "../hooks/useRunner";
-import { last } from "lodash";
+import { compact, last } from "lodash";
 
 export type WordDefinition = {
   name: string;
@@ -51,6 +51,7 @@ export const TemplateEditors = ({
     addToFilledGeneratorPool,
     filledGenerators,
     handleSaveAllFiles,
+    addFullTemplateToPool
   } = useRunner(postMessage, configPath, filledGeneratorsFileText);
 
   const [stepsForPanel, setStepsForPanel] = useState<
@@ -80,6 +81,7 @@ export const TemplateEditors = ({
                 handleSaveAllFiles={handleSaveAllFiles}
                 allFileTemplates={allFileTemplates}
                 runnableWords={runnableWords}
+                addFullTemplateToPool={addFullTemplateToPool}
               />
             </>
           );
@@ -139,6 +141,7 @@ export const TemplateEditor = ({
   handleSaveAllFiles,
   allFileTemplates,
   runnableWords,
+  addFullTemplateToPool
 }: {
   definition: WordDefinition;
   templateModule: any;
@@ -154,6 +157,7 @@ export const TemplateEditor = ({
   handleSaveAllFiles: (template: Template) => void;
   allFileTemplates: Template;
   runnableWords: string[];
+  addFullTemplateToPool: (name: string, template: Template) => void;
 }) => {
   const {
     template,
@@ -257,6 +261,9 @@ export const TemplateEditor = ({
     insertTemplateIntoTemplateAtKey({ templateName: funcPart }, insertToKey);
   }
 
+  function handleSaveIsolatedTemplate(name: string, template: Template) {
+    addFullTemplateToPool(name, template);
+  }
 
   const templates = [template, ...filteredTemplates];
   return (
@@ -307,6 +314,7 @@ export const TemplateEditor = ({
                 setInsertToKey={setInsertToKey}
                 handleRemoveKey={handleRemoveKey}
                 handleSaveAllFiles={handleSaveAllFiles}
+                handleSaveIsolatedTemplate={handleSaveIsolatedTemplate}
               />
               <button
                 onClick={() =>
@@ -577,6 +585,7 @@ export const TemplateTree = ({
   insertToKey,
   setInsertToKey,
   handleSaveAllFiles,
+  handleSaveIsolatedTemplate
 }: {
   addKey: any;
   addKeyToNumerator: any;
@@ -588,6 +597,7 @@ export const TemplateTree = ({
   insertToKey: string;
   setInsertToKey: any;
   handleSaveAllFiles: (template: Template) => void;
+  handleSaveIsolatedTemplate: (name: string, template: Template) => void;
 }) => {
   const [compiledTemplate, setCompiledTemplate] = React.useState("");
   const [collapsedSet, setCollapsedSet] = React.useState(new Set<string>());
@@ -634,11 +644,18 @@ export const TemplateTree = ({
     setHiddenSet(newHiddenSet);
     setCollapsedSet(newCollapsedSet);
   };
+  function handleSaveTemplate(name: string) {
+    handleSaveIsolatedTemplate(name, template);
+  }
+  console.log("TEMPLATE TREE TEMPLATE", template)
   return (
     <div>
       <button onClick={() => handleSaveAllFiles(template)}>
         Save All Files
       </button>
+      <div>
+        <IsolatedTemplateSaver handleSave={handleSaveTemplate}/>
+      </div>
       {Object.keys(template).map((k, i) => {
         const denoms = k.split("/")[1]?.split(",");
 
@@ -704,7 +721,18 @@ export const TemplateTree = ({
     </div>
   );
 };
-
+const IsolatedTemplateSaver = ({
+  handleSave,
+}: {
+  handleSave: (name: string) => void;
+}) => {
+  const [name, setName] = useState("");
+  return (<>
+    <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Isolated Template Name"></input>
+    <button onClick={()=>handleSave(name)}>Save Templ</button>
+    </>
+  )
+};
 const TreeNode = ({
   tKey,
   insertMode,
@@ -781,16 +809,23 @@ function rsToArg(rs: string) {
   return rs.substring(rs.indexOf("(") + 1, rs.indexOf(","));
 }
 function renderPart(part: string, handleRsClick: (arg: string) => void) {
+  console.log("RENDERING PART", part)
   const args = part
     .substring(part.indexOf("{") + 1, part.indexOf("}"))
     .split(",")
     .map((arg) => arg.trim());
+    console.log("PART ARGS", args)
   const compactRs = args.map((arg) => rsCompact(arg));
   const nonCompactRs = args.map((arg) => rs(arg));
-
+  const doubleQuotedCompactRs = compactRs.map((crs) => crs.replaceAll("'", '"'));
+  const doubleQuotedNonCompactRs = nonCompactRs.map((ncrs) => ncrs.replaceAll("'", '"'));
+  const allRs = [...compactRs, ...nonCompactRs, ...doubleQuotedCompactRs, ...doubleQuotedNonCompactRs];
+  console.log("RUN STATEMENTS", compactRs, "NONCOLMPACT",nonCompactRs);
   let funcPart = part.substring(part.indexOf("`") + 1, part.lastIndexOf("`"));
+  console.log("FUNC PART", funcPart);
   const parts = funcPart.split(/(\${[^}]+})/g);
   if (parts.length === 1) {
+    console.log("PARTS===1", parts, "NAKED STRING", nakedPartToString(part));
     return (
       <div style={{ color: "red", padding: "0px 5px" }}>
         {nakedPartToString(part)}
@@ -799,7 +834,9 @@ function renderPart(part: string, handleRsClick: (arg: string) => void) {
   }
   let finalParts = [];
   parts.forEach((part, index) => {
-    if (compactRs.includes(part) || nonCompactRs.includes(part)) {
+    console.log("doing the thing with", part)
+    if (allRs.includes(part)) {
+      console.log("FOUND")
       const arg = rsToArg(part);
       finalParts.push(
         <span
@@ -817,8 +854,10 @@ function renderPart(part: string, handleRsClick: (arg: string) => void) {
         </span>
       );
     } else {
+      console.log("NOT FOUND")
       finalParts.push(part);
     }
   });
+  console.log("ALL TOGETHER", finalParts)
   return <div style={{ color: "red", padding: "0px 5px" }}>{finalParts}</div>;
 }

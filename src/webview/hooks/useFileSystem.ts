@@ -5,7 +5,9 @@ import { WordStep } from "./useTemplate";
 function parseStringifiedTemplateModule(templateModule: string) {
   const templModuleFirstParse = new Function("return " + templateModule)();
   const templModule = Object.keys(templModuleFirstParse).reduce((acc, key) => {
-    acc[key] = new Function("return " + templModuleFirstParse[key])();
+    const templified = new Function("return " + templModuleFirstParse[key])();
+    console.log(key, "TEMPLIFIED", templified);
+    acc[key] = templified;
     return acc;
   }, {});
   return templModule

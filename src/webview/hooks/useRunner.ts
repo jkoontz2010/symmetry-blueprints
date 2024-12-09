@@ -60,6 +60,18 @@ export function useRunner(
     });
   }, []);
 
+  const addFullTemplateToPool = (name: string, template: Template) => {
+    if (templateModule[name] != null) {
+      throw new Error("Template with this name already exists");
+    }
+   postMessage({
+    command: "add_full_template",
+    name,
+    template: tts(template, false),
+    pathToConfig: configPath,
+   })
+  }
+
   const addToTemplatePool = (key: string, value: string, args: string[]) => {
     const funcPart = argsAndTemplateToFunction([], value);
     const templ = { [key]: funcPart };
@@ -114,5 +126,6 @@ export function useRunner(
     filledGenerators,
     addToTemplatePool,
     addToFilledGeneratorPool,
+    addFullTemplateToPool
   };
 }

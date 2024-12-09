@@ -260,6 +260,45 @@ export default class PanelClass {
             });
             break;
           }
+          case "add_full_template": {
+            // a full template doesn't need to be generated
+            // it's the actual object that is a template
+            // we just need to add it to the template pool
+            const {template, name, pathToConfig} = msg;
+            const templatesFilePath = await readFromConfig(
+              "TEMPLATE_FILE",
+              pathToConfig
+            );
+            const templatesFile = await readFromFile(templatesFilePath);
+            console.log("CURR TEMPLATES FILE", templatesFile);
+            // write template to templates file
+            const newTemplatesFile =
+              templatesFile + "\n" + `export const ${name} = ${template}`;
+            console.log("NEW TEMPLATES FILE", newTemplatesFile);
+            fs.writeFile(templatesFilePath, newTemplatesFile, (err) => {
+              if (err) {
+                console.error(err);
+              }
+              console.log("success");
+            });
+
+            // bun run the file and send the result to the frontend
+            const projectDir = await readFromConfig(
+              "PROJECT_DIR",
+              pathToConfig
+            );
+            const templateModule = await runTs(
+              projectDir + "/template-getter.ts"
+            );
+            console.log("ALL OF TEMPLATE MODULE", templateModule)
+            this._panel!.webview.postMessage({
+              command: "all_templates",
+              data: {
+                templateModule,
+              },
+            });
+            break;
+          }
           case "add_template": {
             const { key, args, value, pathToConfig } = msg;
             const funcPart = argsAndTemplateToFunction([], value);
@@ -481,7 +520,7 @@ export default class PanelClass {
               const fileTemplates = await getAllFileTemplates(
                 PanelClass.currentPanel.pathToConfig
               );
-
+console.log("FROM STARTUP TEMPLATE MODEUL", templateModule)
               const wordNames = getWordNamesFromWordPaths(allWordPaths);
               const currentWordName = sortedWordPaths[0]
                 .split("_")[1]
