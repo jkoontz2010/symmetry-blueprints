@@ -48,7 +48,7 @@ export function buildAllGeneratorsTemplate(generatorFile: string) {
   const generatorParseTree = buildGeneratorParseTree(frAll);
   let newTemplate = {};
 
-  performOnNodes("generator", generatorParseTree, (t: Template) => {
+  performOnNodes(generatorParseTree, "generator", (t: Template) => {
     const genSkel = genTemplateWithVars(
       {
         generator: () => `genName(genArgs)`,
@@ -155,7 +155,7 @@ function buildGeneratorMeta(template: Template) {
     replacedTypeNames
   );
   // console.log("JOIN", replacedTypeNames2);
-  const genMeta = performOnNodes("generator", replacedTypeNames2, buildMeta);
+  const genMeta = performOnNodes(replacedTypeNames2, "generator", buildMeta);
   // console.log("GENMETA", tts(genMeta, false));
   // we want {name: "genName", inputSchema: {metaBody}}
   const allMeta = joiner(genMeta, "meta", "metas", ",\n");
@@ -165,7 +165,7 @@ function buildGeneratorMeta(template: Template) {
 function buildMeta(template: Template, index: number): Template {
   const cbFuncStringd = replaceWithAllIsomorphic(template, [newCbTemplFunc]);
   //console.log("CBFUNCSTRING", tts(cbFuncStringd, false));
-  const all = performOnNodes("typeValue", cbFuncStringd, (t: Template) => {
+  const all = performOnNodes(cbFuncStringd, "typeValue", (t: Template) => {
     const folded = orderedFold(cbFuncStringd, [
       stringArrayTypeValueTempl,
       templateArrayTypeValueTempl,
@@ -232,7 +232,7 @@ function buildGeneratorParseTree(generators: Template) {
   }
   const all = { ...gWithTypes.result, ...gWithTypes.divisors };
   //console.log("perf on nodeds");
-  const parsedGenArgs = performOnNodes("genArgs", all, parseGenArgs);
+  const parsedGenArgs = performOnNodes(all, "genArgs", parseGenArgs);
   //console.log("fin parse tree");
   return parsedGenArgs;
 }

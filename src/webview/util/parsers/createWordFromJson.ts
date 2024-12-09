@@ -49,8 +49,8 @@ export function buildWordBodyFromSteps(steps: string) {
   const sortedByDeps = sortTemplateByDeps(stepOfResult);
   // console.log("OFRESULT", tts(sortedByDeps, false));
   const stepFunctions = performOnNodes(
-    "stepElement",
     sortedByDeps,
+    "stepElement",
     createFunctionCodeFromStep
   );
   // console.log("STEP FUNCTIONS", tts(stepFunctions, false));
@@ -95,7 +95,7 @@ function createFunctionCodeFromStep(stepTemplate: Template, index: number) {
   );
   const ofResult = { ...of.result, ...of.divisors };
   console.log("OF RESULT W#@@@", ofResult);
-  const typed = performOnNodes("inputSchema", ofResult, (t: Template) => {
+  const typed = performOnNodes(ofResult, "inputSchema", (t: Template) => {
     // TODO: ADD cb TEMPLATE
     const of = recursiveFold(
       t,
@@ -117,7 +117,7 @@ function createFunctionCodeFromStep(stepTemplate: Template, index: number) {
     return allOf;
   });
 
-  const valuesParsed = performOnNodes("inputValues", typed, (t: Template) => {
+  const valuesParsed = performOnNodes(typed, "inputValues", (t: Template) => {
     const of = recursiveFold(
       t,
       [

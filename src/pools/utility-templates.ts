@@ -611,8 +611,8 @@ export function performIfNotGenericKeyHasValue(
 
 // alternative name: isolateCallbackToKey
 export function performOnNodes(
-  rootKey: string,
   input: Template,
+  rootKey: string,
   cb: (t: Template, index: number) => Template
 ): Template {
   const keys = Object.keys(input);
