@@ -1,0 +1,19 @@
+{
+'postCmdArgument05/commandArg05': ({commandArg05})=>`  ${run(commandArg05,'commandArg05')},
+`,
+'postCmdArgument04/commandArg04': ({commandArg04})=>`  ${run(commandArg04,'commandArg04')},
+`,
+'postCmdArgument03/commandArg03': ({commandArg03})=>`  ${run(commandArg03,'commandArg03')},
+`,
+'postCmdArgument02/commandArg02': ({commandArg02})=>`  ${run(commandArg02,'commandArg02')},
+`,
+'postCmdArgument01/commandArg01': ({commandArg01})=>`  ${run(commandArg01,'commandArg01')},
+`,
+'commandBody03/postCmdArgument01,postCmdArgument02,postCmdArgument03,postCmdArgument04,postCmdArgument05': ({postCmdArgument01, postCmdArgument02, postCmdArgument03, postCmdArgument04, postCmdArgument05})=>`
+${run(postCmdArgument01, 'postCmdArgument01')}${run(postCmdArgument02, 'postCmdArgument02')}${run(postCmdArgument03, 'postCmdArgument03')}${run(postCmdArgument04, 'postCmdArgument04')}${run(postCmdArgument05, 'postCmdArgument05')}      `,
+'commandArg01': ()=>`      command: "add_filled_generator"`,
+'commandArg02': ()=>`      generatorRunFile`,
+'commandArg03': ()=>`      generatorString`,
+'commandArg04': ()=>`      pathToConfig: CONFIG_PATH`,
+'commandArg05': ()=>`      msgId`
+}

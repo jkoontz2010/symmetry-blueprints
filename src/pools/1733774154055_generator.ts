@@ -1,77 +1,12 @@
 
-import { genTemplateWithVars, run } from "symmetric-parser";
+import {  tts,
+run,
+performOnNodes } from "symmetric-parser";
 
+import { fullTest } from "./word-pool";
 
-export const genTempl = genTemplateWithVars(
-  {
-    genTemplate: () => `
-const templName = genTemplateWithVars({
-  templateDesc},
-  keys
-  )`,
-  },
-  ["templName", "templateDesc","keys"]
-);
-
-export const arrayDef = genTemplateWithVars({
-'arrayDef': ()=>`[arrayElements]`
-}, ["arrayElements"]);
-export const firstyThisWay = genTemplateWithVars({
-'firstyThisWay': ()=>`export const funcName(funcArgs) {funcBody}`
-}, ["funcName","funcArgs","funcBody"]);
-
-export const elementTag = genTemplateWithVars({
-'elementTag': ()=>`<tagBody>`
-}, ["tagBody"]);
-
-export const commandSend = genTemplateWithVars({
-'commandSend': ()=>`postMessage({commandBody});`
-}, ["commandBody"]);
-export const nameProperty = genTemplateWithVars({
-'nameProperty': ()=>`command: "commandName",`
-}, ["commandName"]);
-export const argProperties = genTemplateWithVars({
-'argProperties': ()=>`  commandArg,\n`
-}, ["commandArg"]);
-export const postMessageSend = {
-'commandSend02/commandBody02': ({commandBody02})=>`postMessage({${run(commandBody02,'commandBody02')}});`,
-'commandBody02/nameProperty11': ({nameProperty11})=>`
-      ${run(nameProperty11, 'nameProperty11')}
-      generatorRunFile,
-      generatorString,
-      pathToConfig: CONFIG_PATH,
-      msgId,
-    `,
-'nameProperty11/commandName11': ({commandName11})=>`command: "${run(commandName11,'commandName11')}",`,
-'commandName11': ()=>`run_generator`
-}
-export const postMessageArgs = {
-'commandBody02/nameProperty11': ({ nameProperty11 }) => `
-      ${run(nameProperty11, "nameProperty11")}
-      generatorRunFile,
-      generatorString,
-      pathToConfig: CONFIG_PATH,
-      msgId,
-    `,
-'nameProperty11/commandName11': ({ commandName11 }) => `command: "${run(commandName11, "commandName11")}",`
-}
-export const postMessageFull = {
-  'commandBody03': () => `
-        command: "add_filled_generator",
-        generatorRunFile,
-        generatorString,
-        pathToConfig: CONFIG_PATH,
-        msgId,
-      `,
-  }
-export const postCmdArgument = genTemplateWithVars({
-'postCmdArgument': ()=>`  commandArg,\n`
-}, ["commandArg"]);
-export const pathConfigPostArg = genTemplateWithVars({
-'pathConfigPostArg': ()=>`  pathToConfig: configPathValue,\n`
-}, ["configPathValue"]);
-export const readyForPon = {
-'fifth.tsxa4023e8966/commandSend01,commandSend02': ({commandSend01, commandSend02})=>`import { cloneDeep, difference, last, uniqueId } from "lodash";
+const template = {
+'fifth.tsxa4023e8966/commandSend01,commandSend02': ({ commandSend01, commandSend02 }) => `import { cloneDeep, difference, last, uniqueId } from "lodash";
 import { useEffect, useState } from "react";
 import {
   appendKeyToKey,
@@ -135,7 +70,7 @@ export function useTemplate(
     console.log("STRINGIFIED STEPS", stringifiedSteps);
     const wordName = definition.name;
 
-    ${run(commandSend01, 'commandSend01')}
+    ${run(commandSend01, "commandSend01")}
   }
 
   function removeKey(key: string) {
@@ -271,7 +206,7 @@ export function useTemplate(
       generatorModule
     );
     // send it over via postMessage
-    ${run(commandSend02, 'commandSend02')}
+    ${run(commandSend02, "commandSend02")}
   }
   console.log("Word steps", wordSteps);
   return {
@@ -286,20 +221,23 @@ export function useTemplate(
   };
 }
 `,
-'commandSend01/commandBody01': ({commandBody01})=>`postMessage({${run(commandBody01,'commandBody01')}});`,
-'commandSend02/commandBody02': ({commandBody02})=>`postMessage({${run(commandBody02,'commandBody02')}});`,
-'commandBody01': ()=>`
+'commandSend01/commandBody01': ({ commandBody01 }) => `postMessage({${run(commandBody01, "commandBody01")}});`,
+'commandSend02/commandBody02': ({ commandBody02 }) => `postMessage({${run(commandBody02, "commandBody02")}});`,
+'commandBody01': () => `
       command: "save_word_steps",
       wordSteps: JSON.stringify(stringifiedSteps),
       wordName,
       pathToConfig: CONFIG_PATH,
       msgId,
     `,
-'commandBody02': ()=>`
+'commandBody02': () => `
       command: "run_generator",
       generatorRunFile,
       generatorString,
       pathToConfig: CONFIG_PATH,
       msgId,
     `
-}
+};
+// @ts-ignore
+const result = performOnNodes(template, "commandBody", fullTest);
+console.log(tts(result,false));

@@ -1,77 +1,89 @@
-
-import { genTemplateWithVars, run } from "symmetric-parser";
-
-
-export const genTempl = genTemplateWithVars(
-  {
-    genTemplate: () => `
-const templName = genTemplateWithVars({
-  templateDesc},
-  keys
-  )`,
-  },
-  ["templName", "templateDesc","keys"]
-);
-
-export const arrayDef = genTemplateWithVars({
-'arrayDef': ()=>`[arrayElements]`
-}, ["arrayElements"]);
-export const firstyThisWay = genTemplateWithVars({
-'firstyThisWay': ()=>`export const funcName(funcArgs) {funcBody}`
-}, ["funcName","funcArgs","funcBody"]);
-
-export const elementTag = genTemplateWithVars({
-'elementTag': ()=>`<tagBody>`
-}, ["tagBody"]);
-
-export const commandSend = genTemplateWithVars({
-'commandSend': ()=>`postMessage({commandBody});`
-}, ["commandBody"]);
-export const nameProperty = genTemplateWithVars({
-'nameProperty': ()=>`command: "commandName",`
-}, ["commandName"]);
-export const argProperties = genTemplateWithVars({
-'argProperties': ()=>`  commandArg,\n`
-}, ["commandArg"]);
-export const postMessageSend = {
-'commandSend02/commandBody02': ({commandBody02})=>`postMessage({${run(commandBody02,'commandBody02')}});`,
-'commandBody02/nameProperty11': ({nameProperty11})=>`
-      ${run(nameProperty11, 'nameProperty11')}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+orderedFold template: {
+'postCmdArgument/commandArg': ({commandArg})=>`  ${run(commandArg, 'commandArg')},
+`
+} iteration: 0 result: {
+'commandBody01': () => `
+      command: "save_word_steps",
+      wordSteps: JSON.stringify(stringifiedSteps),
+      wordName,
+      pathToConfig: CONFIG_PATH,
+      msgId,
+    `
+}
+folded {
+'commandBody01/postCmdArgument01,postCmdArgument02,postCmdArgument03,postCmdArgument04,postCmdArgument05': ({postCmdArgument01, postCmdArgument02, postCmdArgument03, postCmdArgument04, postCmdArgument05})=>`
+${run(postCmdArgument01, 'postCmdArgument01')}${run(postCmdArgument02, 'postCmdArgument02')}${run(postCmdArgument03, 'postCmdArgument03')}${run(postCmdArgument04, 'postCmdArgument04')}${run(postCmdArgument05, 'postCmdArgument05')}    `,
+'commandArg01': ()=>`    command: "save_word_steps"`,
+'commandArg02': ()=>`    wordSteps: JSON.stringify(stringifiedSteps)`,
+'commandArg03': ()=>`    wordName`,
+'commandArg04': ()=>`    pathToConfig: CONFIG_PATH`,
+'commandArg05': ()=>`    msgId`
+} divisors
+{
+'postCmdArgument01/commandArg01': ({commandArg01})=>`  ${run(commandArg01, 'commandArg01')},
+`
+}
+{
+'postCmdArgument02/commandArg02': ({commandArg02})=>`  ${run(commandArg02, 'commandArg02')},
+`
+}
+{
+'postCmdArgument03/commandArg03': ({commandArg03})=>`  ${run(commandArg03, 'commandArg03')},
+`
+}
+{
+'postCmdArgument04/commandArg04': ({commandArg04})=>`  ${run(commandArg04, 'commandArg04')},
+`
+}
+{
+'postCmdArgument05/commandArg05': ({commandArg05})=>`  ${run(commandArg05, 'commandArg05')},
+`
+}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+orderedFold template: {
+'postCmdArgument/commandArg': ({commandArg})=>`  ${run(commandArg, 'commandArg')},
+`
+} iteration: 0 result: {
+'commandBody02': ()=>`
+      command: "run_generator",
       generatorRunFile,
       generatorString,
       pathToConfig: CONFIG_PATH,
       msgId,
-    `,
-'nameProperty11/commandName11': ({commandName11})=>`command: "${run(commandName11,'commandName11')}",`,
-'commandName11': ()=>`run_generator`
+    `
 }
-export const postMessageArgs = {
-'commandBody02/nameProperty11': ({ nameProperty11 }) => `
-      ${run(nameProperty11, "nameProperty11")}
-      generatorRunFile,
-      generatorString,
-      pathToConfig: CONFIG_PATH,
-      msgId,
-    `,
-'nameProperty11/commandName11': ({ commandName11 }) => `command: "${run(commandName11, "commandName11")}",`
+folded {
+'commandBody02/postCmdArgument01,postCmdArgument02,postCmdArgument03,postCmdArgument04,postCmdArgument05': ({postCmdArgument01, postCmdArgument02, postCmdArgument03, postCmdArgument04, postCmdArgument05})=>`
+${run(postCmdArgument01, 'postCmdArgument01')}${run(postCmdArgument02, 'postCmdArgument02')}${run(postCmdArgument03, 'postCmdArgument03')}${run(postCmdArgument04, 'postCmdArgument04')}${run(postCmdArgument05, 'postCmdArgument05')}    `,
+'commandArg01': ()=>`    command: "run_generator"`,
+'commandArg02': ()=>`    generatorRunFile`,
+'commandArg03': ()=>`    generatorString`,
+'commandArg04': ()=>`    pathToConfig: CONFIG_PATH`,
+'commandArg05': ()=>`    msgId`
+} divisors
+{
+'postCmdArgument01/commandArg01': ({commandArg01})=>`  ${run(commandArg01, 'commandArg01')},
+`
 }
-export const postMessageFull = {
-  'commandBody03': () => `
-        command: "add_filled_generator",
-        generatorRunFile,
-        generatorString,
-        pathToConfig: CONFIG_PATH,
-        msgId,
-      `,
-  }
-export const postCmdArgument = genTemplateWithVars({
-'postCmdArgument': ()=>`  commandArg,\n`
-}, ["commandArg"]);
-export const pathConfigPostArg = genTemplateWithVars({
-'pathConfigPostArg': ()=>`  pathToConfig: configPathValue,\n`
-}, ["configPathValue"]);
-export const readyForPon = {
-'fifth.tsxa4023e8966/commandSend01,commandSend02': ({commandSend01, commandSend02})=>`import { cloneDeep, difference, last, uniqueId } from "lodash";
+{
+'postCmdArgument02/commandArg02': ({commandArg02})=>`  ${run(commandArg02, 'commandArg02')},
+`
+}
+{
+'postCmdArgument03/commandArg03': ({commandArg03})=>`  ${run(commandArg03, 'commandArg03')},
+`
+}
+{
+'postCmdArgument04/commandArg04': ({commandArg04})=>`  ${run(commandArg04, 'commandArg04')},
+`
+}
+{
+'postCmdArgument05/commandArg05': ({commandArg05})=>`  ${run(commandArg05, 'commandArg05')},
+`
+}
+{
+'fifth.tsxa4023e8966/commandSend01,commandSend02': ({ commandSend01, commandSend02 }) => `import { cloneDeep, difference, last, uniqueId } from "lodash";
 import { useEffect, useState } from "react";
 import {
   appendKeyToKey,
@@ -135,7 +147,7 @@ export function useTemplate(
     console.log("STRINGIFIED STEPS", stringifiedSteps);
     const wordName = definition.name;
 
-    ${run(commandSend01, 'commandSend01')}
+    ${run(commandSend01, "commandSend01")}
   }
 
   function removeKey(key: string) {
@@ -271,7 +283,7 @@ export function useTemplate(
       generatorModule
     );
     // send it over via postMessage
-    ${run(commandSend02, 'commandSend02')}
+    ${run(commandSend02, "commandSend02")}
   }
   console.log("Word steps", wordSteps);
   return {
@@ -286,20 +298,25 @@ export function useTemplate(
   };
 }
 `,
-'commandSend01/commandBody01': ({commandBody01})=>`postMessage({${run(commandBody01,'commandBody01')}});`,
-'commandSend02/commandBody02': ({commandBody02})=>`postMessage({${run(commandBody02,'commandBody02')}});`,
-'commandBody01': ()=>`
-      command: "save_word_steps",
-      wordSteps: JSON.stringify(stringifiedSteps),
-      wordName,
-      pathToConfig: CONFIG_PATH,
-      msgId,
-    `,
-'commandBody02': ()=>`
-      command: "run_generator",
-      generatorRunFile,
-      generatorString,
-      pathToConfig: CONFIG_PATH,
-      msgId,
-    `
+'commandSend02/commandBody02': ({ commandBody02 }) => `postMessage({${run(commandBody02, "commandBody02")}});`,
+'commandBody02/postCmdArgument01,postCmdArgument02,postCmdArgument03,postCmdArgument04,postCmdArgument05': ({postCmdArgument01, postCmdArgument02, postCmdArgument03, postCmdArgument04, postCmdArgument05})=>`
+${run(postCmdArgument01, 'postCmdArgument01')}${run(postCmdArgument02, 'postCmdArgument02')}${run(postCmdArgument03, 'postCmdArgument03')}${run(postCmdArgument04, 'postCmdArgument04')}${run(postCmdArgument05, 'postCmdArgument05')}    `,
+'commandSend01/commandBody01': ({ commandBody01 }) => `postMessage({${run(commandBody01, "commandBody01")}});`,
+'commandBody01/postCmdArgument01,postCmdArgument02,postCmdArgument03,postCmdArgument04,postCmdArgument05': ({postCmdArgument01, postCmdArgument02, postCmdArgument03, postCmdArgument04, postCmdArgument05})=>`
+${run(postCmdArgument01, 'postCmdArgument01')}${run(postCmdArgument02, 'postCmdArgument02')}${run(postCmdArgument03, 'postCmdArgument03')}${run(postCmdArgument04, 'postCmdArgument04')}${run(postCmdArgument05, 'postCmdArgument05')}    `,
+'postCmdArgument05/commandArg05': ({commandArg05})=>`  ${run(commandArg05,'commandArg05')},
+`,
+'postCmdArgument04/commandArg04': ({commandArg04})=>`  ${run(commandArg04,'commandArg04')},
+`,
+'postCmdArgument03/commandArg03': ({commandArg03})=>`  ${run(commandArg03,'commandArg03')},
+`,
+'postCmdArgument02/commandArg02': ({commandArg02})=>`  ${run(commandArg02,'commandArg02')},
+`,
+'postCmdArgument01/commandArg01': ({commandArg01})=>`  ${run(commandArg01,'commandArg01')},
+`,
+'commandArg01': ()=>`    command: "run_generator"`,
+'commandArg02': ()=>`    generatorRunFile`,
+'commandArg03': ()=>`    generatorString`,
+'commandArg04': ()=>`    pathToConfig: CONFIG_PATH`,
+'commandArg05': ()=>`    msgId`
 }

@@ -647,7 +647,7 @@ export const TemplateTree = ({
   function handleSaveTemplate(name: string) {
     handleSaveIsolatedTemplate(name, template);
   }
-  console.log("TEMPLATE TREE TEMPLATE", template)
+  //console.log("TEMPLATE TREE TEMPLATE", template)
   return (
     <div>
       <button onClick={() => handleSaveAllFiles(template)}>
@@ -809,23 +809,18 @@ function rsToArg(rs: string) {
   return rs.substring(rs.indexOf("(") + 1, rs.indexOf(","));
 }
 function renderPart(part: string, handleRsClick: (arg: string) => void) {
-  console.log("RENDERING PART", part)
   const args = part
     .substring(part.indexOf("{") + 1, part.indexOf("}"))
     .split(",")
     .map((arg) => arg.trim());
-    console.log("PART ARGS", args)
   const compactRs = args.map((arg) => rsCompact(arg));
   const nonCompactRs = args.map((arg) => rs(arg));
   const doubleQuotedCompactRs = compactRs.map((crs) => crs.replaceAll("'", '"'));
   const doubleQuotedNonCompactRs = nonCompactRs.map((ncrs) => ncrs.replaceAll("'", '"'));
   const allRs = [...compactRs, ...nonCompactRs, ...doubleQuotedCompactRs, ...doubleQuotedNonCompactRs];
-  console.log("RUN STATEMENTS", compactRs, "NONCOLMPACT",nonCompactRs);
   let funcPart = part.substring(part.indexOf("`") + 1, part.lastIndexOf("`"));
-  console.log("FUNC PART", funcPart);
   const parts = funcPart.split(/(\${[^}]+})/g);
   if (parts.length === 1) {
-    console.log("PARTS===1", parts, "NAKED STRING", nakedPartToString(part));
     return (
       <div style={{ color: "red", padding: "0px 5px" }}>
         {nakedPartToString(part)}
@@ -834,9 +829,7 @@ function renderPart(part: string, handleRsClick: (arg: string) => void) {
   }
   let finalParts = [];
   parts.forEach((part, index) => {
-    console.log("doing the thing with", part)
     if (allRs.includes(part)) {
-      console.log("FOUND")
       const arg = rsToArg(part);
       finalParts.push(
         <span
@@ -854,10 +847,8 @@ function renderPart(part: string, handleRsClick: (arg: string) => void) {
         </span>
       );
     } else {
-      console.log("NOT FOUND")
       finalParts.push(part);
     }
   });
-  console.log("ALL TOGETHER", finalParts)
   return <div style={{ color: "red", padding: "0px 5px" }}>{finalParts}</div>;
 }

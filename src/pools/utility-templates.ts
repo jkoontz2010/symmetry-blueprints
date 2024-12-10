@@ -640,7 +640,10 @@ export function performOnNodes(
       const cbResult = cb(filteredTemplates, index);
       //console.log("HERE WITH CBRULEST", tts(cbResult,false));
 
-      result = { ...operatedOnTemplate, ...cbResult }; //mergeResult(cbResult, result);
+      // NEW WAY THAT INSERTS INTO TEMPLATE, PROVIDING UNIQUE INDICES
+      result = insertIntoTemplate(operatedOnTemplate, cbResult);
+      // OLD WAY THAT REQUIRED INDICES TO BE FIGURED OUT IN CALLBACK
+      // result = { ...operatedOnTemplate, ...cbResult }; //mergeResult(cbResult, result);
       //     console.log("MERGERESULT", result);
       // BUT!! what if cbResult keys conflict? do we need to
       // rework the key names??

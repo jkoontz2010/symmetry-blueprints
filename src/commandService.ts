@@ -6,6 +6,7 @@ import {
   genTemplateWithVars,
   orderedParse,
   stringCleaning,
+  stringUnCleaning,
   tts,
 } from "symmetric-parser";
 
@@ -218,6 +219,7 @@ export const getAllGeneratorsExports = async (pathToConfig: string) => {
 };
 
 export const getAllTemplateExports = async (pathToConfig: string) => {
+  console.log("get all template exports");
   const templateFilePath = await readFromConfig("TEMPLATE_FILE", pathToConfig);
   const templateFileContents = await fs.readFile(templateFilePath, {
     encoding: "utf8",
@@ -229,15 +231,17 @@ export const getAllTemplateExports = async (pathToConfig: string) => {
     },
     ["exportName"]
   );
+  console.log("file contents",templateFileContents)
   const fileTempl = {
-    file: argsAndTemplateToFunction([], templateFileContents),
+    file: argsAndTemplateToFunction([], stringCleaning(templateFileContents)),
   };
+  console.log("templTHIS IS FILE", tts(fileTempl,false));
   const parsed = orderedParse(fileTempl, [exportTempl]);
   console.log("templTHIS IS PARSED", parsed);
   const nameKeys = Object.keys(parsed).filter((k) =>
     k.startsWith("exportName")
   );
-  const nameValues = nameKeys.map((k) => parsed[k]());
+  const nameValues = nameKeys.map((k) => stringUnCleaning(parsed[k]()));
   console.log("templFOLUND ALL EXPORTS", nameValues);
   return nameValues;
 };
@@ -271,7 +275,9 @@ export const saveRunnableWord = async (pathToConfig: string, word: string) => {
 
 export const createRunnableGeneratorFileContents = async (pathToConfig: string, generatorString: string, template: string): Promise<string> => {
   const words = await getAllRunnableWords(pathToConfig);
+  console.log("1")
   const templates = await getAllTemplateExports(pathToConfig);
+  console.log("2")
   const generators = await getAllGeneratorsExports(pathToConfig);
 
   const importedTemplates = templates.filter((t) =>

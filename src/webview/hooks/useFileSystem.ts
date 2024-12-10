@@ -116,6 +116,11 @@ export function useFileSystem(postMessage, configPath) {
           setAllFileTemplates(new Function("return " + fileTemplates)());
           break;
         }
+        case "all_runnable_words": {
+          const { runnableWords } = message.data;
+          const rw = JSON.parse(runnableWords);
+          setRunnableWords(rw);
+        }
       }
     });
   }, []);

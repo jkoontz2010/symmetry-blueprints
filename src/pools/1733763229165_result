@@ -1,0 +1,14 @@
+{
+'pathConfigPostArg01/configPathValue01': ({configPathValue01})=>`  pathToConfig: ${run(configPathValue01,'configPathValue01')},
+`,
+'nameProperty11/commandName11': ({commandName11})=>`command: "${run(commandName11, 'commandName11')}",`,
+'commandSend02/commandBody02': ({commandBody02})=>`postMessage({${run(commandBody02, 'commandBody02')}});`,
+'commandBody02/nameProperty11,pathConfigPostArg01': ({nameProperty11, pathConfigPostArg01})=>`
+      ${run(nameProperty11, 'nameProperty11')}
+      generatorRunFile,
+      generatorString,
+    ${run(pathConfigPostArg01, 'pathConfigPostArg01')}      msgId,
+    `,
+'commandName11': ()=>`run_generator`,
+'configPathValue01': ()=>`CONFIG_PATH`
+}

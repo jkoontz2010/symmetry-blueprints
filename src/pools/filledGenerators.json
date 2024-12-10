@@ -3,5 +3,9 @@
 'step2': ()=>`orderedParse(template, [nameProperty])`,
 'step3': ()=>`orderedParse(template, [commandSend,nameProperty])`,
 'step4': ()=>`orderedParse(template, [commandSend,nameProperty,argProperties])`,
-'step7': ()=>`nestedParse(template, [elementTag],5)`
+'step5': ()=>`orderedParse(template, [postCmdArgument])`,
+'step6': ()=>`orderedParse(template, [pathConfigPostArg])`,
+'step7': ()=>`nestedParse(template, [elementTag],5)`,
+'step8': ()=>`performOnNodes(template, "commandBody", fullTest)`,
+'step9': ()=>`orderedParse(template, [commandSend])`
 }
