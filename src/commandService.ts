@@ -74,6 +74,7 @@ export const getAllFileTemplates = async (pathToConfig: string) => {
   const allFileTemplates = {};
   for (const file of allFiles) {
     const { filePath, data } = file;
+    const cleanedData = stringCleaning(data);
     const fileHash = Object.keys(currentHashes).find(
       (key) => currentHashes[key] === filePath
     );
@@ -82,7 +83,8 @@ export const getAllFileTemplates = async (pathToConfig: string) => {
         "file hash not found in getAllFileTemplates, it should exist!!"
       );
     }
-    const funcPart = argsAndTemplateToFunction([], data);
+    // try with string cleaning
+    const funcPart = argsAndTemplateToFunction([], cleanedData);
     if (funcPart == null || !(funcPart instanceof Function)) {
       throw new Error(
         "funcPart is null or not a Function type in getAllFileTemplates, it should exist!!"
