@@ -458,7 +458,6 @@ export default class PanelClass {
               wordSteps == null
             ) {
               throw new Error("No steps to save");
-              break;
             }
             const projectDir = await readFromConfig(
               "PROJECT_DIR",
