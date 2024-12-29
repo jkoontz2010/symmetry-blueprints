@@ -1,9 +1,12 @@
+{
+'panel.tsb779abdb70/panelCommand01,panelCommand03,panelCommand04,panelCommand05,panelCommand06,panelCommand07,panelCommand08,panelCommand09,panelCommand010,panelCommand011,panelCommand012': ({panelCommand01, panelCommand03, panelCommand04, panelCommand05, panelCommand06, panelCommand07, panelCommand08, panelCommand09, panelCommand010, panelCommand011, panelCommand012})=>`
 import * as vscode from "vscode";
 import { getNonce } from "./getNonce";
 import * as fs from "fs";
-import { readFile, runTs, saveFile, saveWord } from "./compiler";
+import { readFile, runIndexFile, runTs, saveFile, saveWord } from "./compiler";
 import {
   argsAndTemplateToFunction,
+  genTemplateWithVars,
   insertIntoTemplate,
   tts,
 } from "symmetric-parser";
@@ -17,20 +20,20 @@ import {
   getWordPath,
   storeFileHash,
   getFilePathHashes,
+  getFilePathFromHashes,
   overwriteFile,
   getAllFileTemplates,
   saveRunnableWord,
   getAllRunnableWords,
   createRunnableGeneratorFileContents,
-} from "./services/commandService";
+} from "./commandService";
 import { sha1 } from "js-sha1";
-import { runWord } from "./services/wordRunService";
-import Runner, { DequeueConfig } from "./runner/runner";
+import { formWordRunFile } from "./wordRunService";
 
 function formFilePathHash(filePath: string) {
   const fileName = filePath.split("/").pop();
   const fileHash = sha1(filePath);
-  return `${fileHash.substring(0, 10)}_${fileName}`;
+  return ェ§{fileHash.substring(0, 10)}_§{fileName}ェ;
 }
 
 function readFromFile(file) {
@@ -46,36 +49,6 @@ function readFromFile(file) {
   });
 }
 
-const TEST_DEQUEUE: DequeueConfig = {
-  name: "test",
-  description:
-    "opens to a blank template. insert the right file and it'll run our favorite parse word on it, then pause.",
-  steps: [
-    {
-      type: "template",
-      config:
-        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig",
-      name: "blank",
-      description:
-        "starts with blank template. fill with fifth.tsx to ready for next step!",
-      waitForTransitionCommand: true,
-      transitionAction: "identity",
-      runWithEmptyTemplate: false,
-    },
-    {
-      type: "template",
-      config:
-        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig",
-      name: "parseFifth",
-      description: "runs the word that parses fifth.tsx",
-      word: "ponTester2",
-      waitForTransitionCommand: true,
-      transitionAction: "identity", // nothing
-      runWithEmptyTemplate: false,
-    },
-  ],
-};
-
 export default class PanelClass {
   public static currentPanel: PanelClass | undefined;
 
@@ -86,7 +59,6 @@ export default class PanelClass {
   private readonly _extContext: vscode.ExtensionContext;
   private _disposables: vscode.Disposable[] = [];
   private pathToConfig: string;
-  private runner: Runner;
 
   public static createOrShow(extContext: vscode.ExtensionContext) {
     const column = vscode.window.activeTextEditor
@@ -167,11 +139,6 @@ export default class PanelClass {
     this._extContext = _extContext;
     this._extensionUri = _extContext.extensionUri;
 
-    // will have to move this somewhere else for initialization.
-    // as-is, this singleton works great for testing.
-    this.runner = new Runner(TEST_DEQUEUE.steps);
-    this.runner.initNextStep("{}")
-
     // Create and show a new webview panel
     this._panel = vscode.window.createWebviewPanel(
       PanelClass.viewType,
@@ -195,294 +162,28 @@ export default class PanelClass {
     this._panel.webview.onDidReceiveMessage(
       async (msg: any) => {
         console.log("DID RECEIVE MSG", msg);
-        const pathToConfig = this.runner.currentStep.config;
         switch (msg.command) {
-          case "set_config_path": {
-            console.log("SET CONFIG PATH", pathToConfig);
-            this.pathToConfig = pathToConfig;
+          ${run(panelCommand01, 'panelCommand01')}
           }
-          case "save_all_files": {
-            const { template } = msg;
-
-            const templ = new Function("return " + template)();
-            // we expect a compiled template here, so no denoms for anything, or an error if so
-            const templFileKeys = Object.keys(templ).filter(
-              (k) => k.indexOf(".") > -1
-            );
-            //console.log("TEMPL FILE KEYS", templFileKeys);
-            const filePathHashes = await getFilePathHashes(pathToConfig);
-            //console.log("FILE PATH HASHES", filePathHashes);
-            for (const filePathHash of templFileKeys) {
-              //console.log("filepathhash", filePathHash);
-              // we expect a compiled template here, so no denoms for anything, or an error if so
-              const filePath = filePathHashes[filePathHash];
-              //console.log("FILE PATH", filePath);
-              const fileContents = templ[filePathHash]();
-              //console.log("writing file", filePath, "\n<>CONTENTS<>\n",fileContents);
-              await overwriteFile(filePath, fileContents);
-            }
-
-            break;
+          ${run(panelCommand03, 'panelCommand03')}
           }
-          case "startup":
-            console.log("message received");
-            // ensure bun is set up for the thing
-
-            break;
-          case "testing":
-            console.log("reachedBrain");
-            this._panel!.webview.postMessage({ command: "refactor" });
-            break;
-          case "build_project":
-            break;
-          case "save_word": {
-            const { word } = msg;
-            const wordsFile = await readFromConfig("WORDS_FILE", pathToConfig);
-            // save to word file
-            const result = await saveWord(word, wordsFile);
-            break;
+          ${run(panelCommand04, 'panelCommand04')}
           }
-          case "store_runnable_word": {
-            const { word } = msg;
-            console.log("STORING RUNNABLE WORD", word, pathToConfig);
-            try {
-              await saveRunnableWord(pathToConfig, word);
-              const runnableWords = await getAllRunnableWords(pathToConfig);
-              this._panel!.webview.postMessage({
-                command: "all_runnable_words",
-                data: {
-                  runnableWords: JSON.stringify(runnableWords),
-                },
-              });
-            } catch (e) {
-              console.error(e);
-            }
-            break;
+          ${run(panelCommand05, 'panelCommand05')}
           }
-          case "get_word": {
-            const { wordName } = msg;
-            const wordPath = await getWordPath(pathToConfig, wordName);
-            const wordContents = await getWordContents(wordPath);
-            this._panel!.webview.postMessage({
-              command: "word_contents",
-              data: {
-                wordName,
-                wordContents,
-              },
-            });
-            break;
+          ${run(panelCommand06, 'panelCommand06')}
           }
-          case "create_word": {
-            const { wordName, template } = msg;
-            const projectDir = await readFromConfig(
-              "PROJECT_DIR",
-              pathToConfig
-            );
-            const wordFile = projectDir + "/word_" + wordName + ".json";
-            // eventually, result might be something more, like a file insertion
-            let wordTemplate = "{}";
-            if (template != null) {
-              wordTemplate = template;
-            }
-            let wordContents = JSON.stringify([{ result: wordTemplate }]);
-            await saveFile(wordFile, wordContents);
-            this._panel!.webview.postMessage({
-              command: "word_contents",
-              data: {
-                wordName,
-                wordContents,
-              },
-            });
-            break;
+          ${run(panelCommand07, 'panelCommand07')}
           }
-          case "add_full_template": {
-            // a full template doesn't need to be generated
-            // it's the actual object that is a template
-            // we just need to add it to the template pool
-            const { template, name } = msg;
-            const templatesFilePath = await readFromConfig(
-              "TEMPLATE_FILE",
-              pathToConfig
-            );
-            const templatesFile = await readFromFile(templatesFilePath);
-            console.log("CURR TEMPLATES FILE", templatesFile);
-            // write template to templates file
-            const newTemplatesFile =
-              templatesFile + "\n" + `export const ${name} = ${template}`;
-            console.log("NEW TEMPLATES FILE", newTemplatesFile);
-            fs.writeFile(templatesFilePath, newTemplatesFile, (err) => {
-              if (err) {
-                console.error(err);
-              }
-              console.log("success");
-            });
-
-            // bun run the file and send the result to the frontend
-            const projectDir = await readFromConfig(
-              "PROJECT_DIR",
-              pathToConfig
-            );
-            const templateModule = await runTs(
-              projectDir + "/template-getter.ts"
-            );
-            console.log("ALL OF TEMPLATE MODULE", templateModule);
-            this._panel!.webview.postMessage({
-              command: "all_templates",
-              data: {
-                templateModule,
-              },
-            });
-            break;
+          ${run(panelCommand08, 'panelCommand08')}
           }
-          case "add_template": {
-            const { key, args, value } = msg;
-            const funcPart = argsAndTemplateToFunction([], value);
-            const templ = { [key]: funcPart };
-            const templateString = `genTemplateWithVars(${tts(
-              templ,
-              false
-            )}, ${args});`;
-            const templatesFilePath = await readFromConfig(
-              "TEMPLATE_FILE",
-              pathToConfig
-            );
-            const templatesFile = await readFromFile(templatesFilePath);
-            console.log("CURR TEMPLATES FILE", templatesFile);
-            // write template to templates file
-            const newTemplatesFile =
-              templatesFile + "\n" + `export const ${key} = ${templateString}`;
-            console.log("NEW TEMPLATES FILE", newTemplatesFile);
-            fs.writeFile(templatesFilePath, newTemplatesFile, (err) => {
-              if (err) {
-                console.error(err);
-              }
-              console.log("success");
-            });
-
-            // bun run the file and send the result to the frontend
-            const projectDir = await readFromConfig(
-              "PROJECT_DIR",
-              pathToConfig
-            );
-            const templateModule = await runTs(
-              projectDir + "/template-getter.ts"
-            );
-            this._panel!.webview.postMessage({
-              command: "all_templates",
-              data: {
-                templateModule,
-              },
-            });
-
-            break;
+          ${run(panelCommand09, 'panelCommand09')}
           }
-          case "run_generator": {
-            const { generatorString, template, msgId } = msg;
-            console.log(
-              "RUNNING",
-              "msgId",
-              msgId,
-              "AND",
-
-              generatorString,
-              pathToConfig
-            );
-            const projectDir = await readFromConfig(
-              "PROJECT_DIR",
-              pathToConfig
-            );
-            const filePrefix = Date.now();
-            const generatorRunFile = await createRunnableGeneratorFileContents(
-              pathToConfig,
-              generatorString,
-              template
-            );
-            const generatorFile = filePrefix + "_generator.ts";
-            const resultFile = filePrefix + "_result";
-            const genFilePath = projectDir + "/" + generatorFile;
-            const resultFilePath = projectDir + "/" + resultFile;
-            await saveFile(genFilePath, generatorRunFile);
-            const result = await runTs(genFilePath);
-            console.log("RESULTv,", result);
-            await saveFile(resultFilePath, result);
-
-            this._panel!.webview.postMessage({
-              command: "generator_result",
-              data: {
-                msgId,
-                generatorFilePath: genFilePath,
-                resultFilePath: resultFilePath,
-                result,
-                generatorString,
-              },
-            });
-            break;
+          ${run(panelCommand010, 'panelCommand010')}
           }
-          case "run_word": {
-            const { wordName, template, msgId } = msg;
-            const {
-              template: result,
-              wordRunFilePath,
-              resultFilePath,
-            } = await runWord(pathToConfig, wordName, template);
-            this._panel!.webview.postMessage({
-              command: "word_run_result",
-              data: {
-                msgId,
-                wordRunFilePath: wordRunFilePath,
-                resultFilePath: resultFilePath,
-                result,
-                wordString: `${wordName}(template)`,
-              },
-            });
-            break;
+          ${run(panelCommand011, 'panelCommand011')}
           }
-          case "add_filled_generator": {
-            const { msgId, filledGenerator } = msg;
-
-            const projectDir = await readFromConfig(
-              "PROJECT_DIR",
-              pathToConfig
-            );
-            const filledGeneratorsPath = projectDir + "/filledGenerators.json";
-
-            let currentFilledGenerators;
-            try {
-              currentFilledGenerators = await readFile(filledGeneratorsPath);
-            } catch {
-              currentFilledGenerators = "{}";
-            }
-            const cfgTemplate: Template = new Function(
-              "return " + currentFilledGenerators
-            )();
-            const filledGeneratorTemplate: Template = new Function(
-              "return " + filledGenerator
-            )();
-            const newFilledGenerators = insertIntoTemplate(
-              cfgTemplate,
-              filledGeneratorTemplate
-            );
-            await saveFile(
-              filledGeneratorsPath,
-              tts(newFilledGenerators, false)
-            );
-            this._panel!.webview.postMessage({
-              command: "all_filled_generators",
-              data: {
-                msgId,
-                allFilledGenerators: tts(newFilledGenerators, false),
-              },
-            });
-            break;
-          }
-          case "save_word_steps": {
-            const { wordSteps, wordName, msgId } = msg;
-            if (
-              wordSteps.length === 0 ||
-              wordSteps === "" ||
-              wordSteps == null
-            ) {
-              throw new Error("No steps to save");
+          ${run(panelCommand012, 'panelCommand012')}
             }
             const projectDir = await readFromConfig(
               "PROJECT_DIR",
@@ -500,6 +201,8 @@ export default class PanelClass {
           }
           case "fetch_from_config":
             try {
+              const { pathToConfig } = msg;
+
               // data will equal:
               // GENERATOR_FILE=src/generators/wordBuilder.ts
               // TEMPLATE_FILE=src/templates/wordBuilder.ts
@@ -537,29 +240,18 @@ export default class PanelClass {
                 readFromFile(generatorPath),
                 readFromFile(templatePath),
                 readFromFile(filledGeneratorsPath),
-                // once upon a time, we initialized the UI
-                // with word = last edited word.
-                // it had downsides, like what if you just
-                // edited generators?
-                // but mostly it didn't fit with our new
-                // Runner/dequeue paradigm.
-                // getWordContents(sortedWordPaths[0]),
+                getWordContents(sortedWordPaths[0]),
               ];
               const fileTemplates = await getAllFileTemplates(
                 PanelClass.currentPanel.pathToConfig
               );
-              console.log("FROM STARTUP TEMPLATE MODEUL", templateModule);
+console.log("FROM STARTUP TEMPLATE MODEUL", templateModule)
               const wordNames = getWordNamesFromWordPaths(allWordPaths);
-              /* part of old Word-based regime, replaced with new Runner/dequeue paradigm
               const currentWordName = sortedWordPaths[0]
                 .split("_")[1]
                 .replace(".json", "");
-                */
-
-              const currentWord = [{"result":this.runner.currentTemplate}];
-              const currentWordName = this.runner.currentStep.name+Date.now().toString().substring(7)
               Promise.all(promises).then((data) => {
-                const [generators, templates, filledGenerators] =
+                const [generators, templates, filledGenerators, currentWord] =
                   data;
                 this._panel!.webview.postMessage({
                   command: "config_data",
@@ -567,7 +259,7 @@ export default class PanelClass {
                     generators,
                     templates,
                     filledGenerators,
-                    currentWord: JSON.stringify(currentWord),
+                    currentWord,
                     currentWordName,
                     wordNames: JSON.stringify(wordNames),
                     templateModule,
@@ -611,13 +303,13 @@ export default class PanelClass {
 
     const nonce = getNonce();
 
-    return `<!DOCTYPE html>
+    return ェ<!DOCTYPE html>
       <html lang="en">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Symmetric Blueprints</title>
-        <link rel="stylesheet" href="${styleUri}">
+        <link rel="stylesheet" href="§{styleUri}">
       </head>
       <body>
         <div id="root"></div>
@@ -630,9 +322,323 @@ export default class PanelClass {
             console.log('HTML started up.');
           };
         </script>
-        <script nonce="${nonce}" src="${scriptUri}"></script>
+        <script nonce="§{nonce}" src="§{scriptUri}"></script>
       </body>
       </html>
-    `;
+    ェ;
   }
+}
+`,
+'panelCommand012/panelCommandName012,panelCommandBody012': ({panelCommandName012, panelCommandBody012})=>`case "${run(panelCommandName012,'panelCommandName012')}": ${run(panelCommandBody012,'panelCommandBody012')}break;`,
+'panelCommand011/panelCommandName011,panelCommandBody011': ({panelCommandName011, panelCommandBody011})=>`case "${run(panelCommandName011,'panelCommandName011')}": ${run(panelCommandBody011,'panelCommandBody011')}break;`,
+'panelCommand010/panelCommandName010,panelCommandBody010': ({panelCommandName010, panelCommandBody010})=>`case "${run(panelCommandName010,'panelCommandName010')}": ${run(panelCommandBody010,'panelCommandBody010')}break;`,
+'panelCommand09/panelCommandName09,panelCommandBody09': ({panelCommandName09, panelCommandBody09})=>`case "${run(panelCommandName09,'panelCommandName09')}": ${run(panelCommandBody09,'panelCommandBody09')}break;`,
+'panelCommand08/panelCommandName08,panelCommandBody08': ({panelCommandName08, panelCommandBody08})=>`case "${run(panelCommandName08,'panelCommandName08')}": ${run(panelCommandBody08,'panelCommandBody08')}break;`,
+'panelCommand07/panelCommandName07,panelCommandBody07': ({panelCommandName07, panelCommandBody07})=>`case "${run(panelCommandName07,'panelCommandName07')}": ${run(panelCommandBody07,'panelCommandBody07')}break;`,
+'panelCommand06/panelCommandName06,panelCommandBody06': ({panelCommandName06, panelCommandBody06})=>`case "${run(panelCommandName06,'panelCommandName06')}": ${run(panelCommandBody06,'panelCommandBody06')}break;`,
+'panelCommand05/panelCommandName05,panelCommandBody05': ({panelCommandName05, panelCommandBody05})=>`case "${run(panelCommandName05,'panelCommandName05')}": ${run(panelCommandBody05,'panelCommandBody05')}break;`,
+'panelCommand04/panelCommandName04,panelCommandBody04': ({panelCommandName04, panelCommandBody04})=>`case "${run(panelCommandName04,'panelCommandName04')}": ${run(panelCommandBody04,'panelCommandBody04')}break;`,
+'panelCommand03/panelCommandName03,panelCommandBody03': ({panelCommandName03, panelCommandBody03})=>`case "${run(panelCommandName03,'panelCommandName03')}": ${run(panelCommandBody03,'panelCommandBody03')}break;`,
+'panelCommand01/panelCommandName01,panelCommandBody01': ({panelCommandName01, panelCommandBody01})=>`case "${run(panelCommandName01,'panelCommandName01')}": ${run(panelCommandBody01,'panelCommandBody01')}break;`,
+'panelCommandBody01/panelCommand02': ({panelCommand02})=>`{
+            const { pathToConfig } = msg;
+            console.log("SET CONFIG PATH", pathToConfig);
+            this.pathToConfig = pathToConfig;
+          }
+          ${run(panelCommand02, 'panelCommand02')}{
+            const { template, pathToConfig } = msg;
+
+            const templ = new Function("return " + template)();
+            // we expect a compiled template here, so no denoms for anything, or an error if so
+            const templFileKeys = Object.keys(templ).filter(
+              (k) => k.indexOf(".") > -1
+            );
+            //console.log("TEMPL FILE KEYS", templFileKeys);
+            const filePathHashes = await getFilePathHashes(pathToConfig);
+            //console.log("FILE PATH HASHES", filePathHashes);
+            for (const filePathHash of templFileKeys) {
+              //console.log("filepathhash", filePathHash);
+              // we expect a compiled template here, so no denoms for anything, or an error if so
+              const filePath = filePathHashes[filePathHash];
+              //console.log("FILE PATH", filePath);
+              const fileContents = templ[filePathHash]();
+              //console.log("writing file", filePath, "Øn<>CONTENTS<>Øn",fileContents);
+              await overwriteFile(filePath, fileContents);
+            }
+
+            `,
+'panelCommand02/panelCommandName02,panelCommandBody02': ({panelCommandName02, panelCommandBody02})=>`case "${run(panelCommandName02,'panelCommandName02')}": ${run(panelCommandBody02,'panelCommandBody02')}break;`,
+'panelCommandBody03': ()=>`{
+            const { word, pathToConfig } = msg;
+            const wordsFile = await readFromConfig("WORDS_FILE", pathToConfig);
+            // save to word file
+            const result = await saveWord(word, wordsFile);
+            `,
+'panelCommandBody04': ()=>`{
+            const { word, pathToConfig } = msg;
+            console.log("STORING RUNNABLE WORD", word, pathToConfig);
+            try {
+              await saveRunnableWord(pathToConfig, word);
+              const runnableWords = await getAllRunnableWords(pathToConfig);
+              this._panel!.webview.postMessage({
+                command: "all_runnable_words",
+                data: {
+                  runnableWords: JSON.stringify(runnableWords),
+                },
+              });
+            } catch (e) {
+              console.error(e);
+            }
+            `,
+'panelCommandBody05': ()=>`{
+            const { wordName, pathToConfig } = msg;
+            const wordPath = await getWordPath(pathToConfig, wordName);
+            const wordContents = await getWordContents(wordPath);
+            this._panel!.webview.postMessage({
+              command: "word_contents",
+              data: {
+                wordName,
+                wordContents,
+              },
+            });
+            `,
+'panelCommandBody06': ()=>`{
+            const { wordName, pathToConfig, template } = msg;
+            const projectDir = await readFromConfig(
+              "PROJECT_DIR",
+              pathToConfig
+            );
+            const wordFile = projectDir + "/word_" + wordName + ".json";
+            // eventually, result might be something more, like a file insertion
+            let wordTemplate = "{}";
+            if (template != null) {
+              wordTemplate = template;
+            }
+            let wordContents = JSON.stringify([{ result: wordTemplate }]);
+            await saveFile(wordFile, wordContents);
+            this._panel!.webview.postMessage({
+              command: "word_contents",
+              data: {
+                wordName,
+                wordContents,
+              },
+            });
+            `,
+'panelCommandBody07': ()=>`{
+            // a full template doesn't need to be generated
+            // it's the actual object that is a template
+            // we just need to add it to the template pool
+            const {template, name, pathToConfig} = msg;
+            const templatesFilePath = await readFromConfig(
+              "TEMPLATE_FILE",
+              pathToConfig
+            );
+            const templatesFile = await readFromFile(templatesFilePath);
+            console.log("CURR TEMPLATES FILE", templatesFile);
+            // write template to templates file
+            const newTemplatesFile =
+              templatesFile + "Øn" + ェexport const §{name} = §{template}ェ;
+            console.log("NEW TEMPLATES FILE", newTemplatesFile);
+            fs.writeFile(templatesFilePath, newTemplatesFile, (err) => {
+              if (err) {
+                console.error(err);
+              }
+              console.log("success");
+            });
+
+            // bun run the file and send the result to the frontend
+            const projectDir = await readFromConfig(
+              "PROJECT_DIR",
+              pathToConfig
+            );
+            const templateModule = await runTs(
+              projectDir + "/template-getter.ts"
+            );
+            console.log("ALL OF TEMPLATE MODULE", templateModule)
+            this._panel!.webview.postMessage({
+              command: "all_templates",
+              data: {
+                templateModule,
+              },
+            });
+            `,
+'panelCommandBody08': ()=>`{
+            const { key, args, value, pathToConfig } = msg;
+            const funcPart = argsAndTemplateToFunction([], value);
+            const templ = { [key]: funcPart };
+            const templateString = ェgenTemplateWithVars(§{tts(
+              templ,
+              false
+            )}, §{args});ェ;
+            const templatesFilePath = await readFromConfig(
+              "TEMPLATE_FILE",
+              pathToConfig
+            );
+            const templatesFile = await readFromFile(templatesFilePath);
+            console.log("CURR TEMPLATES FILE", templatesFile);
+            // write template to templates file
+            const newTemplatesFile =
+              templatesFile + "Øn" + ェexport const §{key} = §{templateString}ェ;
+            console.log("NEW TEMPLATES FILE", newTemplatesFile);
+            fs.writeFile(templatesFilePath, newTemplatesFile, (err) => {
+              if (err) {
+                console.error(err);
+              }
+              console.log("success");
+            });
+
+            // bun run the file and send the result to the frontend
+            const projectDir = await readFromConfig(
+              "PROJECT_DIR",
+              pathToConfig
+            );
+            const templateModule = await runTs(
+              projectDir + "/template-getter.ts"
+            );
+            this._panel!.webview.postMessage({
+              command: "all_templates",
+              data: {
+                templateModule,
+              },
+            });
+
+            `,
+'panelCommandBody09': ()=>`{
+            const { generatorString, template, pathToConfig, msgId } = msg;
+            console.log(
+              "RUNNING",
+              "msgId",
+              msgId,
+              "AND",
+
+              generatorString,
+              pathToConfig
+            );
+            const projectDir = await readFromConfig(
+              "PROJECT_DIR",
+              pathToConfig
+            );
+            const filePrefix = Date.now();
+            const generatorRunFile = await createRunnableGeneratorFileContents(
+              pathToConfig,
+              generatorString,
+              template
+            );
+            const generatorFile = filePrefix + "_generator.ts";
+            const resultFile = filePrefix + "_result";
+            const genFilePath = projectDir + "/" + generatorFile;
+            const resultFilePath = projectDir + "/" + resultFile;
+            await saveFile(genFilePath, generatorRunFile);
+            const result = await runTs(genFilePath);
+            console.log("RESULTv,", result);
+            await saveFile(resultFilePath, result);
+
+            this._panel!.webview.postMessage({
+              command: "generator_result",
+              data: {
+                msgId,
+                generatorFilePath: genFilePath,
+                resultFilePath: resultFilePath,
+                result,
+                generatorString,
+              },
+            });
+            `,
+'panelCommandBody010': ()=>`{
+            const { wordName, template, pathToConfig, msgId } = msg;
+            const projectDir = await readFromConfig(
+              "PROJECT_DIR",
+              pathToConfig
+            );
+            const filePrefix = Date.now();
+            const wordRunFile = formWordRunFile(wordName, template);
+            const wordRunFileName = filePrefix + "_wordRun.ts";
+            const resultFile = filePrefix + "_result";
+            const wordRunFilePath = projectDir + "/" + wordRunFileName;
+            const resultFilePath = projectDir + "/" + resultFile;
+            await saveFile(wordRunFilePath, wordRunFile);
+            const result = await runTs(wordRunFilePath);
+            console.log("word run RESULTv,", result);
+            await saveFile(resultFilePath, result);
+
+            this._panel!.webview.postMessage({
+              command: "word_run_result",
+              data: {
+                msgId,
+                wordRunFilePath: wordRunFilePath,
+                resultFilePath: resultFilePath,
+                result,
+                wordString: ェ§{wordName}(template)ェ,
+              },
+            });
+            `,
+'panelCommandBody011': ()=>`{
+            const { msgId, filledGenerator, pathToConfig } = msg;
+
+            const projectDir = await readFromConfig(
+              "PROJECT_DIR",
+              pathToConfig
+            );
+            const filledGeneratorsPath = projectDir + "/filledGenerators.json";
+
+            let currentFilledGenerators;
+            try {
+              currentFilledGenerators = await readFile(filledGeneratorsPath);
+            } catch {
+              currentFilledGenerators = "{}";
+            }
+            const cfgTemplate: Template = new Function(
+              "return " + currentFilledGenerators
+            )();
+            const filledGeneratorTemplate: Template = new Function(
+              "return " + filledGenerator
+            )();
+            const newFilledGenerators = insertIntoTemplate(
+              cfgTemplate,
+              filledGeneratorTemplate
+            );
+            await saveFile(
+              filledGeneratorsPath,
+              tts(newFilledGenerators, false)
+            );
+            this._panel!.webview.postMessage({
+              command: "all_filled_generators",
+              data: {
+                msgId,
+                allFilledGenerators: tts(newFilledGenerators, false),
+              },
+            });
+            `,
+'panelCommandBody012': ()=>`{
+            const { wordSteps, wordName, pathToConfig, msgId } = msg;
+            if (
+              wordSteps.length === 0 ||
+              wordSteps === "" ||
+              wordSteps == null
+            ) {
+              throw new Error("No steps to save");
+              `,
+'panelCommandName01': ()=>`set_config_path`,
+'panelCommandName02': ()=>`save_all_files`,
+'panelCommandName03': ()=>`startup":
+            console.log("message received");
+            // ensure bun is set up for the thing
+
+            break;
+          case "testing":
+            console.log("reachedBrain");
+            this._panel!.webview.postMessage({ command: "refactor" });
+            break;
+          case "build_project":
+            break;
+          case "save_word`,
+'panelCommandName04': ()=>`store_runnable_word`,
+'panelCommandName05': ()=>`get_word`,
+'panelCommandName06': ()=>`create_word`,
+'panelCommandName07': ()=>`add_full_template`,
+'panelCommandName08': ()=>`add_template`,
+'panelCommandName09': ()=>`run_generator`,
+'panelCommandName010': ()=>`run_word`,
+'panelCommandName011': ()=>`add_filled_generator`,
+'panelCommandName012': ()=>`save_word_steps`
 }

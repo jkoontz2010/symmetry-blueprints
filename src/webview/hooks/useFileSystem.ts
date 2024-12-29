@@ -39,7 +39,6 @@ export function useFileSystem(postMessage, configPath) {
           const {
             generators,
             templates,
-
             filledGenerators,
             currentWord,
             wordNames,
@@ -49,7 +48,6 @@ export function useFileSystem(postMessage, configPath) {
             runnableWords
           }: {
             generators: string;
-
             templates: string;
             filledGenerators: string;
             currentWord: string;

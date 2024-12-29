@@ -9,3 +9,5 @@ fd07d61662_secondy.tsx=/Users/jaykoontz/Documents/GitHub/global-templates/_templ
 a4023e8966_fifth.tsx=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/fifth.tsx
 eccc1edee4_sixth.tsx=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/sixth.tsx
 94a30e0740_sev.tsx=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/sev.tsx
+b779abdb70_panel.ts=/Users/jaykoontz/Documents/GitHub/global-templates/_templates/templator/new/panel.ts
+

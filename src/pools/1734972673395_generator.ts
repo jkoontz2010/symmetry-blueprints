@@ -1,9 +1,247 @@
+import { commandSend } from "./template-pool";
+
+import {  tts,
+run,
+orderedParse } from "symmetric-parser";
+
+
+const template = {
+'fifth.tsxa4023e8966': ()=>`
+import { cloneDeep, difference, last, uniqueId } from "lodash";
+import { useEffect, useState } from "react";
+import {
+  appendKeyToKey,
+  dumbCombine,
+  insertIntoTemplate,
+  sortTemplateByDeps,
+  tts,
+  argsAndTemplateToFunction,
+} from "symmetric-parser";
+import { Template } from "symmetric-parser/dist/src/templator/template-group";
+import { formGeneratorFile } from "./hgcgUtil";
+import { CONFIG_PATH } from "../components/App";
+import { customAlphabet } from "nanoid";
+import { WordDefinition } from "../components/TemplateTree";
+
+export type WordStep = {
+  name?: string;
+  args?: any[];
+  result: Template;
+  files?: { generatorFilePath?: string; resultFilePath?: string };
+};
+
+export function useTemplate(
+  definition: WordDefinition,
+  templateModule: any,
+  generatorModule: any,
+  wordModule: any,
+  postMessage: any,
+  isMainTemplate: boolean
+) {
+  const alphabet =
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  const nanoid = customAlphabet(alphabet, 4);
+
+  const [msgId, setMsgId] = useState(nanoid());
+  let [template, setTemplate] = useState<Template>(
+    last(definition.wordSteps).result
+  );
+
+  const [wordSteps, setWordSteps] = useState<WordStep[]>(definition.wordSteps);
+  function logStep(name, args, result, files = {}) {
+    console.log("PREV STEPS", wordSteps);
+    const wordStep = {
+      name: name,
+      args: args,
+      result: cloneDeep(result),
+      files,
+    };
+
+    const newWordSteps = [...wordSteps, wordStep];
+    setWordSteps(newWordSteps);
+    const stringifiedSteps = newWordSteps.map((ws) => {
+      return {
+        name: ws.name,
+        args: ws.args,
+        result:
+          typeof ws.result === "string" ? ws.result : tts(ws.result, false),
+        files: ws.files,
+      };
+    });
+    console.log("STRINGIFIED STEPS", stringifiedSteps);
+    const wordName = definition.name;
+
+    postMessage({
+      command: "save_word_steps",
+      wordSteps: JSON.stringify(stringifiedSteps),
+      wordName,
+      pathToConfig: CONFIG_PATH,
+      msgId,
+    });
+  }
+
+  function removeKey(key: string) {
+    const newTemplate = cloneDeep(template);
+    delete newTemplate[key];
+    logStep("deleteKey", [key], newTemplate);
+    setTemplate(newTemplate);
+  }
+  function addKey(key: string) {
+    const templateHasNumerator = Object.keys(template).some((k) => {
+      return k.split("/")[0] === key;
+    });
+    if (templateHasNumerator) return;
+    let combineWith = { [key]: () => ェェ };
+    let newTemplate = dumbCombine(template, combineWith);
+    let result = sortTemplateByDeps(sortTemplateByDeps(newTemplate));
+    logStep("dumbCombine", [template, combineWith], result);
+    setTemplate(result);
+  }
+
+  function addKeyToNumerator(appendKey: string, toKey: string) {
+    const fullToKey = Object.keys(template).find(
+      (k) => k.split("/")[0] === toKey
+    );
+    if (fullToKey != null) {
+      // check that the appendKey isn't already in there
+      const denoms = fullToKey.split("/")[1]?.split(",");
+      if (denoms?.includes(appendKey)) {
+        return;
+      }
+    }
+    let newTemplate = appendKeyToKey(template, appendKey, toKey);
+    let result = sortTemplateByDeps(sortTemplateByDeps(newTemplate));
+    logStep("appendKeyToKey", [template, appendKey, toKey], result);
+
+    setTemplate(result);
+  }
+
+  function insertTemplateIntoTemplate(templateToInsert: Template) {
+    console.log("inserting template into template", templateToInsert);
+    let newTemplate = insertIntoTemplate(template, templateToInsert);
+    let result = sortTemplateByDeps(sortTemplateByDeps(newTemplate));
+    logStep("insertIntoTemplate", [template, templateToInsert], result);
+
+    setTemplate(result);
+  }
+  function insertTemplateIntoTemplateAtKey(
+    templateToInsert: Template,
+    toKey: string
+  ) {
+    console.log(
+      "insertTemplateIntoTemplateAtKey",
+      templateToInsert,
+      toKey,
+      template
+    );
+    const oldKeys = Object.keys(template);
+    let newTemplate = insertIntoTemplate(template, templateToInsert);
+    logStep("insertIntoTemplate", [template, templateToInsert], newTemplate);
+
+    const newKeys = Object.keys(newTemplate);
+    const newestKey = newKeys
+      .filter((k) => !oldKeys.includes(k))[0]
+      ?.split("/")[0];
+    console.log("NEWEST KEY", newestKey);
+    let appendedTemplate = appendKeyToKey(newTemplate, newestKey, toKey);
+    const result = sortTemplateByDeps(sortTemplateByDeps(appendedTemplate));
+    logStep("appendKeyToKey", [newTemplate, newestKey, toKey], result);
+    setTemplate(result);
+  }
+
+  const handleGeneratorResult = (message: any) => {
+    console.log("WORD STEPS ON MESSAGE", wordSteps);
+
+    console.log("MESSAGE DATA", message.data);
+    const { generatorFilePath, resultFilePath, result, generatorString } =
+      message.data;
+    console.log("generator_result", result);
+    const name = generatorString.substring(0, generatorString.indexOf("("));
+
+    const args = generatorString
+      .substring(generatorString.indexOf("(") + 1, generatorString.indexOf(")"))
+      .split(",");
+
+    logStep(name, args, result, {
+      generatorFilePath,
+      resultFilePath,
+    });
+    setTemplate(new Function("return " + result)());
+  };
+
+  function handleGenericMessage(event: MessageEvent) {
+    const message = event.data; // The json data that the extension sent
+    switch (message.command) {
+      case "file_insert":
+        if (isMainTemplate) {
+          const { contents, filePath } = message.data;
+          const funcPart = argsAndTemplateToFunction([], contents);
+          const templ = { [filePath]: funcPart };
+          console.log("FILE INSERT", contents, filePath, templ);
+          insertTemplateIntoTemplate(templ);
+        }
+        break;
+    }
+  }
+  useEffect(() => {
+    window.addEventListener("message", handleGenericMessage);
+    return () => {
+      window.removeEventListener("message", handleGenericMessage);
+    };
+  }, [isMainTemplate]);
+  function handleMessage(event: MessageEvent) {
+    if (event.data.data.msgId !== msgId) return;
+    const message = event.data; // The json data that the extension sent
+    switch (message.command) {
+      case "generator_result":
+        handleGeneratorResult(message);
+        break;
+    }
+  }
+  useEffect(() => {
+    window.addEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, [wordSteps]);
+  function applyGeneratorString(generatorString: string) {
+    // form it and send it over
+    const generatorRunFile = formGeneratorFile(
+      generatorString,
+      template,
+      templateModule,
+      generatorModule
+    );
+    // send it over via postMessage
+    postMessage({
+      command: "run_generator",
+      generatorRunFile,
+      generatorString,
+      pathToConfig: CONFIG_PATH,
+      msgId,
+    });
+  }
+  console.log("Word steps", wordSteps);
+  return {
+    template,
+    addKey,
+    addKeyToNumerator,
+    insertTemplateIntoTemplate,
+    insertTemplateIntoTemplateAtKey,
+    wordSteps,
+    applyGeneratorString,
+    removeKey,
+  };
+}
+`,
+'panel.tsb779abdb70': ()=>`
 import * as vscode from "vscode";
 import { getNonce } from "./getNonce";
 import * as fs from "fs";
-import { readFile, runTs, saveFile, saveWord } from "./compiler";
+import { readFile, runIndexFile, runTs, saveFile, saveWord } from "./compiler";
 import {
   argsAndTemplateToFunction,
+  genTemplateWithVars,
   insertIntoTemplate,
   tts,
 } from "symmetric-parser";
@@ -17,20 +255,20 @@ import {
   getWordPath,
   storeFileHash,
   getFilePathHashes,
+  getFilePathFromHashes,
   overwriteFile,
   getAllFileTemplates,
   saveRunnableWord,
   getAllRunnableWords,
   createRunnableGeneratorFileContents,
-} from "./services/commandService";
+} from "./commandService";
 import { sha1 } from "js-sha1";
-import { runWord } from "./services/wordRunService";
-import Runner, { DequeueConfig } from "./runner/runner";
+import { formWordRunFile } from "./wordRunService";
 
 function formFilePathHash(filePath: string) {
   const fileName = filePath.split("/").pop();
   const fileHash = sha1(filePath);
-  return `${fileHash.substring(0, 10)}_${fileName}`;
+  return ェ§{fileHash.substring(0, 10)}_§{fileName}ェ;
 }
 
 function readFromFile(file) {
@@ -46,36 +284,6 @@ function readFromFile(file) {
   });
 }
 
-const TEST_DEQUEUE: DequeueConfig = {
-  name: "test",
-  description:
-    "opens to a blank template. insert the right file and it'll run our favorite parse word on it, then pause.",
-  steps: [
-    {
-      type: "template",
-      config:
-        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig",
-      name: "blank",
-      description:
-        "starts with blank template. fill with fifth.tsx to ready for next step!",
-      waitForTransitionCommand: true,
-      transitionAction: "identity",
-      runWithEmptyTemplate: false,
-    },
-    {
-      type: "template",
-      config:
-        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig",
-      name: "parseFifth",
-      description: "runs the word that parses fifth.tsx",
-      word: "ponTester2",
-      waitForTransitionCommand: true,
-      transitionAction: "identity", // nothing
-      runWithEmptyTemplate: false,
-    },
-  ],
-};
-
 export default class PanelClass {
   public static currentPanel: PanelClass | undefined;
 
@@ -86,7 +294,6 @@ export default class PanelClass {
   private readonly _extContext: vscode.ExtensionContext;
   private _disposables: vscode.Disposable[] = [];
   private pathToConfig: string;
-  private runner: Runner;
 
   public static createOrShow(extContext: vscode.ExtensionContext) {
     const column = vscode.window.activeTextEditor
@@ -167,11 +374,6 @@ export default class PanelClass {
     this._extContext = _extContext;
     this._extensionUri = _extContext.extensionUri;
 
-    // will have to move this somewhere else for initialization.
-    // as-is, this singleton works great for testing.
-    this.runner = new Runner(TEST_DEQUEUE.steps);
-    this.runner.initNextStep("{}")
-
     // Create and show a new webview panel
     this._panel = vscode.window.createWebviewPanel(
       PanelClass.viewType,
@@ -195,14 +397,14 @@ export default class PanelClass {
     this._panel.webview.onDidReceiveMessage(
       async (msg: any) => {
         console.log("DID RECEIVE MSG", msg);
-        const pathToConfig = this.runner.currentStep.config;
         switch (msg.command) {
           case "set_config_path": {
+            const { pathToConfig } = msg;
             console.log("SET CONFIG PATH", pathToConfig);
             this.pathToConfig = pathToConfig;
           }
           case "save_all_files": {
-            const { template } = msg;
+            const { template, pathToConfig } = msg;
 
             const templ = new Function("return " + template)();
             // we expect a compiled template here, so no denoms for anything, or an error if so
@@ -218,7 +420,7 @@ export default class PanelClass {
               const filePath = filePathHashes[filePathHash];
               //console.log("FILE PATH", filePath);
               const fileContents = templ[filePathHash]();
-              //console.log("writing file", filePath, "\n<>CONTENTS<>\n",fileContents);
+              //console.log("writing file", filePath, "Øn<>CONTENTS<>Øn",fileContents);
               await overwriteFile(filePath, fileContents);
             }
 
@@ -236,14 +438,14 @@ export default class PanelClass {
           case "build_project":
             break;
           case "save_word": {
-            const { word } = msg;
+            const { word, pathToConfig } = msg;
             const wordsFile = await readFromConfig("WORDS_FILE", pathToConfig);
             // save to word file
             const result = await saveWord(word, wordsFile);
             break;
           }
           case "store_runnable_word": {
-            const { word } = msg;
+            const { word, pathToConfig } = msg;
             console.log("STORING RUNNABLE WORD", word, pathToConfig);
             try {
               await saveRunnableWord(pathToConfig, word);
@@ -260,7 +462,7 @@ export default class PanelClass {
             break;
           }
           case "get_word": {
-            const { wordName } = msg;
+            const { wordName, pathToConfig } = msg;
             const wordPath = await getWordPath(pathToConfig, wordName);
             const wordContents = await getWordContents(wordPath);
             this._panel!.webview.postMessage({
@@ -273,7 +475,7 @@ export default class PanelClass {
             break;
           }
           case "create_word": {
-            const { wordName, template } = msg;
+            const { wordName, pathToConfig, template } = msg;
             const projectDir = await readFromConfig(
               "PROJECT_DIR",
               pathToConfig
@@ -299,7 +501,7 @@ export default class PanelClass {
             // a full template doesn't need to be generated
             // it's the actual object that is a template
             // we just need to add it to the template pool
-            const { template, name } = msg;
+            const {template, name, pathToConfig} = msg;
             const templatesFilePath = await readFromConfig(
               "TEMPLATE_FILE",
               pathToConfig
@@ -308,7 +510,7 @@ export default class PanelClass {
             console.log("CURR TEMPLATES FILE", templatesFile);
             // write template to templates file
             const newTemplatesFile =
-              templatesFile + "\n" + `export const ${name} = ${template}`;
+              templatesFile + "Øn" + ェexport const §{name} = §{template}ェ;
             console.log("NEW TEMPLATES FILE", newTemplatesFile);
             fs.writeFile(templatesFilePath, newTemplatesFile, (err) => {
               if (err) {
@@ -325,7 +527,7 @@ export default class PanelClass {
             const templateModule = await runTs(
               projectDir + "/template-getter.ts"
             );
-            console.log("ALL OF TEMPLATE MODULE", templateModule);
+            console.log("ALL OF TEMPLATE MODULE", templateModule)
             this._panel!.webview.postMessage({
               command: "all_templates",
               data: {
@@ -335,13 +537,13 @@ export default class PanelClass {
             break;
           }
           case "add_template": {
-            const { key, args, value } = msg;
+            const { key, args, value, pathToConfig } = msg;
             const funcPart = argsAndTemplateToFunction([], value);
             const templ = { [key]: funcPart };
-            const templateString = `genTemplateWithVars(${tts(
+            const templateString = ェgenTemplateWithVars(§{tts(
               templ,
               false
-            )}, ${args});`;
+            )}, §{args});ェ;
             const templatesFilePath = await readFromConfig(
               "TEMPLATE_FILE",
               pathToConfig
@@ -350,7 +552,7 @@ export default class PanelClass {
             console.log("CURR TEMPLATES FILE", templatesFile);
             // write template to templates file
             const newTemplatesFile =
-              templatesFile + "\n" + `export const ${key} = ${templateString}`;
+              templatesFile + "Øn" + ェexport const §{key} = §{templateString}ェ;
             console.log("NEW TEMPLATES FILE", newTemplatesFile);
             fs.writeFile(templatesFilePath, newTemplatesFile, (err) => {
               if (err) {
@@ -377,7 +579,7 @@ export default class PanelClass {
             break;
           }
           case "run_generator": {
-            const { generatorString, template, msgId } = msg;
+            const { generatorString, template, pathToConfig, msgId } = msg;
             console.log(
               "RUNNING",
               "msgId",
@@ -419,12 +621,22 @@ export default class PanelClass {
             break;
           }
           case "run_word": {
-            const { wordName, template, msgId } = msg;
-            const {
-              template: result,
-              wordRunFilePath,
-              resultFilePath,
-            } = await runWord(pathToConfig, wordName, template);
+            const { wordName, template, pathToConfig, msgId } = msg;
+            const projectDir = await readFromConfig(
+              "PROJECT_DIR",
+              pathToConfig
+            );
+            const filePrefix = Date.now();
+            const wordRunFile = formWordRunFile(wordName, template);
+            const wordRunFileName = filePrefix + "_wordRun.ts";
+            const resultFile = filePrefix + "_result";
+            const wordRunFilePath = projectDir + "/" + wordRunFileName;
+            const resultFilePath = projectDir + "/" + resultFile;
+            await saveFile(wordRunFilePath, wordRunFile);
+            const result = await runTs(wordRunFilePath);
+            console.log("word run RESULTv,", result);
+            await saveFile(resultFilePath, result);
+
             this._panel!.webview.postMessage({
               command: "word_run_result",
               data: {
@@ -432,13 +644,13 @@ export default class PanelClass {
                 wordRunFilePath: wordRunFilePath,
                 resultFilePath: resultFilePath,
                 result,
-                wordString: `${wordName}(template)`,
+                wordString: ェ§{wordName}(template)ェ,
               },
             });
             break;
           }
           case "add_filled_generator": {
-            const { msgId, filledGenerator } = msg;
+            const { msgId, filledGenerator, pathToConfig } = msg;
 
             const projectDir = await readFromConfig(
               "PROJECT_DIR",
@@ -476,13 +688,14 @@ export default class PanelClass {
             break;
           }
           case "save_word_steps": {
-            const { wordSteps, wordName, msgId } = msg;
+            const { wordSteps, wordName, pathToConfig, msgId } = msg;
             if (
               wordSteps.length === 0 ||
               wordSteps === "" ||
               wordSteps == null
             ) {
               throw new Error("No steps to save");
+              break;
             }
             const projectDir = await readFromConfig(
               "PROJECT_DIR",
@@ -500,6 +713,8 @@ export default class PanelClass {
           }
           case "fetch_from_config":
             try {
+              const { pathToConfig } = msg;
+
               // data will equal:
               // GENERATOR_FILE=src/generators/wordBuilder.ts
               // TEMPLATE_FILE=src/templates/wordBuilder.ts
@@ -537,29 +752,18 @@ export default class PanelClass {
                 readFromFile(generatorPath),
                 readFromFile(templatePath),
                 readFromFile(filledGeneratorsPath),
-                // once upon a time, we initialized the UI
-                // with word = last edited word.
-                // it had downsides, like what if you just
-                // edited generators?
-                // but mostly it didn't fit with our new
-                // Runner/dequeue paradigm.
-                // getWordContents(sortedWordPaths[0]),
+                getWordContents(sortedWordPaths[0]),
               ];
               const fileTemplates = await getAllFileTemplates(
                 PanelClass.currentPanel.pathToConfig
               );
-              console.log("FROM STARTUP TEMPLATE MODEUL", templateModule);
+console.log("FROM STARTUP TEMPLATE MODEUL", templateModule)
               const wordNames = getWordNamesFromWordPaths(allWordPaths);
-              /* part of old Word-based regime, replaced with new Runner/dequeue paradigm
               const currentWordName = sortedWordPaths[0]
                 .split("_")[1]
                 .replace(".json", "");
-                */
-
-              const currentWord = [{"result":this.runner.currentTemplate}];
-              const currentWordName = this.runner.currentStep.name+Date.now().toString().substring(7)
               Promise.all(promises).then((data) => {
-                const [generators, templates, filledGenerators] =
+                const [generators, templates, filledGenerators, currentWord] =
                   data;
                 this._panel!.webview.postMessage({
                   command: "config_data",
@@ -567,7 +771,7 @@ export default class PanelClass {
                     generators,
                     templates,
                     filledGenerators,
-                    currentWord: JSON.stringify(currentWord),
+                    currentWord,
                     currentWordName,
                     wordNames: JSON.stringify(wordNames),
                     templateModule,
@@ -611,13 +815,13 @@ export default class PanelClass {
 
     const nonce = getNonce();
 
-    return `<!DOCTYPE html>
+    return ェ<!DOCTYPE html>
       <html lang="en">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Symmetric Blueprints</title>
-        <link rel="stylesheet" href="${styleUri}">
+        <link rel="stylesheet" href="§{styleUri}">
       </head>
       <body>
         <div id="root"></div>
@@ -630,9 +834,14 @@ export default class PanelClass {
             console.log('HTML started up.');
           };
         </script>
-        <script nonce="${nonce}" src="${scriptUri}"></script>
+        <script nonce="§{nonce}" src="§{scriptUri}"></script>
       </body>
       </html>
-    `;
+    ェ;
   }
 }
+`
+};
+// @ts-ignore
+const result = orderedParse(template, [commandSend]);
+console.log(tts(result,false));

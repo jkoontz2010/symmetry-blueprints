@@ -1,3 +1,12 @@
+import { commandSend } from "./template-pool";
+
+import {  tts,
+run,
+orderedParse } from "symmetric-parser";
+
+
+const template = {
+'fifth.tsxa4023e8966': ()=>`
 import { cloneDeep, compact, difference, last, uniqueId } from "lodash";
 import { useEffect, useState } from "react";
 import {
@@ -45,7 +54,7 @@ export function useTemplate(
     const wordStep = {
       name: name,
       args: args,
-      full: `${name}(${args.join(",")})`,
+      full: ェ§{name}(§{args.join(",")})ェ,
       result: cloneDeep(result),
       files,
     };
@@ -84,7 +93,7 @@ export function useTemplate(
       return k.split("/")[0] === key;
     });
     if (templateHasNumerator) return;
-    let combineWith = { [key]: () => `` };
+    let combineWith = { [key]: () => ェェ };
     let newTemplate = dumbCombine(template, combineWith);
     let result = sortTemplateByDeps(sortTemplateByDeps(newTemplate));
     logStep("dumbCombine", [template, combineWith], result);
@@ -279,9 +288,13 @@ function parseWordStepsIntoWord(wordName:string, wordSteps: WordStep[]): string 
 			return null
 		}
     if(step.full==null) {return null}
-		return `(template)=>${step.full}`
+		return ェ(template)=>§{step.full}ェ
 	}))
 
-	const word = `export const ${wordName} = flow(${callbacks.join(",")})`
+	const word = ェexport const §{wordName} = flow(§{callbacks.join(",")})ェ
   return word;
-}
+}`
+};
+// @ts-ignore
+const result = orderedParse(template, [commandSend]);
+console.log(tts(result,false));

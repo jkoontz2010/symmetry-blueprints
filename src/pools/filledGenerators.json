@@ -7,5 +7,6 @@
 'step6': ()=>`orderedParse(template, [pathConfigPostArg])`,
 'step7': ()=>`nestedParse(template, [elementTag],5)`,
 'step8': ()=>`performOnNodes(template, "commandBody", fullTest)`,
-'step9': ()=>`orderedParse(template, [commandSend])`
+'step9': ()=>`orderedParse(template, [commandSend])`,
+'step10': ()=>`orderedParse(template, [panelCommand])`
 }

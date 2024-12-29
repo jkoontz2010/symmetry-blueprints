@@ -1,4 +1,5 @@
-import { cloneDeep, compact, difference, last, uniqueId } from "lodash";
+{
+'fifth.tsxa4023e8966/commandSend01,commandSend02': ({ commandSend01, commandSend02 }) => `import { cloneDeep, difference, last, uniqueId } from "lodash";
 import { useEffect, useState } from "react";
 import {
   appendKeyToKey,
@@ -13,13 +14,11 @@ import { formGeneratorFile } from "./hgcgUtil";
 import { CONFIG_PATH } from "../components/App";
 import { customAlphabet } from "nanoid";
 import { WordDefinition } from "../components/TemplateTree";
-import { pathToFileURL } from "url";
 
 export type WordStep = {
   name?: string;
   args?: any[];
   result: Template;
-  full?: string;
   files?: { generatorFilePath?: string; resultFilePath?: string };
 };
 
@@ -42,10 +41,10 @@ export function useTemplate(
 
   const [wordSteps, setWordSteps] = useState<WordStep[]>(definition.wordSteps);
   function logStep(name, args, result, files = {}) {
+    console.log("PREV STEPS", wordSteps);
     const wordStep = {
       name: name,
       args: args,
-      full: `${name}(${args.join(",")})`,
       result: cloneDeep(result),
       files,
     };
@@ -56,21 +55,15 @@ export function useTemplate(
       return {
         name: ws.name,
         args: ws.args,
-        full: ws.full,
         result:
           typeof ws.result === "string" ? ws.result : tts(ws.result, false),
         files: ws.files,
       };
     });
+    console.log("STRINGIFIED STEPS", stringifiedSteps);
     const wordName = definition.name;
 
-    postMessage({
-      command: "save_word_steps",
-      wordSteps: JSON.stringify(stringifiedSteps),
-      wordName,
-      pathToConfig: CONFIG_PATH,
-      msgId,
-    });
+    ${run(commandSend01, "commandSend01")}
   }
 
   function removeKey(key: string) {
@@ -84,7 +77,7 @@ export function useTemplate(
       return k.split("/")[0] === key;
     });
     if (templateHasNumerator) return;
-    let combineWith = { [key]: () => `` };
+    let combineWith = { [key]: () => \`\` };
     let newTemplate = dumbCombine(template, combineWith);
     let result = sortTemplateByDeps(sortTemplateByDeps(newTemplate));
     logStep("dumbCombine", [template, combineWith], result);
@@ -135,7 +128,7 @@ export function useTemplate(
     const newestKey = newKeys
       .filter((k) => !oldKeys.includes(k))[0]
       ?.split("/")[0];
-    //console.log("NEWEST KEY", newestKey);
+    console.log("NEWEST KEY", newestKey);
     let appendedTemplate = appendKeyToKey(newTemplate, newestKey, toKey);
     const result = sortTemplateByDeps(sortTemplateByDeps(appendedTemplate));
     logStep("appendKeyToKey", [newTemplate, newestKey, toKey], result);
@@ -143,9 +136,9 @@ export function useTemplate(
   }
 
   const handleGeneratorResult = (message: any) => {
-    //console.log("WORD STEPS ON MESSAGE", wordSteps);
+    console.log("WORD STEPS ON MESSAGE", wordSteps);
 
-    //console.log("MESSAGE DATA", message.data);
+    console.log("MESSAGE DATA", message.data);
     const { generatorFilePath, resultFilePath, result, generatorString } =
       message.data;
     console.log("generator_result", result);
@@ -162,35 +155,17 @@ export function useTemplate(
     setTemplate(new Function("return " + result)());
   };
 
-  const handleWordRunResult = (message:any) => {
-    const { wordRunFilePath, resultFilePath, result, wordString } =
-      message.data;
-    console.log("word_run_result", result);
-    const name = wordString.substring(0, wordString.indexOf("("));
-
-    const args = ["template"]
-
-    logStep(name, args, result, {
-      wordRunFilePath,
-      resultFilePath,
-    });
-    setTemplate(new Function("return " + result)());
-  }
-
   function handleGenericMessage(event: MessageEvent) {
     const message = event.data; // The json data that the extension sent
     switch (message.command) {
-      case "file_insert": {
+      case "file_insert":
         if (isMainTemplate) {
           const { contents, filePath } = message.data;
           const funcPart = argsAndTemplateToFunction([], contents);
           const templ = { [filePath]: funcPart };
-          //console.log("FILE INSERT", contents, filePath, templ);
+          console.log("FILE INSERT", contents, filePath, templ);
           insertTemplateIntoTemplate(templ);
         }
-        break;
-      } 
-      default:
         break;
     }
   }
@@ -207,14 +182,6 @@ export function useTemplate(
       case "generator_result":
         handleGeneratorResult(message);
         break;
-      case "word_run_result": {
-        handleWordRunResult(message);
-        break;
-      }
-      default: {
-        // defaults give a good end-of-switch-statement parse hack
-        break;
-      }
     }
   }
   useEffect(() => {
@@ -225,39 +192,15 @@ export function useTemplate(
   }, [wordSteps]);
   function applyGeneratorString(generatorString: string) {
     // form it and send it over
-
-    // send it over via postMessage
-    postMessage({
-      command: "run_generator",
+    const generatorRunFile = formGeneratorFile(
       generatorString,
-      template: tts(template,false),
-      pathToConfig: CONFIG_PATH,
-      msgId,
-    });
+      template,
+      templateModule,
+      generatorModule
+    );
+    // send it over via postMessage
+    ${run(commandSend02, "commandSend02")}
   }
-  const handleConvertWordSteps = () => {
-    const parsedWord=parseWordStepsIntoWord(definition.name, wordSteps)
-    console.log("parsedWord", parsedWord, wordSteps);
-    postMessage({
-      command: "store_runnable_word",
-      word: parsedWord,
-      pathToConfig: CONFIG_PATH,
-    })
-  }
-  const handleRunnableWordClick = (rWordName:string) => {
-    // postMessage
-    // run word
-    // get result back
-
-    postMessage({
-      command: "run_word",
-      wordName:rWordName,
-      pathToConfig: CONFIG_PATH,
-      template: tts(template,false),
-      msgId,
-    })
-  }
-
   console.log("Word steps", wordSteps);
   return {
     template,
@@ -268,20 +211,43 @@ export function useTemplate(
     wordSteps,
     applyGeneratorString,
     removeKey,
-    handleConvertWordSteps,
-    handleRunnableWordClick,
   };
 }
-
-function parseWordStepsIntoWord(wordName:string, wordSteps: WordStep[]): string {
-	const callbacks = compact(wordSteps.map(step=> {
-		if(step.name==="insertIntoTemplate") {
-			return null
-		}
-    if(step.full==null) {return null}
-		return `(template)=>${step.full}`
-	}))
-
-	const word = `export const ${wordName} = flow(${callbacks.join(",")})`
-  return word;
+`,
+'commandSend02/commandBody02': ({ commandBody02 }) => `postMessage({${run(commandBody02, "commandBody02")}});`,
+'commandBody02/postCmdArgument06,postCmdArgument07,postCmdArgument08,postCmdArgument09,postCmdArgument10': ({postCmdArgument06, postCmdArgument07, postCmdArgument08, postCmdArgument09, postCmdArgument10})=>`
+${run(postCmdArgument06, 'postCmdArgument06')}${run(postCmdArgument07, 'postCmdArgument07')}${run(postCmdArgument08, 'postCmdArgument08')}${run(postCmdArgument09, 'postCmdArgument09')}${run(postCmdArgument10, 'postCmdArgument10')}    `,
+'postCmdArgument10/commandArg10': ({commandArg10})=>`  ${run(commandArg10,'commandArg10')},
+`,
+'postCmdArgument09/commandArg09': ({commandArg09})=>`  ${run(commandArg09,'commandArg09')},
+`,
+'postCmdArgument08/commandArg08': ({commandArg08})=>`  ${run(commandArg08,'commandArg08')},
+`,
+'postCmdArgument07/commandArg07': ({commandArg07})=>`  ${run(commandArg07,'commandArg07')},
+`,
+'postCmdArgument06/commandArg06': ({commandArg06})=>`  ${run(commandArg06,'commandArg06')},
+`,
+'commandSend01/commandBody01': ({ commandBody01 }) => `postMessage({${run(commandBody01, "commandBody01")}});`,
+'commandBody01/postCmdArgument01,postCmdArgument02,postCmdArgument03,postCmdArgument04,postCmdArgument05': ({postCmdArgument01, postCmdArgument02, postCmdArgument03, postCmdArgument04, postCmdArgument05})=>`
+${run(postCmdArgument01, 'postCmdArgument01')}${run(postCmdArgument02, 'postCmdArgument02')}${run(postCmdArgument03, 'postCmdArgument03')}${run(postCmdArgument04, 'postCmdArgument04')}${run(postCmdArgument05, 'postCmdArgument05')}    `,
+'postCmdArgument05/commandArg05': ({commandArg05})=>`  ${run(commandArg05,'commandArg05')},
+`,
+'postCmdArgument04/commandArg04': ({commandArg04})=>`  ${run(commandArg04,'commandArg04')},
+`,
+'postCmdArgument03/commandArg03': ({commandArg03})=>`  ${run(commandArg03,'commandArg03')},
+`,
+'postCmdArgument02/commandArg02': ({commandArg02})=>`  ${run(commandArg02,'commandArg02')},
+`,
+'postCmdArgument01/commandArg01': ({commandArg01})=>`  ${run(commandArg01,'commandArg01')},
+`,
+'commandArg01': ()=>`    command: "save_word_steps"`,
+'commandArg02': ()=>`    wordSteps: JSON.stringify(stringifiedSteps)`,
+'commandArg03': ()=>`    wordName`,
+'commandArg04': ()=>`    pathToConfig: CONFIG_PATH`,
+'commandArg05': ()=>`    msgId`,
+'commandArg06': ()=>`    command: "run_generator"`,
+'commandArg07': ()=>`    generatorRunFile`,
+'commandArg08': ()=>`    generatorString`,
+'commandArg09': ()=>`    pathToConfig: CONFIG_PATH`,
+'commandArg10': ()=>`    msgId`
 }
