@@ -59,18 +59,21 @@ export const storeFileHash = async (
 };
 
 export const getAllFileTemplates = async (pathToConfig: string) => {
+  if (pathToConfig == null) {
+    throw new Error("pathToConfig is null in getAllFileTemplates");
+  }
   const currentHashes = await getFilePathHashes(pathToConfig);
   const filePaths = new Set<string>();
   for (const filePath of Object.values(currentHashes)) {
     filePaths.add(filePath);
   }
-  console.log("FILE PATHS", Array.from(filePaths));
+//  console.log("FILE PATHS", Array.from(filePaths));
   const readPromises = Array.from(filePaths).map(async (filePath) => {
     const data = await fs.readFile(filePath, { encoding: "utf8" });
     return { filePath, data };
   });
   const allFiles = await Promise.all(readPromises);
-  console.log("ALL FILES", allFiles);
+  //console.log("ALL FILES", allFiles);
   const allFileTemplates = {};
   for (const file of allFiles) {
     const { filePath, data } = file;

@@ -26,6 +26,7 @@ import {
 import { sha1 } from "js-sha1";
 import { runWord } from "./services/wordRunService";
 import Runner, { DequeueConfig } from "./runner/runner";
+import { fetchFromConfig } from "./services/configService";
 
 function formFilePathHash(filePath: string) {
   const fileName = filePath.split("/").pop();
@@ -33,7 +34,7 @@ function formFilePathHash(filePath: string) {
   return `${fileHash.substring(0, 10)}_${fileName}`;
 }
 
-function readFromFile(file) {
+export function readFromFile(file) {
   return new Promise((resolve, reject) => {
     fs.readFile(file, "utf8", function (err, data) {
       if (err) {
@@ -109,6 +110,7 @@ export default class PanelClass {
   public static async insertFileIntoTemplate(
     extContext: vscode.ExtensionContext
   ) {
+    console.log("this is both broken and not going to be used anymore");
     const activeTextEditor = vscode.window.activeTextEditor;
     if (activeTextEditor == null) {
       return;
@@ -170,7 +172,7 @@ export default class PanelClass {
     // will have to move this somewhere else for initialization.
     // as-is, this singleton works great for testing.
     this.runner = new Runner(TEST_DEQUEUE.steps);
-    this.runner.initNextStep("{}")
+    this.runner.initNextStep("{}");
 
     // Create and show a new webview panel
     this._panel = vscode.window.createWebviewPanel(
@@ -194,13 +196,8 @@ export default class PanelClass {
     //Listen to messages
     this._panel.webview.onDidReceiveMessage(
       async (msg: any) => {
-        console.log("DID RECEIVE MSG", msg);
         const pathToConfig = this.runner.currentStep.config;
         switch (msg.command) {
-          case "set_config_path": {
-            console.log("SET CONFIG PATH", pathToConfig);
-            this.pathToConfig = pathToConfig;
-          }
           case "save_all_files": {
             const { template } = msg;
 
@@ -498,6 +495,22 @@ export default class PanelClass {
             });
             break;
           }
+          case "transition": {
+            const { template } = msg;
+            await this.runner.transition(template);
+            const newConfig  = this.runner.currentStep.config;
+            const data = await fetchFromConfig(newConfig, this.runner);
+            // so on transition:
+            // get the config from the step
+            // fetch it all (make a service for it)
+            // send it to the frontend like we do on startup
+            // also send the current template as a new word result
+            this._panel!.webview.postMessage({
+              command: "config_data",
+              data,
+            });
+            break;
+          }
           case "fetch_from_config":
             try {
               // data will equal:
@@ -505,76 +518,10 @@ export default class PanelClass {
               // TEMPLATE_FILE=src/templates/wordBuilder.ts
               // WORDS_FILE=src/words/wordBuilder.ts
               // we want to parse each file path and send it back to the webview
-
-              const generatorPath = await readFromConfig(
-                "GENERATOR_FILE",
-                pathToConfig
-              );
-
-              const templatePath = await readFromConfig(
-                "TEMPLATE_FILE",
-                pathToConfig
-              );
-              const runnableWords = await getAllRunnableWords(pathToConfig);
-              const projectDir = await readFromConfig(
-                "PROJECT_DIR",
-                pathToConfig
-              );
-              const filledGeneratorsPath =
-                projectDir + "/filledGenerators.json";
-              const allWordPaths = await getAllWordPathsByLastModified(
-                pathToConfig
-              );
-              const sortedWordPaths = await sortFilesByLastModified(
-                allWordPaths
-              );
-
-              const templateModule = await runTs(
-                projectDir + "/template-getter.ts"
-              );
-
-              const promises = [
-                readFromFile(generatorPath),
-                readFromFile(templatePath),
-                readFromFile(filledGeneratorsPath),
-                // once upon a time, we initialized the UI
-                // with word = last edited word.
-                // it had downsides, like what if you just
-                // edited generators?
-                // but mostly it didn't fit with our new
-                // Runner/dequeue paradigm.
-                // getWordContents(sortedWordPaths[0]),
-              ];
-              const fileTemplates = await getAllFileTemplates(
-                PanelClass.currentPanel.pathToConfig
-              );
-              console.log("FROM STARTUP TEMPLATE MODEUL", templateModule);
-              const wordNames = getWordNamesFromWordPaths(allWordPaths);
-              /* part of old Word-based regime, replaced with new Runner/dequeue paradigm
-              const currentWordName = sortedWordPaths[0]
-                .split("_")[1]
-                .replace(".json", "");
-                */
-
-              const currentWord = [{"result":this.runner.currentTemplate}];
-              const currentWordName = this.runner.currentStep.name+Date.now().toString().substring(7)
-              Promise.all(promises).then((data) => {
-                const [generators, templates, filledGenerators] =
-                  data;
-                this._panel!.webview.postMessage({
-                  command: "config_data",
-                  data: {
-                    generators,
-                    templates,
-                    filledGenerators,
-                    currentWord: JSON.stringify(currentWord),
-                    currentWordName,
-                    wordNames: JSON.stringify(wordNames),
-                    templateModule,
-                    fileTemplates: tts(fileTemplates, false),
-                    runnableWords: JSON.stringify(runnableWords),
-                  },
-                });
+              const data = await fetchFromConfig(pathToConfig, this.runner);
+              this._panel!.webview.postMessage({
+                command: "config_data",
+                data,
               });
 
               //this._panel!.webview.postMessage({ command: 'config_data', data });

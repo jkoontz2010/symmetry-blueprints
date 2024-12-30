@@ -1,3 +1,7 @@
+import { ponTester2 } from "./word-pool";
+import { tts } from "symmetric-parser";
+const template = {
+'fifth.tsxa4023e8966': ()=>`
 import { cloneDeep, compact, difference, last, uniqueId } from "lodash";
 import { useEffect, useState } from "react";
 import {
@@ -40,16 +44,12 @@ export function useTemplate(
     last(definition.wordSteps).result
   );
 
-  useEffect(() => {
-    setTemplate(last(definition.wordSteps).result);
-  },[definition])
-
   const [wordSteps, setWordSteps] = useState<WordStep[]>(definition.wordSteps);
   function logStep(name, args, result, files = {}) {
     const wordStep = {
       name: name,
       args: args,
-      full: `${name}(${args.join(",")})`,
+      full: ェ§{name}(§{args.join(",")})ェ,
       result: cloneDeep(result),
       files,
     };
@@ -72,6 +72,7 @@ export function useTemplate(
       command: "save_word_steps",
       wordSteps: JSON.stringify(stringifiedSteps),
       wordName,
+      pathToConfig: CONFIG_PATH,
       msgId,
     });
   }
@@ -87,7 +88,7 @@ export function useTemplate(
       return k.split("/")[0] === key;
     });
     if (templateHasNumerator) return;
-    let combineWith = { [key]: () => `` };
+    let combineWith = { [key]: () => ェェ };
     let newTemplate = dumbCombine(template, combineWith);
     let result = sortTemplateByDeps(sortTemplateByDeps(newTemplate));
     logStep("dumbCombine", [template, combineWith], result);
@@ -234,6 +235,7 @@ export function useTemplate(
       command: "run_generator",
       generatorString,
       template: tts(template,false),
+      pathToConfig: CONFIG_PATH,
       msgId,
     });
   }
@@ -243,6 +245,7 @@ export function useTemplate(
     postMessage({
       command: "store_runnable_word",
       word: parsedWord,
+      pathToConfig: CONFIG_PATH,
     })
   }
   const handleRunnableWordClick = (rWordName:string) => {
@@ -253,16 +256,12 @@ export function useTemplate(
     postMessage({
       command: "run_word",
       wordName:rWordName,
+      pathToConfig: CONFIG_PATH,
       template: tts(template,false),
       msgId,
     })
   }
-  const handleTransition = () => {
-    postMessage({
-      command: "transition",
-      template: tts(template,false),
-    })
-  }
+
   console.log("Word steps", wordSteps);
   return {
     template,
@@ -275,7 +274,6 @@ export function useTemplate(
     removeKey,
     handleConvertWordSteps,
     handleRunnableWordClick,
-    handleTransition
   };
 }
 
@@ -285,9 +283,12 @@ function parseWordStepsIntoWord(wordName:string, wordSteps: WordStep[]): string 
 			return null
 		}
     if(step.full==null) {return null}
-		return `(template)=>${step.full}`
+		return ェ(template)=>§{step.full}ェ
 	}))
 
-	const word = `export const ${wordName} = flow(${callbacks.join(",")})`
+	const word = ェexport const §{wordName} = flow(§{callbacks.join(",")})ェ
   return word;
-}
+}`
+};
+const result = ponTester2(template);
+console.log(tts(result, false));

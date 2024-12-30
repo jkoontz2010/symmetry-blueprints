@@ -1,6 +1,8 @@
 
 import React from "react";
 import { WordStep } from "./useTemplate";
+import { tts } from "symmetric-parser";
+import { Template } from "symmetric-parser/dist/src/templator/template-group";
 
 function parseStringifiedTemplateModule(templateModule: string) {
   const templModuleFirstParse = new Function("return " + templateModule)();
@@ -13,7 +15,7 @@ function parseStringifiedTemplateModule(templateModule: string) {
   return templModule
 }
 
-export function useFileSystem(postMessage, configPath) {
+export function useFileSystem(postMessage) {
   const [generatorsFileText, setGeneratorsFileText] =
     React.useState<string>(null);
   const [templatesFileText, setTemplatesFileText] =
@@ -27,15 +29,12 @@ export function useFileSystem(postMessage, configPath) {
   const [templateModule, setTemplateModule] = React.useState<any>(null);
   const [allFileTemplates, setAllFileTemplates] = React.useState<any>(null);
   const [runnableWords, setRunnableWords] = React.useState<string[]>(null);
-  React.useEffect(() => {
-    postMessage({ command: "set_config_path", pathToConfig: configPath });
-  }, [configPath]);
+
   React.useEffect(() => {
     window.addEventListener("message", (event) => {
       const message = event.data; // The json data that the extension sent
       switch (message.command) {
         case "config_data": {
-          console.log("MESSAGE DATA", message.data);
           const {
             generators,
             templates,
@@ -73,10 +72,6 @@ export function useFileSystem(postMessage, configPath) {
           setAllFileTemplates(new Function("return " + fileTemplates)());
 
           const templModule = parseStringifiedTemplateModule(templateModule);
-          console.log(
-            "templModuletemplModuletemplModuleHOW DOES THIS LOOK",
-            templModule
-          );
           setTemplateModule(templModule);
           setLoading(false);
           break;
@@ -123,7 +118,7 @@ export function useFileSystem(postMessage, configPath) {
     });
   }, []);
   const readAllFiles = () => {
-    postMessage({ command: "fetch_from_config", pathToConfig: configPath });
+    postMessage({ command: "fetch_from_config" });
   };
   const writeFile = (path, data) => {
     postMessage({ command: "writeFile", path, data });
@@ -132,7 +127,6 @@ export function useFileSystem(postMessage, configPath) {
     postMessage({
       command: "get_word",
       wordName: name,
-      pathToConfig: configPath,
     });
 
     setLoading(true);
@@ -142,7 +136,6 @@ export function useFileSystem(postMessage, configPath) {
     postMessage({
       command: "create_word",
       wordName: name,
-      pathToConfig: configPath,
     });
     setLoading(true);
   };
@@ -153,9 +146,9 @@ export function useFileSystem(postMessage, configPath) {
       key,
       args: JSON.stringify(args),
       value,
-      pathToConfig: configPath,
     });
   };
+
   return {
     readAllFiles,
     createNewWord,
@@ -171,6 +164,6 @@ export function useFileSystem(postMessage, configPath) {
     wordNames,
     loading,
     templateModule,
-    allFileTemplates
+    allFileTemplates,
   };
 }

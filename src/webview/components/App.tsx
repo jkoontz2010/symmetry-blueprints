@@ -72,11 +72,10 @@ const App = () => {
     templateModule,
     allFileTemplates,
     runnableWords
-  } = useFileSystem(vscode.postMessage, CONFIG_PATH);
+  } = useFileSystem(vscode.postMessage);
   React.useEffect(() => {
     readAllFiles();
   }, []);
-  console.log("GUESS WHAT", wordNames, currentWord);
   //console.log("generatorsFileText", generatorsFileText);
   const [showGTWVEditor, setShowGTWVEditor] = React.useState(false);
   return (

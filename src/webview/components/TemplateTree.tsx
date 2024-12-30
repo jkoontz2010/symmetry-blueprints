@@ -51,7 +51,7 @@ export const TemplateEditors = ({
     addToFilledGeneratorPool,
     filledGenerators,
     handleSaveAllFiles,
-    addFullTemplateToPool
+    addFullTemplateToPool,
   } = useRunner(postMessage, configPath, filledGeneratorsFileText);
 
   const [stepsForPanel, setStepsForPanel] = useState<
@@ -141,7 +141,7 @@ export const TemplateEditor = ({
   handleSaveAllFiles,
   allFileTemplates,
   runnableWords,
-  addFullTemplateToPool
+  addFullTemplateToPool,
 }: {
   definition: WordDefinition;
   templateModule: any;
@@ -170,6 +170,7 @@ export const TemplateEditor = ({
     removeKey,
     handleConvertWordSteps,
     handleRunnableWordClick,
+    handleTransition,
   } = useTemplate(
     definition,
     templateModule,
@@ -292,6 +293,9 @@ export const TemplateEditor = ({
               minSize={20}
               style={{ overflowX: "scroll" }}
             >
+              {isMainEditor && (
+                <button onClick={handleTransition}>RUN TRANSITION</button>
+              )}
               <h3 style={{ color: "black" }}>{definition.name}</h3>{" "}
               <button
                 onClick={() => {
@@ -585,7 +589,7 @@ export const TemplateTree = ({
   insertToKey,
   setInsertToKey,
   handleSaveAllFiles,
-  handleSaveIsolatedTemplate
+  handleSaveIsolatedTemplate,
 }: {
   addKey: any;
   addKeyToNumerator: any;
@@ -654,7 +658,7 @@ export const TemplateTree = ({
         Save All Files
       </button>
       <div>
-        <IsolatedTemplateSaver handleSave={handleSaveTemplate}/>
+        <IsolatedTemplateSaver handleSave={handleSaveTemplate} />
       </div>
       {Object.keys(template).map((k, i) => {
         const denoms = k.split("/")[1]?.split(",");
@@ -727,11 +731,16 @@ const IsolatedTemplateSaver = ({
   handleSave: (name: string) => void;
 }) => {
   const [name, setName] = useState("");
-  return (<>
-    <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Isolated Template Name"></input>
-    <button onClick={()=>handleSave(name)}>Save Templ</button>
+  return (
+    <>
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Isolated Template Name"
+      ></input>
+      <button onClick={() => handleSave(name)}>Save Templ</button>
     </>
-  )
+  );
 };
 const TreeNode = ({
   tKey,
@@ -815,9 +824,18 @@ function renderPart(part: string, handleRsClick: (arg: string) => void) {
     .map((arg) => arg.trim());
   const compactRs = args.map((arg) => rsCompact(arg));
   const nonCompactRs = args.map((arg) => rs(arg));
-  const doubleQuotedCompactRs = compactRs.map((crs) => crs.replaceAll("'", '"'));
-  const doubleQuotedNonCompactRs = nonCompactRs.map((ncrs) => ncrs.replaceAll("'", '"'));
-  const allRs = [...compactRs, ...nonCompactRs, ...doubleQuotedCompactRs, ...doubleQuotedNonCompactRs];
+  const doubleQuotedCompactRs = compactRs.map((crs) =>
+    crs.replaceAll("'", '"')
+  );
+  const doubleQuotedNonCompactRs = nonCompactRs.map((ncrs) =>
+    ncrs.replaceAll("'", '"')
+  );
+  const allRs = [
+    ...compactRs,
+    ...nonCompactRs,
+    ...doubleQuotedCompactRs,
+    ...doubleQuotedNonCompactRs,
+  ];
   let funcPart = part.substring(part.indexOf("`") + 1, part.lastIndexOf("`"));
   const parts = funcPart.split(/(\${[^}]+})/g);
   if (parts.length === 1) {
