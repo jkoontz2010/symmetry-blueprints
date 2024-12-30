@@ -1,3 +1,7 @@
+import { ponTester2 } from "./word-pool";
+import { tts } from "symmetric-parser";
+const template = {
+'panel.ts3f5913a659': ()=>`
 import * as vscode from "vscode";
 import { getNonce } from "./getNonce";
 import * as fs from "fs";
@@ -31,7 +35,7 @@ import { fetchFromConfig } from "./services/configService";
 export function formFilePathHash(filePath: string) {
   const fileName = filePath.split("/").pop();
   const fileHash = sha1(filePath);
-  return `${fileHash.substring(0, 10)}_${fileName}`;
+  return ェ§{fileHash.substring(0, 10)}_§{fileName}ェ;
 }
 
 export function readFromFile(file) {
@@ -57,7 +61,8 @@ const TEST_DEQUEUE: DequeueConfig = {
       config:
         "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.fsconfig",
       name: "testGrab",
-      description: "test fs!!",
+      description:
+        "test fs!!",
       waitForTransitionCommand: false,
       transitionAction: "get",
       runWithEmptyTemplate: false,
@@ -182,9 +187,8 @@ export default class PanelClass {
     // will have to move this somewhere else for initialization.
     // as-is, this singleton works great for testing.
     this.runner = new Runner(TEST_DEQUEUE.steps);
-    this.runner.initNextStep(
-      "{filePath1:()=>`src/webview/hooks/useTemplate.ts`}"
-    );
+    this.runner.initNextStep("{filePath1:()=>ェsrc/panel.tsェ}");
+    debugger
 
     // Create and show a new webview panel
     this._panel = vscode.window.createWebviewPanel(
@@ -227,7 +231,7 @@ export default class PanelClass {
               const filePath = filePathHashes[filePathHash];
               //console.log("FILE PATH", filePath);
               const fileContents = templ[filePathHash]();
-              //console.log("writing file", filePath, "\n<>CONTENTS<>\n",fileContents);
+              //console.log("writing file", filePath, "Øn<>CONTENTS<>Øn",fileContents);
               await overwriteFile(filePath, fileContents);
             }
 
@@ -317,7 +321,7 @@ export default class PanelClass {
             console.log("CURR TEMPLATES FILE", templatesFile);
             // write template to templates file
             const newTemplatesFile =
-              templatesFile + "\n" + `export const ${name} = ${template}`;
+              templatesFile + "Øn" + ェexport const §{name} = §{template}ェ;
             console.log("NEW TEMPLATES FILE", newTemplatesFile);
             fs.writeFile(templatesFilePath, newTemplatesFile, (err) => {
               if (err) {
@@ -347,10 +351,10 @@ export default class PanelClass {
             const { key, args, value } = msg;
             const funcPart = argsAndTemplateToFunction([], value);
             const templ = { [key]: funcPart };
-            const templateString = `genTemplateWithVars(${tts(
+            const templateString = ェgenTemplateWithVars(§{tts(
               templ,
               false
-            )}, ${args});`;
+            )}, §{args});ェ;
             const templatesFilePath = await readFromConfig(
               "TEMPLATE_FILE",
               pathToConfig
@@ -359,7 +363,7 @@ export default class PanelClass {
             console.log("CURR TEMPLATES FILE", templatesFile);
             // write template to templates file
             const newTemplatesFile =
-              templatesFile + "\n" + `export const ${key} = ${templateString}`;
+              templatesFile + "Øn" + ェexport const §{key} = §{templateString}ェ;
             console.log("NEW TEMPLATES FILE", newTemplatesFile);
             fs.writeFile(templatesFilePath, newTemplatesFile, (err) => {
               if (err) {
@@ -441,7 +445,7 @@ export default class PanelClass {
                 wordRunFilePath: wordRunFilePath,
                 resultFilePath: resultFilePath,
                 result,
-                wordString: `${wordName}(template)`,
+                wordString: ェ§{wordName}(template)ェ,
               },
             });
             break;
@@ -510,7 +514,7 @@ export default class PanelClass {
           case "transition": {
             const { template } = msg;
             await this.runner.transition(template);
-            const newConfig = this.runner.currentStep.config;
+            const newConfig  = this.runner.currentStep.config;
             const data = await fetchFromConfig(newConfig, this.runner);
             // so on transition:
             // get the config from the step
@@ -570,13 +574,13 @@ export default class PanelClass {
 
     const nonce = getNonce();
 
-    return `<!DOCTYPE html>
+    return ェ<!DOCTYPE html>
       <html lang="en">
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Symmetric Blueprints</title>
-        <link rel="stylesheet" href="${styleUri}">
+        <link rel="stylesheet" href="§{styleUri}">
       </head>
       <body>
         <div id="root"></div>
@@ -589,9 +593,13 @@ export default class PanelClass {
             console.log('HTML started up.');
           };
         </script>
-        <script nonce="${nonce}" src="${scriptUri}"></script>
+        <script nonce="§{nonce}" src="§{scriptUri}"></script>
       </body>
       </html>
-    `;
+    ェ;
   }
 }
+`
+};
+const result = ponTester2(template);
+console.log(tts(result, false));
