@@ -1,5 +1,5 @@
 import React from "react";
-export default function Dropdown({ options, onSelect }) {
+export default function Dropdown({ options, onSelect, placeholder="Select an option" }) {
     const handleChange = (event) => {
       onSelect(event.target.value);
     };
@@ -7,7 +7,7 @@ export default function Dropdown({ options, onSelect }) {
     return (
       <select onChange={handleChange}>
         <option value="" disabled selected>
-          Select an option
+          {placeholder}
         </option>
         {options.map((option, index) => (
           <option key={index} value={option}>

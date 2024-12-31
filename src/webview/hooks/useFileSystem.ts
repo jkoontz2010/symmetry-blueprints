@@ -29,6 +29,7 @@ export function useFileSystem(postMessage) {
   const [templateModule, setTemplateModule] = React.useState<any>(null);
   const [allFileTemplates, setAllFileTemplates] = React.useState<any>(null);
   const [runnableWords, setRunnableWords] = React.useState<string[]>(null);
+  const [queueNames, setQueueNames] = React.useState<string[]>([]);
 
   React.useEffect(() => {
     window.addEventListener("message", (event) => {
@@ -44,7 +45,8 @@ export function useFileSystem(postMessage) {
             currentWordName,
             templateModule,
             fileTemplates,
-            runnableWords
+            runnableWords,
+            queueNames
           }: {
             generators: string;
             templates: string;
@@ -55,6 +57,7 @@ export function useFileSystem(postMessage) {
             templateModule: string;
             fileTemplates:string;
             runnableWords:string;
+            queueNames:string;
           } = message.data;
           setGeneratorsFileText(generators);
           setTemplatesFileText(templates);
@@ -68,6 +71,7 @@ export function useFileSystem(postMessage) {
 
           setCurrentWord(parsedCurrentWord);
           setWordNames(JSON.parse(wordNames));
+          setQueueNames(JSON.parse(queueNames));
           setCurrentWordName(currentWordName);
           setAllFileTemplates(new Function("return " + fileTemplates)());
 
@@ -148,6 +152,12 @@ export function useFileSystem(postMessage) {
       value,
     });
   };
+  const selectQueue = (queueName) => {
+    postMessage({
+      command: "select_queue",
+      queueName
+    });
+  }
 
   return {
     readAllFiles,
@@ -165,5 +175,7 @@ export function useFileSystem(postMessage) {
     loading,
     templateModule,
     allFileTemplates,
+    queueNames,
+    selectQueue
   };
 }

@@ -71,34 +71,51 @@ const App = () => {
     addToTemplatePool,
     templateModule,
     allFileTemplates,
-    runnableWords
+    runnableWords,
+    selectQueue,
+    queueNames,
   } = useFileSystem(vscode.postMessage);
   React.useEffect(() => {
     readAllFiles();
   }, []);
-  //console.log("generatorsFileText", generatorsFileText);
+  console.log("queueNames", queueNames);
   const [showGTWVEditor, setShowGTWVEditor] = React.useState(false);
   return (
     <div>
       <CssVarsProvider>
+        <Dropdown
+          options={queueNames}
+          onSelect={(value) => {
+            console.log("NEW QUEUE", value);
+            selectQueue(value);
+          }}
+          placeholder="Select a word"
+        />
         <Dropdown
           options={wordNames}
           onSelect={(value) => {
             console.log("VALUE", value);
             setWord(value);
           }}
+          placeholder="Select a word"
         />
         <WordCreator createNewWord={createNewWord} />
         {showGTWVEditor && (
-          <GTWVEditor handleSubmit={(value) => {
-            console.log("VALUE", value)
-            setShowGTWVEditor(false)
-            addToTemplatePool(value.key, value.value, value.args);
-          }} />
-        )}<button onClick={() => {
-          setShowGTWVEditor(!showGTWVEditor)
-          
-          }}>toggle GTWV Editor</button>
+          <GTWVEditor
+            handleSubmit={(value) => {
+              console.log("VALUE", value);
+              setShowGTWVEditor(false);
+              addToTemplatePool(value.key, value.value, value.args);
+            }}
+          />
+        )}
+        <button
+          onClick={() => {
+            setShowGTWVEditor(!showGTWVEditor);
+          }}
+        >
+          toggle GTWV Editor
+        </button>
 
         {!loading && (
           <>

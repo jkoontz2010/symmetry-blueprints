@@ -49,8 +49,7 @@ export function readFromFile(file) {
 
 const TEST_DEQUEUE: DequeueConfig = {
   name: "test",
-  description:
-    "runs fs, grabs the useTemplate file, and takes off parsing it!",
+  description: "runs fs, grabs the useTemplate file, and takes off parsing it!",
   steps: [
     {
       type: "fs",
@@ -61,7 +60,7 @@ const TEST_DEQUEUE: DequeueConfig = {
       waitForTransitionCommand: false,
       transitionAction: "get",
       runWithEmptyTemplate: false,
-      word: "getUseTemplate"
+      word: "getUseTemplate",
     },
     {
       type: "template",
@@ -146,10 +145,15 @@ const ALL_SERVICES_DEQUEUE: DequeueConfig = {
       waitForTransitionCommand: true,
       transitionAction: "identity",
       runWithEmptyTemplate: false,
-    }
+    },
   ],
 };
-const ALL_QUEUES = [TEST_DEQUEUE, BLANK_FS_DEQUEUE, BLANK_TEMPL_DEQUEUE,ALL_SERVICES_DEQUEUE];
+const ALL_QUEUES = [
+  TEST_DEQUEUE,
+  BLANK_FS_DEQUEUE,
+  BLANK_TEMPL_DEQUEUE,
+  ALL_SERVICES_DEQUEUE,
+];
 
 export default class PanelClass {
   public static currentPanel: PanelClass | undefined;
@@ -245,7 +249,7 @@ export default class PanelClass {
 
     // will have to move this somewhere else for initialization.
     // as-is, this singleton works great for testing.
-    this.runner = new Runner(ALL_SERVICES_DEQUEUE.steps);
+    this.runner = new Runner(BLANK_FS_DEQUEUE.steps);
     this.runner.initNextStep();
     // Create and show a new webview panel
     this._panel = vscode.window.createWebviewPanel(
@@ -580,7 +584,23 @@ export default class PanelClass {
             // also send the current template as a new word result
             this._panel!.webview.postMessage({
               command: "config_data",
-              data,
+              data:{
+                ...data,
+                queueNames: JSON.stringify(ALL_QUEUES.map((q) => q.name)),
+              },
+            });
+            break;
+          }
+          case "select_queue": {
+            this.runner = new Runner(ALL_QUEUES.find((q) => q.name === msg.queueName).steps);
+            this.runner.initNextStep();
+            const data = await fetchFromConfig(pathToConfig, this.runner);
+            this._panel!.webview.postMessage({
+              command: "config_data",
+              data: {
+                ...data,
+                queueNames: JSON.stringify(ALL_QUEUES.map((q) => q.name)),
+              },
             });
             break;
           }
@@ -597,7 +617,10 @@ export default class PanelClass {
               );
               this._panel!.webview.postMessage({
                 command: "config_data",
-                data,
+                data:{
+                  ...data,
+                  queueNames: JSON.stringify(ALL_QUEUES.map((q) => q.name)),
+                },
               });
 
               //this._panel!.webview.postMessage({ command: 'config_data', data });
