@@ -1,2 +1,6 @@
 3f5913a659_panel.ts=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/src/panel.ts
 60c890fb5b_useTemplate.ts=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/src/webview/hooks/useTemplate.ts
+aa3e96021c_wordRunService.ts=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/src/services/wordRunService.ts
+e294b67673_fsService.ts=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/src/services/fsService.ts
+0198e0307e_configService.ts=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/src/services/configService.ts
+69cdb52686_commandService.ts=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/src/services/commandService.ts

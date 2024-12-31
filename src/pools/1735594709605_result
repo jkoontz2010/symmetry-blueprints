@@ -1,8 +1,6 @@
-import { ponTester2 } from "./word-pool";
-import { tts } from "symmetric-parser";
-const template = {
+{
 'useTemplate.ts60c890fb5b/fileContents1': ({fileContents1})=>`${run(fileContents1, 'fileContents1')}`,
-'fileContents1': ()=>`
+'fileContents1/commandSend01,commandSend02': ({commandSend01, commandSend02})=>`
 import { cloneDeep, compact, difference, last, uniqueId } from "lodash";
 import { useEffect, useState } from "react";
 import {
@@ -73,12 +71,7 @@ export function useTemplate(
     });
     const wordName = definition.name;
 
-    postMessage({
-      command: "save_word_steps",
-      wordSteps: JSON.stringify(stringifiedSteps),
-      wordName,
-      msgId,
-    });
+    ${run(commandSend01, 'commandSend01')}
   }
 
   function removeKey(key: string) {
@@ -235,12 +228,7 @@ export function useTemplate(
     // form it and send it over
 
     // send it over via postMessage
-    postMessage({
-      command: "run_generator",
-      generatorString,
-      template: tts(template,false),
-      msgId,
-    });
+    ${run(commandSend02, 'commandSend02')}
   }
   const handleConvertWordSteps = () => {
     const parsedWord=parseWordStepsIntoWord(definition.name, wordSteps)
@@ -295,7 +283,35 @@ function parseWordStepsIntoWord(wordName:string, wordSteps: WordStep[]): string 
 
 	const word = ェexport const §{wordName} = flow(§{callbacks.join(",")})ェ
   return word;
-}`
-};
-const result = ponTester2(template);
-console.log(tts(result, false));
+}`,
+'commandSend02/commandBody02': ({commandBody02})=>`postMessage({${run(commandBody02,'commandBody02')}});`,
+'commandSend01/commandBody01': ({commandBody01})=>`postMessage({${run(commandBody01,'commandBody01')}});`,
+'commandBody01/postCmdArgument05,postCmdArgument06,postCmdArgument07,postCmdArgument08': ({postCmdArgument05, postCmdArgument06, postCmdArgument07, postCmdArgument08})=>`
+${run(postCmdArgument05, 'postCmdArgument05')}${run(postCmdArgument06, 'postCmdArgument06')}${run(postCmdArgument07, 'postCmdArgument07')}${run(postCmdArgument08, 'postCmdArgument08')}    `,
+'postCmdArgument08/commandArg08': ({commandArg08})=>`  ${run(commandArg08,'commandArg08')},
+`,
+'postCmdArgument07/commandArg07': ({commandArg07})=>`  ${run(commandArg07,'commandArg07')},
+`,
+'postCmdArgument06/commandArg06': ({commandArg06})=>`  ${run(commandArg06,'commandArg06')},
+`,
+'postCmdArgument05/commandArg05': ({commandArg05})=>`  ${run(commandArg05,'commandArg05')},
+`,
+'postCmdArgument04/commandArg04': ({commandArg04})=>`  ${run(commandArg04,'commandArg04')},
+`,
+'postCmdArgument03/commandArg03': ({commandArg03})=>`  ${run(commandArg03,'commandArg03')},
+`,
+'postCmdArgument02/commandArg02': ({commandArg02})=>`  ${run(commandArg02,'commandArg02')},
+`,
+'postCmdArgument01/commandArg01': ({commandArg01})=>`  ${run(commandArg01,'commandArg01')},
+`,
+'commandBody02/postCmdArgument01,postCmdArgument02,postCmdArgument03,postCmdArgument04': ({postCmdArgument01, postCmdArgument02, postCmdArgument03, postCmdArgument04})=>`
+${run(postCmdArgument01, 'postCmdArgument01')}${run(postCmdArgument02, 'postCmdArgument02')}${run(postCmdArgument03, 'postCmdArgument03')}${run(postCmdArgument04, 'postCmdArgument04')}    `,
+'commandArg01': ()=>`    command: "run_generator"`,
+'commandArg02': ()=>`    generatorString`,
+'commandArg03': ()=>`    template: tts(template,false)`,
+'commandArg04': ()=>`    msgId`,
+'commandArg05': ()=>`    command: "save_word_steps"`,
+'commandArg06': ()=>`    wordSteps: JSON.stringify(stringifiedSteps)`,
+'commandArg07': ()=>`    wordName`,
+'commandArg08': ()=>`    msgId`
+}
