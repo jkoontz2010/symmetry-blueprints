@@ -11,6 +11,10 @@ import * as path from "path";
 import { insertIntoTemplate, orderedParse, tts } from "symmetric-parser";
 import { formFilePathHash } from "../panel";
 
+export const identity = async (pathToConfig: string, input: TemplateAsString) => {
+    return input
+}
+
 export const get = async (pathToConfig: string, input: TemplateAsString) => {
   const baseDir = await readFromConfig("BASE_DIR", pathToConfig);
   const ignore = await readFromConfig("IGNORE", pathToConfig);

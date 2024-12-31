@@ -50,7 +50,7 @@ export function readFromFile(file) {
 const TEST_DEQUEUE: DequeueConfig = {
   name: "test",
   description:
-    "opens to a blank template. insert the right file and it'll run our favorite parse word on it, then pause.",
+    "runs fs, grabs the useTemplate file, and takes off parsing it!",
   steps: [
     {
       type: "fs",
@@ -61,6 +61,7 @@ const TEST_DEQUEUE: DequeueConfig = {
       waitForTransitionCommand: false,
       transitionAction: "get",
       runWithEmptyTemplate: false,
+      word: "getUseTemplate"
     },
     {
       type: "template",
@@ -86,6 +87,69 @@ const TEST_DEQUEUE: DequeueConfig = {
     },
   ],
 };
+const BLANK_TEMPL_DEQUEUE: DequeueConfig = {
+  name: "blank template",
+  description: "starts out with an empty word",
+  steps: [
+    {
+      type: "template",
+      config:
+        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig",
+      name: "blankTempl",
+      description:
+        "starts with blank template. fill with fifth.tsx to ready for next step!",
+      waitForTransitionCommand: true,
+      transitionAction: "identity",
+      runWithEmptyTemplate: false,
+    },
+  ],
+};
+const BLANK_FS_DEQUEUE: DequeueConfig = {
+  name: "blank fs",
+  description: "starts out with an empty word",
+  steps: [
+    {
+      type: "fs",
+      config:
+        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.fsconfig",
+      name: "blankFs",
+      description:
+        "starts with blank template. fill with fifth.tsx to ready for next step!",
+      waitForTransitionCommand: true,
+      transitionAction: "identity",
+      runWithEmptyTemplate: false,
+    },
+  ],
+};
+const ALL_SERVICES_DEQUEUE: DequeueConfig = {
+  name: "show all service files",
+  description: "testing out how a multi-grab works",
+  steps: [
+    {
+      type: "fs",
+      config:
+        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.fsconfig",
+      name: "blankFs",
+      description:
+        "starts with blank template. fill with fifth.tsx to ready for next step!",
+      waitForTransitionCommand: false,
+      transitionAction: "get",
+      runWithEmptyTemplate: false,
+      word: "getServices",
+    },
+    {
+      type: "template",
+      config:
+        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig",
+      name: "allServicesTempl",
+      description: "all the service files!",
+      waitForTransitionCommand: true,
+      transitionAction: "identity",
+      runWithEmptyTemplate: false,
+    }
+  ],
+};
+const ALL_QUEUES = [TEST_DEQUEUE, BLANK_FS_DEQUEUE, BLANK_TEMPL_DEQUEUE,ALL_SERVICES_DEQUEUE];
 
 export default class PanelClass {
   public static currentPanel: PanelClass | undefined;
@@ -181,11 +245,8 @@ export default class PanelClass {
 
     // will have to move this somewhere else for initialization.
     // as-is, this singleton works great for testing.
-    this.runner = new Runner(TEST_DEQUEUE.steps);
-    this.runner.initNextStep(
-      "{filePath1:()=>`src/webview/hooks/useTemplate.ts`}"
-    );
-
+    this.runner = new Runner(ALL_SERVICES_DEQUEUE.steps);
+    this.runner.initNextStep();
     // Create and show a new webview panel
     this._panel = vscode.window.createWebviewPanel(
       PanelClass.viewType,
@@ -208,7 +269,7 @@ export default class PanelClass {
     //Listen to messages
     this._panel.webview.onDidReceiveMessage(
       async (msg: any) => {
-        const pathToConfig = this.runner.currentStep.config;
+        let pathToConfig = this.runner.currentStep.config;
         switch (msg.command) {
           case "save_all_files": {
             const { template } = msg;
@@ -510,8 +571,8 @@ export default class PanelClass {
           case "transition": {
             const { template } = msg;
             await this.runner.transition(template);
-            const newConfig = this.runner.currentStep.config;
-            const data = await fetchFromConfig(newConfig, this.runner);
+            pathToConfig = this.runner.currentStep.config;
+            const data = await fetchFromConfig(pathToConfig, this.runner);
             // so on transition:
             // get the config from the step
             // fetch it all (make a service for it)
@@ -530,7 +591,10 @@ export default class PanelClass {
               // TEMPLATE_FILE=src/templates/wordBuilder.ts
               // WORDS_FILE=src/words/wordBuilder.ts
               // we want to parse each file path and send it back to the webview
-              const data = await fetchFromConfig(pathToConfig, this.runner);
+              const data = await fetchFromConfig(
+                this.runner.currentStep.config,
+                this.runner
+              );
               this._panel!.webview.postMessage({
                 command: "config_data",
                 data,

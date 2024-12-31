@@ -1,3 +1,4 @@
+import { tts } from "symmetric-parser";
 import * as fsService from "../services/fsService";
 import { runWord, TemplateAsString } from "../services/wordRunService";
 
@@ -43,6 +44,7 @@ async function handleRunStep(
 const fsActionToServiceMap = {
   get: fsService.get, // controller action?
   getOrCreate: fsService.getOrCreate,
+  identity: fsService.identity
 };
 
 // can be made generic?
@@ -72,13 +74,16 @@ export default class Runner {
   currentStep: DequeueStep;
   currentTemplate: TemplateAsString;
   subscribed: Map<string, SubscribeCb>;
-  constructor(steps: DequeueStep[], initTemplate: string = "{}") {
+  isRunning: boolean;
+  constructor(steps: DequeueStep[]) {
     if (steps == null || steps.length === 0) {
       this.steps = [];
     } else {
       this.steps = steps;
     }
     this.subscribed = new Map();
+    this.isRunning= false;
+    this.currentStep = this.steps[0];
   }
   append(steps: DequeueStep[]) {
     this.steps.push(...steps);
@@ -105,12 +110,14 @@ export default class Runner {
   }
 
   async initNextStep(
-    templateAsString: TemplateAsString
+    templateAsString: TemplateAsString = "{}"
   ): Promise<TemplateAsString> {
+    this.isRunning = true;
     const step = this.steps.shift();
 
     if (step == null) {
-      throw new Error("no further steps");
+      console.log("no further steps");
+      return templateAsString;
     }
     this.currentStep = step;
     // someone else's event handler, returns void, affects nothing
@@ -134,6 +141,7 @@ export default class Runner {
       const result = await this.transition(stepTemplate);
       return result;
     } else {
+      this.isRunning = false;
       return stepTemplate;
     }
   }
@@ -142,6 +150,7 @@ export default class Runner {
   async transition(input: TemplateAsString = "{}"): Promise<TemplateAsString> {
     // the actual internal runner, returns Template, affects so many things
     const stepResult = await handleRunStep(this.currentStep, input);
-    return this.initNextStep(stepResult);
+    const fullResult = await this.initNextStep(stepResult);
+    return fullResult;
   }
 }
