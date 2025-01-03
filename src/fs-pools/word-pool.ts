@@ -7,9 +7,20 @@ import { orderedParse,
 performOnNodes, 
 insertIntoTemplate} from "symmetric-parser";
 import flow from 'lodash/flow'
+import type { Template } from "../../../react-for-code/dist/src/templator/template-group";
 
 
-
+let QUEUE: Template[]=[]
+function buildQueue(template: Template) {
+    QUEUE.push(template)
+    return template
+}
+export function getQueue() {
+    return QUEUE
+}
+export function clearQueue() {
+    QUEUE=[]
+}   
 
 export const getServices = flow((template)=>insertIntoTemplate(template, servicesPath))
 export const getPanel = flow((template)=>insertIntoTemplate(template, panelSrcFile))

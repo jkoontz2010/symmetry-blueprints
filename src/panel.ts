@@ -69,7 +69,7 @@ const TEST_DEQUEUE: DequeueConfig = {
       name: "blank",
       description:
         "starts with blank template. fill with fifth.tsx to ready for next step!",
-      waitForTransitionCommand: true,
+      waitForTransitionCommand: false,
       transitionAction: "identity",
       runWithEmptyTemplate: false,
     },
@@ -79,7 +79,7 @@ const TEST_DEQUEUE: DequeueConfig = {
         "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig",
       name: "parseFifth",
       description: "runs the word that parses fifth.tsx",
-      word: "ponTester2",
+      word: "ponTesterQueue",
       waitForTransitionCommand: true,
       transitionAction: "identity", // nothing
       runWithEmptyTemplate: false,
@@ -249,7 +249,7 @@ export default class PanelClass {
 
     // will have to move this somewhere else for initialization.
     // as-is, this singleton works great for testing.
-    this.runner = new Runner(BLANK_FS_DEQUEUE.steps);
+    this.runner = new Runner(TEST_DEQUEUE.steps);
     this.runner.initNextStep();
     // Create and show a new webview panel
     this._panel = vscode.window.createWebviewPanel(
@@ -498,7 +498,12 @@ export default class PanelClass {
               template: result,
               wordRunFilePath,
               resultFilePath,
+              queuedTemplates,
             } = await runWord(pathToConfig, wordName, template);
+            // ADD queuedTemplates TO RUNNER
+            this.runner.addSubTemplatesToQueue(queuedTemplates);
+            // the queued items will change in the queue header
+            // so the user will know buildQueue affected the queue
             this._panel!.webview.postMessage({
               command: "word_run_result",
               data: {
@@ -576,7 +581,9 @@ export default class PanelClass {
             const { template } = msg;
             await this.runner.transition(template);
             pathToConfig = this.runner.currentStep.config;
+            console.time("fetchFromConfig");
             const data = await fetchFromConfig(pathToConfig, this.runner);
+            console.timeEnd("fetchFromConfig");
             // so on transition:
             // get the config from the step
             // fetch it all (make a service for it)
@@ -587,11 +594,16 @@ export default class PanelClass {
               data:{
                 ...data,
                 queueNames: JSON.stringify(ALL_QUEUES.map((q) => q.name)),
+                subTemplate: this.runner.currentStep.subTemplate,
               },
             });
             break;
           }
           case "select_queue": {
+            if(!ALL_QUEUES.some((q) => q.name === msg.queueName)) {
+              console.log("queue name vs ALL_QUEUES", msg.queueName, ALL_QUEUES);
+              throw new Error("Queue not found, how did this happen?");
+            }
             this.runner = new Runner(ALL_QUEUES.find((q) => q.name === msg.queueName).steps);
             this.runner.initNextStep();
             const data = await fetchFromConfig(pathToConfig, this.runner);
