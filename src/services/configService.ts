@@ -7,9 +7,11 @@ import {
   getAllWordPathsByLastModified,
   getWordNamesFromWordPaths,
   readFromConfig,
+  readMultipleFromConfig,
   sortFilesByLastModified,
 } from "./commandService";
 import Runner from "../runner/runner";
+import { Template } from "symmetric-parser/dist/src/templator/template-group";
 
 type DataFromConfigSO = {
   generators: string;
@@ -32,21 +34,21 @@ export async function fetchFromConfig(
   runner: Runner
 ): Promise<DataFromConfigSO> {
   try {
-    const generatorPath = await readFromConfig("GENERATOR_FILE", pathToConfig);
-
-    const templatePath = await readFromConfig("TEMPLATE_FILE", pathToConfig);
-    const runnableWords = await getAllRunnableWords(pathToConfig);
-    const projectDir = await readFromConfig("PROJECT_DIR", pathToConfig);
+    const [projectDir, generatorPath, templatePath] =
+      await readMultipleFromConfig(
+        ["PROJECT_DIR", "GENERATOR_FILE", "TEMPLATE_FILE"],
+        pathToConfig
+      );
     const filledGeneratorsPath = projectDir + "/filledGenerators.json";
-    const allWordPaths = await getAllWordPathsByLastModified(pathToConfig);
-    //const sortedWordPaths = await sortFilesByLastModified(allWordPaths);
-
-    const templateModule = await runTs(projectDir + "/template-getter.ts");
 
     const promises = [
       readFromFile(generatorPath),
       readFromFile(templatePath),
       readFromFile(filledGeneratorsPath),
+      getAllRunnableWords(pathToConfig),
+      getAllWordPathsByLastModified(pathToConfig),
+      runTs(projectDir + "/template-getter.ts"),
+      getAllFileTemplates(pathToConfig),
       // once upon a time, we initialized the UI
       // with word = last edited word.
       // it had downsides, like what if you just
@@ -55,9 +57,8 @@ export async function fetchFromConfig(
       // Runner/dequeue paradigm.
       // getWordContents(sortedWordPaths[0]),
     ];
-    const fileTemplates = await getAllFileTemplates(pathToConfig);
+
     //console.log("FROM STARTUP TEMPLATE MODEUL", templateModule);
-    const wordNames = getWordNamesFromWordPaths(allWordPaths);
     /* part of old Word-based regime, replaced with new Runner/dequeue paradigm
       const currentWordName = sortedWordPaths[0]
         .split("_")[1]
@@ -68,16 +69,26 @@ export async function fetchFromConfig(
     const currentWordName =
       runner.currentStep.name + Date.now().toString().substring(7);
     return Promise.all(promises).then((data) => {
-      const [generators, templates, filledGenerators] = data;
+      const [
+        generators,
+        templates,
+        filledGenerators,
+        runnableWords,
+        allWordPaths,
+        templateModule,
+        fileTemplates,
+      ] = data;
+      const wordNames = getWordNamesFromWordPaths(allWordPaths as string[]);
+
       return {
         generators: generators as string,
         templates: templates as string,
         filledGenerators: filledGenerators as string,
         currentWord: JSON.stringify(currentWord),
-        currentWordName,
+        currentWordName: currentWordName as string,
         wordNames: JSON.stringify(wordNames),
-        templateModule,
-        fileTemplates: tts(fileTemplates, false),
+        templateModule: templateModule as string,
+        fileTemplates: tts(fileTemplates as Template, false),
         runnableWords: JSON.stringify(runnableWords),
       };
     });

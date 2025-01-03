@@ -151,7 +151,7 @@ export function useTemplate(
     //console.log("MESSAGE DATA", message.data);
     const { generatorFilePath, resultFilePath, result, generatorString } =
       message.data;
-    console.log("generator_result", result);
+    //console.log("generator_result", result);
     const name = generatorString.substring(0, generatorString.indexOf("("));
 
     const args = generatorString
@@ -208,9 +208,11 @@ export function useTemplate(
     const message = event.data; // The json data that the extension sent
     switch (message.command) {
       case "generator_result":
+        console.log("handling generator result")
         handleGeneratorResult(message);
         break;
       case "word_run_result": {
+        console.log("handling word run result")
         handleWordRunResult(message);
         break;
       }
@@ -263,7 +265,7 @@ export function useTemplate(
       template: tts(template,false),
     })
   }
-  console.log("Word steps", wordSteps);
+  //console.log("Word steps", wordSteps);
   return {
     template,
     addKey,

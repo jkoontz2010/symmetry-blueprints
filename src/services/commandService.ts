@@ -33,6 +33,25 @@ export async function readFromConfig(configVar: string, pathToConfig: string) {
     throw error;
   }
 }
+
+export async function readMultipleFromConfig(configVars: string[], pathToConfig: string) {
+  try {
+    let results = [];
+    const data = await fs.readFile(pathToConfig, { encoding: "utf8" });
+
+    const lines = data.split("\n");
+    configVars.forEach((configVar) => {
+      const result = lines.find((line) => line.includes(configVar)).split("=")[1];
+      results.push(result);
+    });
+    
+    return results;
+  } catch (error) {
+    console.error("WRONG CONFIG VAR NAME PROVIDED");
+
+    throw error;
+  }
+}
 export const getWordPath = async (pathToConfig: string, wordName: string) => {
   const projectDir = await readFromConfig("PROJECT_DIR", pathToConfig);
   const wordPaths = await getWordJsonFiles(projectDir);
@@ -74,6 +93,8 @@ export const getAllFileTemplates = async (
   pathToConfig: string,
   onlyIncludePaths?: string[]
 ) => {
+  console.count("getAllFileTemplates");
+  console.trace()
   if (pathToConfig == null) {
     throw new Error("pathToConfig is null in getAllFileTemplates");
   }
@@ -88,14 +109,14 @@ export const getAllFileTemplates = async (
       filePaths.add(filePath);
     }
   }
-  console.log("getAllFileTemplates");
-  console.log("FILE PATHS", Array.from(filePaths));
+  //console.log("getAllFileTemplates");
+  //console.log("FILE PATHS", Array.from(filePaths));
   const readPromises = Array.from(filePaths).map(async (filePath) => {
     const data = await fs.readFile(filePath, { encoding: "utf8" });
     return { filePath, data };
   });
   const allFiles = await Promise.all(readPromises);
-  console.log("ALL FILES", allFiles);
+  //console.log("ALL FILES", allFiles);
   let allFileTemplates = {};
   let idx = 1;
   for (const file of allFiles) {
@@ -120,7 +141,6 @@ export const getAllFileTemplates = async (
     const fileTempl = {};
     const newKey = "fileContents" + idx;
     fileTempl[newKey] = funcPart;
-
     const newTempl = genTemplateWithVars(
       {
         [readableFileHash]: () => `${newKey}`,
@@ -130,6 +150,7 @@ export const getAllFileTemplates = async (
     allFileTemplates = { ...allFileTemplates, ...newTempl, ...fileTempl };
     idx++;
   }
+  //console.log("ALL FILE TEMPLATES", allFileTemplates)
   return allFileTemplates;
 };
 export const getRawFilePathHashes = async (pathToConfig: string) => {
@@ -248,17 +269,17 @@ export const getAllGeneratorsExports = async (pathToConfig: string) => {
     file: argsAndTemplateToFunction([], stringCleaning(generatorFileContents)),
   };
   const parsed = orderedParse(fileTempl, [exportTempl]);
-  console.log("THIS IS PARSED", parsed);
+  //console.log("THIS IS PARSED", parsed);
   const nameKeys = Object.keys(parsed).filter((k) =>
     k.startsWith("exportName")
   );
   const nameValues = nameKeys.map((k) => parsed[k]());
-  console.log("FOLUND ALL EXPORTS", nameValues);
+  //console.log("FOLUND ALL EXPORTS", nameValues);
   return nameValues;
 };
 
 export const getAllTemplateExports = async (pathToConfig: string) => {
-  console.log("get all template exports");
+  //console.log("get all template exports");
   const templateFilePath = await readFromConfig("TEMPLATE_FILE", pathToConfig);
   const templateFileContents = await fs.readFile(templateFilePath, {
     encoding: "utf8",
@@ -270,18 +291,18 @@ export const getAllTemplateExports = async (pathToConfig: string) => {
     },
     ["exportName"]
   );
-  console.log("file contents", templateFileContents);
+  //console.log("file contents", templateFileContents);
   const fileTempl = {
     file: argsAndTemplateToFunction([], stringCleaning(templateFileContents)),
   };
-  console.log("templTHIS IS FILE", tts(fileTempl, false));
+  //console.log("templTHIS IS FILE", tts(fileTempl, false));
   const parsed = orderedParse(fileTempl, [exportTempl]);
-  console.log("templTHIS IS PARSED", parsed);
+  //console.log("templTHIS IS PARSED", parsed);
   const nameKeys = Object.keys(parsed).filter((k) =>
     k.startsWith("exportName")
   );
   const nameValues = nameKeys.map((k) => stringUnCleaning(parsed[k]()));
-  console.log("templFOLUND ALL EXPORTS", nameValues);
+ // console.log("templFOLUND ALL EXPORTS", nameValues);
   return nameValues;
 };
 
@@ -320,9 +341,7 @@ export const createRunnableGeneratorFileContents = async (
   template: string
 ): Promise<string> => {
   const words = await getAllRunnableWords(pathToConfig);
-  console.log("1c");
   const templates = await getAllTemplateExports(pathToConfig);
-  console.log("2c");
   const generators = await getAllGeneratorsExports(pathToConfig);
 
   const importedTemplates = templates.filter((t) =>
@@ -371,9 +390,9 @@ export const getAllRunnableWords = async (pathToConfig: string) => {
   } catch {
     return [];
   }
-  console.log("THIS IS PARSED", parsed);
+  //console.log("THIS IS PARSED", parsed);
   const nameKeys = Object.keys(parsed).filter((k) => k.startsWith("wordName"));
   const nameValues = nameKeys.map((k) => parsed[k]());
-  console.log("FOLUND ALL WORDS", nameValues);
+  //console.log("FOLUND ALL WORDS", nameValues);
   return nameValues;
 };

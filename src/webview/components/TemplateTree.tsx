@@ -20,6 +20,7 @@ export type WordDefinition = {
   name: string;
   wordSteps: WordStep[];
   meta?: Record<string, any>;
+  subTemplate?: Template;
 };
 
 const FAVORITE_GENERATORS = ["orderedParse", "nestedParse"];
@@ -179,6 +180,7 @@ export const TemplateEditor = ({
     postMessage,
     isMainEditor
   );
+  const {subTemplate} = definition;
   const [insertMode, setInsertMode] = React.useState(false);
   const [insertToKey, setInsertToKey] = React.useState("");
 
@@ -186,7 +188,10 @@ export const TemplateEditor = ({
     setStepsForPanel((prev) => ({ ...prev, [definition.name]: wordSteps }));
   }, [wordSteps]);
 
-  const [filteredTemplates, setFilteredTemplates] = useState([]);
+  const [filteredTemplates, setFilteredTemplates] = useState(compact([subTemplate??null]));
+  useEffect(() => {
+    setFilteredTemplates(compact([subTemplate??null]));
+  }, [subTemplate]);
   function handleOpenFilter(key: string) {
     const newFilteredTemplates = [
       ...filteredTemplates,
@@ -660,7 +665,7 @@ export const TemplateTree = ({
       <div>
         <IsolatedTemplateSaver handleSave={handleSaveTemplate} />
       </div>
-      {Object.keys(template).map((k, i) => {
+      {Object.keys(template)?.map((k, i) => {
         const denoms = k.split("/")[1]?.split(",");
 
         const numerator = k.split("/")[0];

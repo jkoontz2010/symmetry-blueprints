@@ -1,4 +1,3 @@
-
 import React from "react";
 import { WordStep } from "./useTemplate";
 import { tts } from "symmetric-parser";
@@ -8,29 +7,27 @@ function parseStringifiedTemplateModule(templateModule: string) {
   const templModuleFirstParse = new Function("return " + templateModule)();
   const templModule = Object.keys(templModuleFirstParse).reduce((acc, key) => {
     const templified = new Function("return " + templModuleFirstParse[key])();
-    console.log(key, "TEMPLIFIED", templified);
     acc[key] = templified;
     return acc;
   }, {});
-  return templModule
+  return templModule;
 }
 
 export function useFileSystem(postMessage) {
-  const [generatorsFileText, setGeneratorsFileText] =
-    React.useState<string>(null);
-  const [templatesFileText, setTemplatesFileText] =
-    React.useState<string>(null);
-  const [filledGeneratorsFileText, setFilledGeneratorsFileText] =
-    React.useState<string>(null);
-  const [currentWord, setCurrentWord] = React.useState<WordStep[]>(null);
-  const [wordNames, setWordNames] = React.useState<string[]>([]);
-  const [loading, setLoading] = React.useState<boolean>(true);
-  const [currentWordName, setCurrentWordName] = React.useState<string>(null);
-  const [templateModule, setTemplateModule] = React.useState<any>(null);
-  const [allFileTemplates, setAllFileTemplates] = React.useState<any>(null);
-  const [runnableWords, setRunnableWords] = React.useState<string[]>(null);
-  const [queueNames, setQueueNames] = React.useState<string[]>([]);
-
+  const [all, setAll] = React.useState<any>({
+    generatorsFileText: null,
+    templatesFileText: null,
+    filledGeneratorsFileText: null,
+    currentWord: null,
+    wordNames: [],
+    currentWordName: null,
+    templateModule: null,
+    allFileTemplates: null,
+    runnableWords: null,
+    queueNames: [],
+    subTemplate: null
+  });
+  const [loading, setLoading] = React.useState(true);
   React.useEffect(() => {
     window.addEventListener("message", (event) => {
       const message = event.data; // The json data that the extension sent
@@ -46,7 +43,8 @@ export function useFileSystem(postMessage) {
             templateModule,
             fileTemplates,
             runnableWords,
-            queueNames
+            queueNames,
+            subTemplate,
           }: {
             generators: string;
             templates: string;
@@ -55,35 +53,48 @@ export function useFileSystem(postMessage) {
             wordNames: string;
             currentWordName: string;
             templateModule: string;
-            fileTemplates:string;
-            runnableWords:string;
-            queueNames:string;
+            fileTemplates: string;
+            runnableWords: string;
+            queueNames: string;
+            subTemplate: string;
           } = message.data;
-          setGeneratorsFileText(generators);
-          setTemplatesFileText(templates);
           const rw = JSON.parse(runnableWords);
-          setRunnableWords(rw);
-          setFilledGeneratorsFileText(filledGenerators);
           const parsedCurrentWord = JSON.parse(currentWord).map((cw) => ({
             ...cw,
             result: new Function("return " + cw.result)(),
           }));
-
-          setCurrentWord(parsedCurrentWord);
-          setWordNames(JSON.parse(wordNames));
-          setQueueNames(JSON.parse(queueNames));
-          setCurrentWordName(currentWordName);
-          setAllFileTemplates(new Function("return " + fileTemplates)());
-
+          const parsedAllFileTemplate = new Function(
+            "return " + fileTemplates
+          )();
+          const parsedSubTemplate =
+            subTemplate == null
+              ? null
+              : new Function("return " + subTemplate)();
           const templModule = parseStringifiedTemplateModule(templateModule);
-          setTemplateModule(templModule);
+          const parsedWordNames = JSON.parse(wordNames);
+          const parsedQueueNames = JSON.parse(queueNames);
+
+          const all ={
+            generatorsFileText: generators,
+            templatesFileText: templates,
+            filledGeneratorsFileText: filledGenerators,
+            currentWord: parsedCurrentWord,
+            wordNames: parsedWordNames,
+            currentWordName: currentWordName,
+            templateModule: templModule,
+            allFileTemplates: parsedAllFileTemplate,
+            runnableWords: rw,
+            queueNames: parsedQueueNames,
+            subTemplate: parsedSubTemplate,
+          };
+          setAll(all);
           setLoading(false);
           break;
         }
         case "word_contents": {
           const { wordName, wordContents } = message.data;
           console.log("WORD CONTENTS", message);
-          setCurrentWordName(wordName);
+          //setCurrentWordName(wordName);
           let parsedCurrentWord;
           if (wordContents === "[]") {
             parsedCurrentWord = [{ result: {} }];
@@ -93,30 +104,31 @@ export function useFileSystem(postMessage) {
               result: new Function("return " + cw.result)(),
             }));
           }
-          setCurrentWord(parsedCurrentWord);
-          if (!wordNames.includes(wordName)) {
-            setWordNames([...wordNames, wordName]);
+          //setCurrentWord(parsedCurrentWord);
+          let newWordNames = all.wordNames;
+          if (!all.wordNames.includes(wordName)) {
+            newWordNames=[...all.wordNames, wordName];
           }
-
+          setAll((prev) => ({ ...prev, wordNames: newWordNames, currentWord:parsedCurrentWord, currentWordName:wordName }));
           setLoading(false);
           break;
         }
         case "all_templates": {
           const { templateModule } = message.data;
           const templModule = parseStringifiedTemplateModule(templateModule);
-
-          setTemplateModule(templModule);
+          setAll((prev) => ({ ...prev, templateModule: templModule }));
           break;
         }
         case "all_file_templates": {
           const { fileTemplates } = message.data;
-          setAllFileTemplates(new Function("return " + fileTemplates)());
+
+          setAll((prev) => ({ ...prev, allFileTemplates: new Function("return " + fileTemplates)() }));
           break;
         }
         case "all_runnable_words": {
           const { runnableWords } = message.data;
           const rw = JSON.parse(runnableWords);
-          setRunnableWords(rw);
+          setAll((prev) => ({ ...prev, runnableWords: rw }));
         }
       }
     });
@@ -155,9 +167,9 @@ export function useFileSystem(postMessage) {
   const selectQueue = (queueName) => {
     postMessage({
       command: "select_queue",
-      queueName
+      queueName,
     });
-  }
+  };
 
   return {
     readAllFiles,
@@ -165,17 +177,8 @@ export function useFileSystem(postMessage) {
     writeFile,
     setWord,
     addToTemplatePool,
-    generatorsFileText,
-    templatesFileText,
-    runnableWords,
-    filledGeneratorsFileText,
-    currentWord,
-    currentWordName,
-    wordNames,
+    selectQueue,
     loading,
-    templateModule,
-    allFileTemplates,
-    queueNames,
-    selectQueue
+    ...all,
   };
 }

@@ -74,11 +74,11 @@ const App = () => {
     runnableWords,
     selectQueue,
     queueNames,
+    subTemplate
   } = useFileSystem(vscode.postMessage);
   React.useEffect(() => {
     readAllFiles();
   }, []);
-  console.log("queueNames", queueNames);
   const [showGTWVEditor, setShowGTWVEditor] = React.useState(false);
   return (
     <div>
@@ -86,7 +86,6 @@ const App = () => {
         <Dropdown
           options={queueNames}
           onSelect={(value) => {
-            console.log("NEW QUEUE", value);
             selectQueue(value);
           }}
           placeholder="Select a word"
@@ -94,7 +93,6 @@ const App = () => {
         <Dropdown
           options={wordNames}
           onSelect={(value) => {
-            console.log("VALUE", value);
             setWord(value);
           }}
           placeholder="Select a word"
@@ -103,7 +101,6 @@ const App = () => {
         {showGTWVEditor && (
           <GTWVEditor
             handleSubmit={(value) => {
-              console.log("VALUE", value);
               setShowGTWVEditor(false);
               addToTemplatePool(value.key, value.value, value.args);
             }}
@@ -133,6 +130,7 @@ const App = () => {
                   meta: {
                     generators: buildAllGeneratorsTemplate(generatorsFileText),
                   },
+                  subTemplate // added separately here bc it's for display purposes
                 },
                 {
                   name: "generators",

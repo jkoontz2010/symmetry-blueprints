@@ -16,6 +16,7 @@ export type DequeueStep = {
   waitForTransitionCommand: boolean;
   runWithEmptyTemplate: boolean;
   transitionAction: string; //"get" // getOrCreate
+  subTemplate?: TemplateAsString;
 };
 
 const typeToHandlerMap = {
@@ -44,7 +45,7 @@ async function handleRunStep(
 const fsActionToServiceMap = {
   get: fsService.get, // controller action?
   getOrCreate: fsService.getOrCreate,
-  identity: fsService.identity
+  identity: fsService.identity,
 };
 
 // can be made generic?
@@ -82,7 +83,7 @@ export default class Runner {
       this.steps = steps;
     }
     this.subscribed = new Map();
-    this.isRunning= false;
+    this.isRunning = false;
     this.currentStep = this.steps[0];
   }
   append(steps: DequeueStep[]) {
@@ -98,7 +99,6 @@ export default class Runner {
     this.subscribed.delete(name);
   }
   onRunNext(step: DequeueStep, template: TemplateAsString) {
-
     this.subscribed.forEach((cb, key) => {
       try {
         cb(step, template);
@@ -107,6 +107,41 @@ export default class Runner {
         console.error(e);
       }
     });
+  }
+  addSubTemplatesToQueue(templates: TemplateAsString[]) {
+
+    // this is nasty. we basically want to delay the transition action
+    // until the subTemplates queue'd steps are ran.
+    // then we run the currentStep's transition action.
+    // meaning we need to change the currentStep's transition action to identity
+    const oldTransitionAction = this.currentStep.transitionAction;
+    // use config from current step to deduce what the new config is
+    // then add to the queue
+    const queueSteps: DequeueStep[] = templates.map((t) => {
+      console.log("queueing", t)
+      return {
+        type: this.currentStep.type,
+        config: this.currentStep.config,
+        runWithEmptyTemplate: false,
+        subTemplate: t,
+        waitForTransitionCommand: true,
+        description: "Queue item from subTemplate",
+        name: this.currentStep.name + "_subTemplate",
+        transitionAction: "identity",
+      };
+    });
+    // the final step just runs the original transition action.
+    // no need to wait for anything.
+    queueSteps.push({
+      ...this.currentStep,
+      word: null,
+      waitForTransitionCommand: false,
+      transitionAction: oldTransitionAction,
+    });
+    this.appendLeft(queueSteps);
+    // every handler must implement identity
+    this.currentStep.transitionAction = "identity";
+    console.log("APPENEDED STEPS", this.steps);
   }
 
   async initNextStep(
@@ -129,11 +164,14 @@ export default class Runner {
     if (word != null) {
       const runWordTemplate =
         step.runWithEmptyTemplate === true ? "{}" : templateAsString;
-      const { template: runResult } = await runWord(
+      const { template: runResult, queuedTemplates } = await runWord(
         config,
         word,
         runWordTemplate
       );
+      if (queuedTemplates.length > 0) {
+        this.addSubTemplatesToQueue(queuedTemplates);
+      }
       stepTemplate = runResult;
     }
     this.currentTemplate = stepTemplate;
