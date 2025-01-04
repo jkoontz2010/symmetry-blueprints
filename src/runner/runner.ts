@@ -1,6 +1,7 @@
 import { tts } from "symmetric-parser";
 import * as fsService from "../services/fsService";
 import { runWord, TemplateAsString } from "../services/wordRunService";
+import { compact } from "lodash";
 
 export type DequeueConfig = {
   name: string;
@@ -117,7 +118,7 @@ export default class Runner {
     const oldTransitionAction = this.currentStep.transitionAction;
     // use config from current step to deduce what the new config is
     // then add to the queue
-    const queueSteps: DequeueStep[] = templates.map((t) => {
+    const queueSteps: DequeueStep[] = compact(templates).map((t) => {
       console.log("queueing", t)
       return {
         type: this.currentStep.type,

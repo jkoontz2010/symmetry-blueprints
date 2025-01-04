@@ -17,6 +17,7 @@ import { GTWVEditor } from "./GTWVEditor";
 import "ace-builds/src-noconflict/mode-java";
 import "ace-builds/src-noconflict/theme-github";
 import "ace-builds/src-noconflict/ext-language_tools";
+import { QueueHeader } from "./QueueHeader";
 
 export function run(func: () => string, keyName: string) {
   try {
@@ -82,6 +83,7 @@ const App = () => {
   const [showGTWVEditor, setShowGTWVEditor] = React.useState(false);
   return (
     <div>
+      <div><QueueHeader/></div>
       <CssVarsProvider>
         <Dropdown
           options={queueNames}
