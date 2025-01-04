@@ -133,8 +133,8 @@ export function useFileSystem(postMessage) {
       }
     });
   }, []);
-  const readAllFiles = () => {
-    postMessage({ command: "fetch_from_config" });
+  const readAllFiles = (queueName: string) => {
+    postMessage({ command: "fetch_from_config", queueName });
   };
   const writeFile = (path, data) => {
     postMessage({ command: "writeFile", path, data });

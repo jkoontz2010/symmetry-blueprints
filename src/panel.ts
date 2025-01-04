@@ -247,21 +247,17 @@ export default class PanelClass {
     this._extContext = _extContext;
     this._extensionUri = _extContext.extensionUri;
 
-    // will have to move this somewhere else for initialization.
-    // as-is, this singleton works great for testing.
-    this.runner = new Runner(TEST_DEQUEUE.steps);
-    this.runner.initNextStep();
     // Create and show a new webview panel
     function handleQueueUpdate() {
       
-      const currentQueue = this.runner.steps.map((step) => ({
+      const currentQueue = this.runner.steps?.map((step) => ({
         type: step.type,
         name: step.name,
         description: step.description,
         word: step.word ?? "-",
         isWaitingForCommand: step.waitForTransitionCommand,
         transitionAction: step.transitionAction,
-      }));
+      }))??[];
       console.log("queue update", currentQueue);
       this._panel!.webview.postMessage({
         command: "queue_update",
@@ -270,7 +266,6 @@ export default class PanelClass {
         },
       });
     }
-    this.runner.subscribe("queueUpdate", handleQueueUpdate.bind(this));
     this._panel = vscode.window.createWebviewPanel(
       PanelClass.viewType,
       "Blueprints",
@@ -292,7 +287,7 @@ export default class PanelClass {
     //Listen to messages
     this._panel.webview.onDidReceiveMessage(
       async (msg: any) => {
-        let pathToConfig = this.runner.currentStep.config;
+;
         switch (msg.command) {
           case "save_all_files": {
             const { template } = msg;
@@ -303,6 +298,7 @@ export default class PanelClass {
               (k) => k.indexOf(".") > -1
             );
             //console.log("TEMPL FILE KEYS", templFileKeys);
+            const pathToConfig = this.runner.currentStep.config;
             const filePathHashes = await getFilePathHashes(pathToConfig);
             //console.log("FILE PATH HASHES", filePathHashes);
             for (const filePathHash of templFileKeys) {
@@ -330,6 +326,7 @@ export default class PanelClass {
             break;
           case "save_word": {
             const { word } = msg;
+            const pathToConfig = this.runner.currentStep.config;
             const wordsFile = await readFromConfig("WORDS_FILE", pathToConfig);
             // save to word file
             const result = await saveWord(word, wordsFile);
@@ -337,6 +334,7 @@ export default class PanelClass {
           }
           case "store_runnable_word": {
             const { word } = msg;
+            const pathToConfig = this.runner.currentStep.config;
             console.log("STORING RUNNABLE WORD", word, pathToConfig);
             try {
               await saveRunnableWord(pathToConfig, word);
@@ -354,6 +352,7 @@ export default class PanelClass {
           }
           case "get_word": {
             const { wordName } = msg;
+            const pathToConfig = this.runner.currentStep.config;
             const wordPath = await getWordPath(pathToConfig, wordName);
             const wordContents = await getWordContents(wordPath);
             this._panel!.webview.postMessage({
@@ -367,6 +366,7 @@ export default class PanelClass {
           }
           case "create_word": {
             const { wordName, template } = msg;
+            const pathToConfig = this.runner.currentStep.config;
             const projectDir = await readFromConfig(
               "PROJECT_DIR",
               pathToConfig
@@ -393,6 +393,7 @@ export default class PanelClass {
             // it's the actual object that is a template
             // we just need to add it to the template pool
             const { template, name } = msg;
+            const pathToConfig = this.runner.currentStep.config;
             const templatesFilePath = await readFromConfig(
               "TEMPLATE_FILE",
               pathToConfig
@@ -435,6 +436,7 @@ export default class PanelClass {
               templ,
               false
             )}, ${args});`;
+            const pathToConfig = this.runner.currentStep.config;
             const templatesFilePath = await readFromConfig(
               "TEMPLATE_FILE",
               pathToConfig
@@ -470,6 +472,7 @@ export default class PanelClass {
             break;
           }
           case "run_generator": {
+            const pathToConfig = this.runner.currentStep.config;
             const { generatorString, template, msgId } = msg;
             console.log(
               "RUNNING",
@@ -513,6 +516,7 @@ export default class PanelClass {
           }
           case "run_word": {
             const { wordName, template, msgId } = msg;
+            const pathToConfig = this.runner.currentStep.config;
             const {
               template: result,
               wordRunFilePath,
@@ -537,7 +541,7 @@ export default class PanelClass {
           }
           case "add_filled_generator": {
             const { msgId, filledGenerator } = msg;
-
+            const pathToConfig = this.runner.currentStep.config;
             const projectDir = await readFromConfig(
               "PROJECT_DIR",
               pathToConfig
@@ -582,6 +586,7 @@ export default class PanelClass {
             ) {
               throw new Error("No steps to save");
             }
+            const pathToConfig = this.runner.currentStep.config;
             const projectDir = await readFromConfig(
               "PROJECT_DIR",
               pathToConfig
@@ -599,7 +604,7 @@ export default class PanelClass {
           case "transition": {
             const { template } = msg;
             await this.runner.transition(template);
-            pathToConfig = this.runner.currentStep.config;
+            const pathToConfig = this.runner.currentStep.config;
             console.time("fetchFromConfig");
             const data = await fetchFromConfig(pathToConfig, this.runner);
             console.timeEnd("fetchFromConfig");
@@ -631,6 +636,7 @@ export default class PanelClass {
               ALL_QUEUES.find((q) => q.name === msg.queueName).steps
             );
             this.runner.initNextStep();
+            const pathToConfig = this.runner.currentStep.config;
             const data = await fetchFromConfig(pathToConfig, this.runner);
             this._panel!.webview.postMessage({
               command: "config_data",
@@ -643,6 +649,16 @@ export default class PanelClass {
           }
           case "fetch_from_config":
             try {
+              const {queueName} = msg;
+              if(queueName == null) {
+                throw new Error("Queue name is null");
+              }
+              const queue = ALL_QUEUES.find((q) => q.name === queueName);
+              this.runner = new Runner(queue.steps);
+              await this.runner.initNextStep();
+              this.runner.unsubscribe("queueUpdate");
+              this.runner.subscribe("queueUpdate", handleQueueUpdate.bind(this));
+
               // data will equal:
               // GENERATOR_FILE=src/generators/wordBuilder.ts
               // TEMPLATE_FILE=src/templates/wordBuilder.ts

@@ -93,8 +93,6 @@ export const getAllFileTemplates = async (
   pathToConfig: string,
   onlyIncludePaths?: string[]
 ) => {
-  console.count("getAllFileTemplates");
-  console.trace()
   if (pathToConfig == null) {
     throw new Error("pathToConfig is null in getAllFileTemplates");
   }
