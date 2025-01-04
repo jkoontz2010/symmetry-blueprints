@@ -252,6 +252,25 @@ export default class PanelClass {
     this.runner = new Runner(TEST_DEQUEUE.steps);
     this.runner.initNextStep();
     // Create and show a new webview panel
+    function handleQueueUpdate() {
+      
+      const currentQueue = this.runner.steps.map((step) => ({
+        type: step.type,
+        name: step.name,
+        description: step.description,
+        word: step.word ?? "-",
+        isWaitingForCommand: step.waitForTransitionCommand,
+        transitionAction: step.transitionAction,
+      }));
+      console.log("queue update", currentQueue);
+      this._panel!.webview.postMessage({
+        command: "queue_update",
+        data: {
+          currentQueue: JSON.stringify(currentQueue),
+        },
+      });
+    }
+    this.runner.subscribe("queueUpdate", handleQueueUpdate.bind(this));
     this._panel = vscode.window.createWebviewPanel(
       PanelClass.viewType,
       "Blueprints",
@@ -591,7 +610,7 @@ export default class PanelClass {
             // also send the current template as a new word result
             this._panel!.webview.postMessage({
               command: "config_data",
-              data:{
+              data: {
                 ...data,
                 queueNames: JSON.stringify(ALL_QUEUES.map((q) => q.name)),
                 subTemplate: this.runner.currentStep.subTemplate,
@@ -600,11 +619,17 @@ export default class PanelClass {
             break;
           }
           case "select_queue": {
-            if(!ALL_QUEUES.some((q) => q.name === msg.queueName)) {
-              console.log("queue name vs ALL_QUEUES", msg.queueName, ALL_QUEUES);
+            if (!ALL_QUEUES.some((q) => q.name === msg.queueName)) {
+              console.log(
+                "queue name vs ALL_QUEUES",
+                msg.queueName,
+                ALL_QUEUES
+              );
               throw new Error("Queue not found, how did this happen?");
             }
-            this.runner = new Runner(ALL_QUEUES.find((q) => q.name === msg.queueName).steps);
+            this.runner = new Runner(
+              ALL_QUEUES.find((q) => q.name === msg.queueName).steps
+            );
             this.runner.initNextStep();
             const data = await fetchFromConfig(pathToConfig, this.runner);
             this._panel!.webview.postMessage({
@@ -629,7 +654,7 @@ export default class PanelClass {
               );
               this._panel!.webview.postMessage({
                 command: "config_data",
-                data:{
+                data: {
                   ...data,
                   queueNames: JSON.stringify(ALL_QUEUES.map((q) => q.name)),
                 },
