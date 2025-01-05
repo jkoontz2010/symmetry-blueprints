@@ -24,7 +24,7 @@ import {
   createRunnableGeneratorFileContents,
 } from "./services/commandService";
 import { sha1 } from "js-sha1";
-import { runWord } from "./services/wordRunService";
+import { parseWordRunResult, runWord } from "./services/wordRunService";
 import Runner, { DequeueConfig } from "./runner/runner";
 import { fetchFromConfig } from "./services/configService";
 
@@ -528,16 +528,17 @@ export default class PanelClass {
             const resultFilePath = projectDir + "/" + resultFile;
             await saveFile(genFilePath, generatorRunFile);
             const result = await runTs(genFilePath);
-            console.log("RESULTv,", result);
-            await saveFile(resultFilePath, result);
-
+            const { template: tresult, queue } = parseWordRunResult(result);
+            this.runner.addSubTemplatesToQueue(queue);
+            await saveFile(resultFilePath, tresult);
+console.log("SENDING RESULT", tresult.substring(0, 100));
             this._panel!.webview.postMessage({
               command: "generator_result",
               data: {
                 msgId,
                 generatorFilePath: genFilePath,
                 resultFilePath: resultFilePath,
-                result,
+                result: tresult,
                 generatorString,
               },
             });
@@ -664,7 +665,7 @@ export default class PanelClass {
             this.runner = new Runner(
               ALL_QUEUES.find((q) => q.name === msg.queueName).steps
             );
-            this.runner.initNextStep();
+            await this.runner.initNextStep();
             const pathToConfig = this.runner.currentStep.config;
             const data = await fetchFromConfig(pathToConfig, this.runner);
             this._panel!.webview.postMessage({
@@ -684,10 +685,10 @@ export default class PanelClass {
               }
               const queue = ALL_QUEUES.find((q) => q.name === queueName);
               this.runner = new Runner(queue.steps);
-              await this.runner.initNextStep();
               this.runner.unsubscribe("queueUpdate");
               this.runner.subscribe("queueUpdate", handleQueueUpdate.bind(this));
-
+             
+              await this.runner.initNextStep();
               // data will equal:
               // GENERATOR_FILE=src/generators/wordBuilder.ts
               // TEMPLATE_FILE=src/templates/wordBuilder.ts

@@ -8,29 +8,13 @@ type QueueStepData = {
   isWaitingForCommand: boolean;
   transitionAction: string;
 }
-const FAKE_DATA = [
-  {
-      "type": "template",
-      "name": "parseFifth_subTemplate",
-      "description": "Queue item from subTemplate",
-      "word": "-",
-      "isWaitingForCommand": true,
-      "transitionAction": "identity"
-  },
-  {
-      "type": "template",
-      "name": "parseFifth",
-      "description": "runs the word that parses fifth.tsx",
-      "word": "-",
-      "isWaitingForCommand": false,
-      "transitionAction": "identity"
-  }
-]
-export function useQueueListener() {
-  const [queueSteps, setQueueSteps] = useState<QueueStepData[]>(FAKE_DATA);
-  function handleQueueUpdate(message) {
-    const newQueueSteps = message.data;
 
+export function useQueueListener() {
+  const [queueSteps, setQueueSteps] = useState<QueueStepData[]>([]);
+  function handleQueueUpdate(message) {
+    const data = message.data;
+    const currentQueue = JSON.parse(data.currentQueue);
+    setQueueSteps(currentQueue);
   }
   function handleMessage(event: MessageEvent) {
     const message = event.data; // The json data that the extension sent

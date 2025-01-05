@@ -10,6 +10,7 @@ import {
   stringUnCleaning,
   tts,
 } from "symmetric-parser";
+import { QUEUE_SPLITTER, RESULT_SPLITTER } from "./hardToParse/util";
 
 export async function appendToFile(filePath: string, data: string) {
   try {
@@ -349,7 +350,7 @@ export const createRunnableGeneratorFileContents = async (
     generatorString.includes(g)
   );
   const importedWords = words.filter((w) => generatorString.includes(w));
-  const generalImports = `import { buildQueue } from "./word-pool";`;
+  const generalImports = `import { buildQueue, getQueue, clearQueue } from "./word-pool";`;
   const templatesImport =
     importedTemplates.length > 0
       ? `import { ${importedTemplates.join(",\n")} } from "./template-pool";\n`
@@ -365,7 +366,7 @@ export const createRunnableGeneratorFileContents = async (
   const allImports = `${generalImports}\n${templatesImport}\n${generatorsImport}\n${wordsImport}`;
 
   const templateString = `const template = ${template};`;
-  const generatorRun = `// @ts-ignore\nconst result = ${generatorString};\nconsole.log(tts(result,false));`;
+  const generatorRun = `// @ts-ignore\nconst result = ${generatorString};\nconst queue=getQueue();\nconsole.log(tts(result,false));\nif(queue.length>0) {\nconsole.log("${RESULT_SPLITTER}");\nqueue.forEach(q=>console.log(tts(q,false),"${QUEUE_SPLITTER}"))}\nclearQueue();`;
   return `${allImports}\n${templateString}\n${generatorRun}`;
 };
 

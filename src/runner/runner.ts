@@ -69,7 +69,7 @@ async function handleTemplate(
 }
 
 // make it agnostic from WHAT gets ran
-type SubscribeCb = (step: DequeueStep, template: TemplateAsString) => void;
+type SubscribeCb = () => void;
 
 export default class Runner {
   steps: DequeueStep[];
@@ -99,12 +99,12 @@ export default class Runner {
   unsubscribe(name: string) {
     this.subscribed.delete(name);
   }
-  onRunNext(step: DequeueStep, template: TemplateAsString) {
+  onQueueChange() {
     this.subscribed.forEach((cb, key) => {
       try {
-        cb(step, template);
+        cb();
       } catch (e) {
-        console.error(`onRunNext failure, ${key} callback failed:`);
+        console.error(`onQueueChange failure, ${key} callback failed:`);
         console.error(e);
       }
     });
@@ -140,6 +140,7 @@ export default class Runner {
       transitionAction: oldTransitionAction,
     });
     this.appendLeft(queueSteps);
+    this.onQueueChange();
     // every handler must implement identity
     this.currentStep.transitionAction = "identity";
     console.log("APPENEDED STEPS", this.steps);
@@ -149,15 +150,17 @@ export default class Runner {
     templateAsString: TemplateAsString = "{}"
   ): Promise<TemplateAsString> {
     this.isRunning = true;
+    // placement is important. here, it will retain the current step in the queue.
+    // after this.steps.shift(), the currentStep is no longer in the queue.
+    this.onQueueChange();
     const step = this.steps.shift();
-
     if (step == null) {
       console.log("no further steps");
       return templateAsString;
     }
     this.currentStep = step;
     // someone else's event handler, returns void, affects nothing
-    this.onRunNext(step, this.currentTemplate);
+    
     const { config, word } = step;
 
     let stepTemplate =
@@ -171,6 +174,7 @@ export default class Runner {
         runWordTemplate
       );
       if (queuedTemplates.length > 0) {
+        console.log("FOUND SUB TEMPLATES", queuedTemplates.length);
         this.addSubTemplatesToQueue(queuedTemplates);
       }
       stepTemplate = runResult;

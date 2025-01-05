@@ -15,7 +15,7 @@ type WordRunParse = {
   template: string;
   queue: string[];
 }
-function parseWordRunResult(result: string): WordRunParse {
+export function parseWordRunResult(result: string): WordRunParse {
   const split = result.split(RESULT_SPLITTER);
   const template = split[0];
   const queue = split[1];

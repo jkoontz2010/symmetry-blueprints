@@ -24,15 +24,7 @@ export const elementTag = genTemplateWithVars({
 'elementTag': ()=>`<tagBody>`
 }, ["tagBody"]);
 
-export const commandSend = genTemplateWithVars({
-'commandSend': ()=>`postMessage({commandBody});`
-}, ["commandBody"]);
-export const nameProperty = genTemplateWithVars({
-'nameProperty': ()=>`command: "commandName",`
-}, ["commandName"]);
-export const argProperties = genTemplateWithVars({
-'argProperties': ()=>`  commandArg,\n`
-}, ["commandArg"]);
+
 export const postMessageSend = {
 'commandSend02/commandBody02': ({commandBody02})=>`postMessage({${run(commandBody02,'commandBody02')}});`,
 'commandBody02/nameProperty11': ({nameProperty11})=>`
@@ -64,9 +56,6 @@ export const postMessageFull = {
         msgId,
       `,
   }
-export const postCmdArgument = genTemplateWithVars({
-'postCmdArgument': ()=>`  commandArg,\n`
-}, ["commandArg"]);
 export const pathConfigPostArg = genTemplateWithVars({
 'pathConfigPostArg': ()=>`  pathToConfig: configPathValue,\n`
 }, ["configPathValue"]);
@@ -303,9 +292,6 @@ export function useTemplate(
       msgId,
     `
 }
-export const panelCommand = genTemplateWithVars({
-'panelCommand': ()=>`case "panelCommandName": panelCommandBodybreak;`
-}, ["panelCommandName","panelCommandBody"]);
 
 
 export const forLink = {
@@ -2660,3 +2646,68 @@ console.log("FROM STARTUP TEMPLATE MODEUL", templateModule)
 }
 `
 }
+
+
+export const postCmdArgument = genTemplateWithVars(
+  {
+    postCmdArgument: () => `  commandArg,\n`,
+  },
+  ["commandArg"]
+);
+export const panelCommand = genTemplateWithVars(
+  {
+    panelCommand: () => `case "panelCommandName":panelCommandBodybreak;`,
+  },
+  ["panelCommandName", "panelCommandBody"]
+);
+export const cmdHandler = genTemplateWithVars(
+  {
+    hookCmdHandleSection: () => `case "hookHandlerName":hookHandlerBodybreak;`,
+  },
+  ["hookHandlerName", "hookHandlerBody"]
+);
+
+export const commandSend = genTemplateWithVars(
+  {
+    commandSend: () => ` postMessage({commandBody});`,
+  },
+  ["commandBody"]
+);
+export const nameProperty = genTemplateWithVars(
+  {
+    nameProperty: () => `command: "commandName",`,
+  },
+  ["commandName"]
+);
+export const argProperties = genTemplateWithVars(
+  {
+    argProperties: () => `  commandArg,\n`,
+  },
+  ["commandArg"]
+);
+export const webviewPostMessage = genTemplateWithVars(
+  {
+    webviewPostMessage: () => `webview.postMessage({webviewCommandBody});`,
+  },
+  ["webviewCommandBody"]
+);
+export const webviewPostMessageName = genTemplateWithVars(
+  {
+    webviewPostMessageName: () => `command: "webviewCommandName",`,
+  },
+  ["webviewCommandName"]
+);
+export const webviewCommandHandler = genTemplateWithVars(
+  {
+    webviewCommandHandler: () =>
+      `webview.onDidReceiveMessage(webviewHandlerthis._disposables`,
+  },
+  ["webviewHandler"]
+);
+export const hookCommandHandler = genTemplateWithVars(
+  {
+    hookCmdHandler: () =>
+      `switch (message.command)hookCommandHandlerBodydefault:`,
+  },
+  ["hookCommandHandlerBody"]
+);

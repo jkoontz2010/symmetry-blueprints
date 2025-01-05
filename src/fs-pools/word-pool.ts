@@ -11,7 +11,7 @@ import type { Template } from "../../../react-for-code/dist/src/templator/templa
 
 
 let QUEUE: Template[]=[]
-function buildQueue(template: Template) {
+export function buildQueue(template: Template) {
     QUEUE.push(template)
     return template
 }

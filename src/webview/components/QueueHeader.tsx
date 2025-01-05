@@ -23,6 +23,9 @@ max-height: 200px;
 `;
 export const QueueHeader = ({}) => {
   const { queueSteps } = useQueueListener();
+  if(queueSteps.length === 0) {
+    return <div>No steps in queue</div>
+  }
   const currentStep = queueSteps[0];
   return (
     <div className={baseStyle}>

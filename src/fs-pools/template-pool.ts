@@ -32,3 +32,8 @@ export const panelSrcFile = {
 export const useTemplatePath = {
 'filePath1': ()=>`src/webview/hooks/useTemplate.ts`
 }
+export const allButPools = {
+'excludePath1': ()=>`pools`,
+'excludePath2': ()=>`hardToParse`,
+'filePath1': ()=>`src`
+}

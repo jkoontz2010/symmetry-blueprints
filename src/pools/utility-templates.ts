@@ -41,6 +41,9 @@ import {
 
 getTemplateTextFromFunc, rsCompact,
 hasDuplicateValuesAtKey,
+getLinkedBySections,
+uniqueifyKeys,
+getRootKeys,
 } from "symmetric-parser";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
 
@@ -608,7 +611,33 @@ export function performIfNotGenericKeyHasValue(
     return input;
   }
 }
+function mergeIsolatedChange(
+  template: Template,
+  isolatedTemplate: Template, // sub-template
+  cb: (t: Template) => Template
+): Template {
+  // idea: preserve root keys, change what's underneath them
+  const roots = getRootKeys(isolatedTemplate);
+  let operatedOnTemplate = cloneDeep(template);
+  const isolatedKeys = Object.keys(isolatedTemplate);
+  isolatedKeys.forEach(k=>{
+    delete operatedOnTemplate[k];
+  })
+  let cbResult = cb(isolatedTemplate);
+  //console.log("HERE WITH CBRULEST", tts(cbResult,false));
+  const opKeys = Object.keys(operatedOnTemplate);
+  const cbKeys = Object.keys(cbResult);
+  const keyChanges = uniqueifyKeys(opKeys, cbKeys, roots);
+  //console.log("HEY ITS THE KEY CHAGNES",keyChanges)
+  Object.entries(keyChanges).forEach(([oldKey, newKey]) => {
+    //console.log("oldKey", oldKey, "newKey", newKey);
+    cbResult = changeKeyName(cbResult, oldKey, newKey);
+  });
 
+  //console.log("operatedOnTemplate", Object.keys(operatedOnTemplate));
+  //console.log("cbResult", Object.keys(cbResult));
+  return { ...operatedOnTemplate, ...cbResult };
+}
 // alternative name: isolateCallbackToKey
 export function performOnNodes(
   input: Template,
@@ -632,18 +661,29 @@ export function performOnNodes(
       childKeys.forEach((ck) => {
         filteredTemplates[ck] = input[ck];
       });
+      // @ts-ignore cb doesn't use index anymore, and we haven't refactored that out in performOnNodes
+      result = mergeIsolatedChange(operatedOnTemplate, filteredTemplates, cb);
+      /*
       //console.log("FILTERED OUT KEYS", childKeys);
       childKeys.forEach((fok) => {
         delete operatedOnTemplate[fok];
       });
       //console.log("_____________________________________");
-      const cbResult = cb(filteredTemplates, index);
+      let cbResult = cb(filteredTemplates, index);
       //console.log("HERE WITH CBRULEST", tts(cbResult,false));
+      const opKeys = Object.keys(operatedOnTemplate);
+      const cbKeys = Object.keys(cbResult);
+      const keyChanges = uniqueifyKeys(opKeys, cbKeys, [k]);
+      //console.log("HEY ITS THE KEY CHAGNES",keyChanges)
+      Object.entries(keyChanges).forEach(([oldKey, newKey]) => {
+        //console.log("oldKey", oldKey, "newKey", newKey);
+        cbResult = changeKeyName(cbResult, oldKey, newKey);
+      });
 
-      // NEW WAY THAT INSERTS INTO TEMPLATE, PROVIDING UNIQUE INDICES
-      result = insertIntoTemplate(operatedOnTemplate, cbResult);
-      // OLD WAY THAT REQUIRED INDICES TO BE FIGURED OUT IN CALLBACK
-      // result = { ...operatedOnTemplate, ...cbResult }; //mergeResult(cbResult, result);
+      //console.log("operatedOnTemplate", Object.keys(operatedOnTemplate));
+      //console.log("cbResult", Object.keys(cbResult));
+      result = { ...operatedOnTemplate, ...cbResult }; //mergeResult(cbResult, result);
+      */
       //     console.log("MERGERESULT", result);
       // BUT!! what if cbResult keys conflict? do we need to
       // rework the key names??
@@ -928,6 +968,20 @@ export function getImmediateFamily(
     return { ...acc, [curr]: input[curr] };
   }, {});
   return { ...siblingsTemplate, [parentKey]: input[parentKey] };
+}
+
+type Link = {
+  rootA: string;
+  rootB: string;
+  matchOnKey: string;
+};
+
+export function performOnLinks(
+  input: Template,
+  links: Link[],
+  cb: (t: Template) => Template
+): Template {
+  return input;
 }
 
 // value must be complete, no denoms
@@ -1341,20 +1395,36 @@ export function swapValuesWhenChildHasMatchingValue(
   return result;
 }
 
+// DO NOT feed denom'd keys to this function!
 export function changeKeyName(
   input: Template,
   from: string,
   to: string
 ): Template {
-  // console.log("changeKeyName", from, to);
+  if (from.indexOf("/") > -1) {
+    // you gave it "k1/k2". Feed it "k1", then call it with "k2" separately.
+    throw new Error(
+      "changeKeyName must be fed a key without a denominator, failed in 'from' arg"
+    );
+  }
+  if (to.indexOf("/") > -1) {
+    throw new Error(
+      "changeKeyName must be fed a key without a denominator, failed in 'to' arg"
+    );
+  }
+  //console.log("changeKeyName", from, to);
+  if (from === to) return input;
   const keys = Object.keys(input);
   const fromNumerator = from.split("/")[0];
 
+  // if the from key is found in any key's denominator,
+  // we must include that in the changed keys.
   const matchingKeys = keys.filter((k) => {
     const denoms = getKeyDenominators(k);
     const numerator = k.split("/")[0];
     return denoms?.includes(from) || numerator === fromNumerator;
   });
+  //console.log("matchingKeys", matchingKeys);
 
   const toNumerator = to.split("/")[0];
   matchingKeys.forEach((k) => {
@@ -1365,11 +1435,14 @@ export function changeKeyName(
       getKeyName(numerator) === getKeyName(fromNumerator)
         ? toNumerator
         : numerator;
-    // console.log("NEW NUMERATOR", newNumerator);
+    //console.log("NEW NUMERATOR", newNumerator);
     const newDenoms = denoms?.map((d) => (d === from ? to : d));
+    //console.log("NEW DNEOMS", newDenoms);
     const newKey =
-      denoms != null ? `${newNumerator}/${newDenoms.join(",")}` : newNumerator;
-
+      denoms != null && denoms.length > 0
+        ? `${newNumerator}/${newDenoms.join(",")}`
+        : newNumerator;
+    //console.log("NEW KEY", newKey);
     // change Template Part
     let templatePart = input[k].toString();
     // must change args and run statements in templatePart
@@ -1444,7 +1517,9 @@ export function insertIntoTemplate(
     // guess what the dumb way is? add random number to index, recheck for existence
     // and repeat until it's unique
     let newKey = ik;
-    let currentIndex = Number(getKeyIndex(ik) ?? 0);
+    const keyIndexString = getKeyIndex(ik);
+    let currentIndex = Number(keyIndexString ?? 0);
+
     const keyName = getKeyName(ik);
     let isUnique = false;
     while (!isUnique) {
@@ -1502,7 +1577,10 @@ export function orderedParse(
   const of = orderedFold(input, orderedParseTemplates, {
     mode: FoldMode.AllOrNothing,
   });
-  if (of == null) throw new Error("orderedParse failed");
+  if (of == null) {
+    return input;
+  }
+
   return { ...of.result, ...of.divisors };
 }
 
@@ -1521,4 +1599,24 @@ export function nestedParse(
   );
 
   return { ...rf.result, ...rf.divisors };
+}
+
+type LinkedBySpec = {
+  from: string;
+  to: string;
+  by: string; // must belong in from's section
+};
+
+export function performOnLinkedBySections(
+  input: Template,
+  linkedBySpec: LinkedBySpec[],
+  cb: (t: Template) => Template
+): Template {
+  let result = {};
+  const linkedSections = getLinkedBySections(input, linkedBySpec);
+  linkedSections.forEach((ls) => {
+    result = mergeIsolatedChange(input, ls, cb);
+  });
+
+  return result;
 }
