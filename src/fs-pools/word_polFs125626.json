@@ -1,0 +1,1 @@
+[{"result":"{\n\n}"},{"name":"insertIntoTemplate","args":[{},{}],"full":"insertIntoTemplate([object Object],[object Object])","result":"{\n'excludePath1': () => \"pools\",\n'excludePath2': () => \"hardToParse\",\n'filePath1': () => \"src\"\n}","files":{}}]

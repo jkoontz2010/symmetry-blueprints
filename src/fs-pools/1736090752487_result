@@ -1,0 +1,4 @@
+{
+'filePath1': () => "src/webview/hooks/useTemplate.ts"
+}
+

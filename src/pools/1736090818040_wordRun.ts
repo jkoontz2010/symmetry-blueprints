@@ -1,3 +1,23 @@
+import { getQueue, clearQueue, ponTesterQueue } from "./word-pool";
+import { tts } from "symmetric-parser";
+  function run(func: () => string, keyName: string) {
+  try {
+    if (func == null) {
+      return "${run(" + keyName + ", '" + keyName + "')}";
+    }
+    if (typeof func === "string") {
+      throw new Error("func is string");
+    }
+    const result = func();
+    return result;
+  } catch (e) {
+    return "${run(" + keyName + ", '" + keyName + "')}";
+  }
+}
+  
+const template = {
+'useTemplate.ts60c890fb5b/fileContents1': ({fileContents1})=>`${run(fileContents1, 'fileContents1')}`,
+'fileContents1': ()=>`
 import { cloneDeep, compact, difference, last, uniqueId } from "lodash";
 import { useEffect, useState } from "react";
 import {
@@ -49,7 +69,7 @@ export function useTemplate(
     const wordStep = {
       name: name,
       args: args,
-      full: `${name}(${args.join(",")})`,
+      full: ェ§{name}(§{args.join(",")})ェ,
       result: cloneDeep(result),
       files,
     };
@@ -87,7 +107,7 @@ export function useTemplate(
       return k.split("/")[0] === key;
     });
     if (templateHasNumerator) return;
-    let combineWith = { [key]: () => `` };
+    let combineWith = { [key]: () => ェェ };
     let newTemplate = dumbCombine(template, combineWith);
     let result = sortTemplateByDeps(sortTemplateByDeps(newTemplate));
     logStep("dumbCombine", [template, combineWith], result);
@@ -151,7 +171,7 @@ export function useTemplate(
     //console.log("MESSAGE DATA", message.data);
     const { generatorFilePath, resultFilePath, result, generatorString } =
       message.data;
-    console.log("generator_result", result);
+    //console.log("generator_result", result);
     const name = generatorString.substring(0, generatorString.indexOf("("));
 
     const args = generatorString
@@ -287,9 +307,17 @@ function parseWordStepsIntoWord(wordName:string, wordSteps: WordStep[]): string 
 			return null
 		}
     if(step.full==null) {return null}
-		return `(template)=>${step.full}`
+		return ェ(template)=>§{step.full}ェ
 	}))
 
-	const word = `export const ${wordName} = flow(${callbacks.join(",")})`
+	const word = ェexport const §{wordName} = flow(§{callbacks.join(",")})ェ
   return word;
-}
+}`
+};
+const result = ponTesterQueue(template);
+const queue=getQueue();
+console.log(tts(result, false));
+if(queue.length>0) {
+console.log("|||||||");
+queue.forEach(q=>console.log(tts(q,false),"&&&&&&&"))}
+clearQueue();
