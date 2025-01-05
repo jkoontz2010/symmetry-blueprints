@@ -78,7 +78,7 @@ const App = () => {
     subTemplate
   } = useFileSystem(vscode.postMessage);
   React.useEffect(() => {
-    readAllFiles("test");
+    readAllFiles("polTest");
   }, []);
   const [showGTWVEditor, setShowGTWVEditor] = React.useState(false);
   return (

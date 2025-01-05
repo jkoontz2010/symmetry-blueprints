@@ -11,14 +11,23 @@ import * as path from "path";
 import { insertIntoTemplate, orderedParse, tts } from "symmetric-parser";
 import { formFilePathHash } from "../panel";
 
-export const identity = async (pathToConfig: string, input: TemplateAsString) => {
-    return input
-}
+export const identity = async (
+  pathToConfig: string,
+  input: TemplateAsString
+) => {
+  return input;
+};
 
 export const get = async (pathToConfig: string, input: TemplateAsString) => {
   const baseDir = await readFromConfig("BASE_DIR", pathToConfig);
   const ignore = await readFromConfig("IGNORE", pathToConfig);
-  const allFilePaths = await getAllFilePaths(baseDir, ignore);
+  const parseTemplate = new Function("return " + input)();
+  const excludeTempl = {};
+  Object.keys(parseTemplate).filter((key) => key.includes("excludePath")).forEach((key) => {
+    excludeTempl[key] = parseTemplate[key]
+  })
+  const excludeValues = Object.keys(excludeTempl).map((key) => excludeTempl[key]());
+  const allFilePaths = await getAllFilePaths(baseDir, [ignore,...excludeValues]);
 
   const allFilePathsTemplate: Template = allFilePaths.reduce(
     (t: Template, path: string) => {
@@ -28,15 +37,28 @@ export const get = async (pathToConfig: string, input: TemplateAsString) => {
     {}
   );
 
-  const parseTemplate = new Function("return " + input)();
+console.log("THE PARSE TEMPLAT", tts(parseTemplate, false))
 
-  const division = orderedParse(allFilePathsTemplate, [parseTemplate]);
+  const includeTempl = {};
+  Object.keys(parseTemplate).filter((key) => key.includes("filePath")).forEach((key) => {
+    includeTempl[key] = parseTemplate[key]
+  })
+
+
+  const division = orderedParse(allFilePathsTemplate, [includeTempl]);
 
   // find all keys with filePath in the denominator
   const filePaths = Object.keys(division)
     .filter((key) => key.includes("/filePath"))
+    .map((test) => {
+      console.log("TEST", test);
+      return test;
+    })
     .map((key) => key.split("/")[0])
     .map((numerator) => allFilePathsTemplate[numerator]());
+
+
+
 
   const filePathHashesMap = {};
 
@@ -58,7 +80,7 @@ export const getOrCreate = async (
   return input;
 };
 
-async function getAllFilePaths(dir: string, ignore: string): Promise<string[]> {
+async function getAllFilePaths(dir: string, ignoreAll: string[]): Promise<string[]> {
   let results: string[] = [];
 
   // Read directory entries (files & folders)
@@ -69,14 +91,14 @@ async function getAllFilePaths(dir: string, ignore: string): Promise<string[]> {
     const fullPath = path.join(dir, entry.name);
 
     // Skip if the path includes the ignore string
-    if (ignore && fullPath.includes(ignore)) {
+    if (ignoreAll && ignoreAll.some(i=>fullPath.includes(i))) {
       continue;
     }
 
     // Check if the entry is a directory or a file
     if (entry.isDirectory()) {
       // Recursively gather paths from the subdirectory
-      const subPaths = await getAllFilePaths(fullPath, ignore);
+      const subPaths = await getAllFilePaths(fullPath, ignoreAll);
       results.push(...subPaths);
     } else {
       // It's a file; add to results

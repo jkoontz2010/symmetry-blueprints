@@ -1,4 +1,4 @@
-GENERATOR_FILE=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/src/fs-pools/utility-templates.ts
+GENERATOR_FILE=/Users/jaykoontz/Documents/GitHub/react-for-code/src/templator/utility-templates.ts
 TEMPLATE_FILE=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/src/fs-pools/template-pool.ts
 WORDS_FILE=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/src/fs-pools/word-pool.ts
 PROJECT_DIR=/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/src/fs-pools

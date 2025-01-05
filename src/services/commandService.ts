@@ -349,6 +349,7 @@ export const createRunnableGeneratorFileContents = async (
     generatorString.includes(g)
   );
   const importedWords = words.filter((w) => generatorString.includes(w));
+  const generalImports = `import { buildQueue } from "./word-pool";`;
   const templatesImport =
     importedTemplates.length > 0
       ? `import { ${importedTemplates.join(",\n")} } from "./template-pool";\n`
@@ -361,7 +362,7 @@ export const createRunnableGeneratorFileContents = async (
       ? `import { ${importedWords.join(",\n")} } from "./word-pool";\n`
       : "";
 
-  const allImports = `${templatesImport}\n${generatorsImport}\n${wordsImport}`;
+  const allImports = `${generalImports}\n${templatesImport}\n${generatorsImport}\n${wordsImport}`;
 
   const templateString = `const template = ${template};`;
   const generatorRun = `// @ts-ignore\nconst result = ${generatorString};\nconsole.log(tts(result,false));`;

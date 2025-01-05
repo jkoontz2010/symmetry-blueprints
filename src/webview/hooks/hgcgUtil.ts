@@ -15,7 +15,8 @@ export function formGeneratorFile(
   const generators = Object.keys(generatorModule).filter(
     (k) => generatorString.indexOf(k) > -1
   );
-  const templatesImport = `import { ${templates.join(
+  const generalImports = `import { getQueue, clearQueue } from "./word-pool"
+  import { ${templates.join(
     ",\n"
   )} } from "./template-pool";`;
   const generatorsImport = `import { tts,\nrun,\n${generators.join(
@@ -23,5 +24,5 @@ export function formGeneratorFile(
   )} } from "symmetric-parser";`;
   const templateString = `const template = ${tts(template, false)};`;
   const generatorRun = `// @ts-ignore\nconst result = ${generatorString};\nconsole.log(tts(result,false));`;
-  return `${templatesImport}\n${generatorsImport}\n${templateString}\n${generatorRun}`;
+  return `${generalImports}\n${generatorsImport}\n${templateString}\n${generatorRun}`;
 }

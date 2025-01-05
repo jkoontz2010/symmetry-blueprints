@@ -103,6 +103,34 @@ const BLANK_TEMPL_DEQUEUE: DequeueConfig = {
     },
   ],
 };
+const POL_DEUQUE: DequeueConfig = {
+  name: "polTest",
+  description: "grabs anything postMessage-related and queues the links",
+  steps: [
+    {
+      type: "fs",
+      config:
+        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.fsconfig",
+      name: "polFs",
+      description:
+      "grabs anything postMessage-related",
+      waitForTransitionCommand: true,
+      transitionAction: "get",
+      runWithEmptyTemplate: false,
+    },{
+      type: "template",
+      config:
+        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig",
+      name: "blankTempl",
+      description:
+        "starts with blank template. fill with files found from polTest step!",
+      waitForTransitionCommand: true,
+      word: "fromParserTest",
+      transitionAction: "identity",
+      runWithEmptyTemplate: false,
+    },
+  ]
+}
 const BLANK_FS_DEQUEUE: DequeueConfig = {
   name: "blank fs",
   description: "starts out with an empty word",
@@ -153,6 +181,7 @@ const ALL_QUEUES = [
   BLANK_FS_DEQUEUE,
   BLANK_TEMPL_DEQUEUE,
   ALL_SERVICES_DEQUEUE,
+  POL_DEUQUE
 ];
 
 export default class PanelClass {
