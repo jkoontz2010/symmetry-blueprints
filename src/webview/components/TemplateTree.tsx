@@ -14,7 +14,7 @@ import { useTemplate, WordStep } from "../hooks/useTemplate";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
 import { useRunner } from "../hooks/useRunner";
-import { compact, last } from "lodash";
+import { compact } from "lodash";
 
 export type WordDefinition = {
   name: string;
@@ -485,9 +485,9 @@ export const SkeletonPanel = ({
           </div>
         );
       })}
-
-      <div style={{ color: "black" }}>File Templates:</div>
-      {Object.keys(allFileTemplates)?.map((k) => {
+      {false &&(<>
+      <div style={{ color: "black" }}>I don't wanna display these anymore now that we have filesystem queue items. But I'm leaving this here in case we decide it's worthwhile. File Templates:</div>
+      <>{Object.keys(allFileTemplates)?.map((k) => {
         return (
           <div>
             <span
@@ -516,7 +516,8 @@ export const SkeletonPanel = ({
             </span>
           </div>
         );
-      })}
+      })}</></>)
+    }
       <div style={{ color: "black" }}>Generators</div>
       {lastClickedGenerator != null && (
         <div style={{ color: "red", textDecoration: "none" }}>

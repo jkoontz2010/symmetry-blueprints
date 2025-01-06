@@ -1,15 +1,8 @@
 import * as React from "react";
-import { Template } from "symmetric-parser/dist/src/templator/template-group";
-import BuilderAccordion from "./BuilderAccordion";
 import { CssVarsProvider } from "@mui/joy";
 import { useFileSystem } from "../hooks/useFileSystem";
-import TemplateDirect from "./v2";
-import { TemplateEditors, TemplateTree } from "./TemplateTree";
-import { useRunner } from "../hooks/useRunner";
-import { tts } from "symmetric-parser";
+import { TemplateEditors } from "./TemplateTree";
 import { buildAllGeneratorsTemplate, buildGeneratorNamesFromMeta } from "../util/parsers/parseGenerators";
-import { WordStep } from "../hooks/useTemplate";
-import { last } from "lodash";
 import Dropdown from "./Dropdown";
 import { WordCreator } from "./WordCreator";
 import { GTWVEditor } from "./GTWVEditor";
