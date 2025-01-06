@@ -2711,3 +2711,45 @@ export const hookCommandHandler = genTemplateWithVars(
   },
   ["hookCommandHandlerBody"]
 );
+export const deleteThis = {
+'arrayDef1/arrayElements1': ({arrayElements1})=>`[${run(arrayElements1, 'arrayElements1')}]`,
+'arrayElements1/asdf1': ({asdf1})=>`${run(asdf1,'asdf1')}`,
+'asdf1': ()=>`2`
+}
+
+export const deletetIt = {
+'arrayDef1/arrayElements1': ({arrayElements1})=>`[${run(arrayElements1, 'arrayElements1')}]`,
+'arrayElements1/fdsa1': ({fdsa1})=>`${run(fdsa1,'fdsa1')}`,
+'fdsa1': ()=>`23`
+}
+
+
+export const testdetete = {
+'arrayDef1/arrayElements1': ({arrayElements1})=>`[${run(arrayElements1, 'arrayElements1')}]`,
+'arrayElements1/fdxa1': ({fdxa1})=>`${run(fdxa1,'fdxa1')}`,
+'fdxa1': ()=>`asdf`
+}
+
+
+export const testtesttest = {
+'arrayDef1/arrayElements1': ({arrayElements1})=>`[${run(arrayElements1, 'arrayElements1')}]`
+}
+
+
+export const atest = {
+'arrayDef1/arrayElements1': ({ arrayElements1 }) => `[${run(arrayElements1, "arrayElements1")}]`,
+'arrayElements1': ()=>""
+}
+
+
+export const testaset = {
+'fdas1': ()=>`asdf`
+}
+
+
+export const aatestaset = {
+'arrayDef1/arrayElements1': ({arrayElements1})=>`[${run(arrayElements1, 'arrayElements1')}]`,
+'arrayElements1/fda1': ({fda1})=>`${run(fda1,'fda1')}`,
+'fda1': ()=>`asdf`
+}
+

@@ -1,0 +1,5 @@
+{
+'arrayDef1/arrayElements1': ({ arrayElements1 }) => `[${run(arrayElements1, "arrayElements1")}]`,
+'arrayElements1/fda1': ({ fda1 }) => `${run(fda1, "fda1")}`,
+'fda1': () => "asdf"
+}
