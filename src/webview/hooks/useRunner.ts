@@ -10,8 +10,7 @@ import { Template } from "symmetric-parser/dist/src/templator/template-group";
 export function useRunner(
   postMessage: any,
   configPath: string,
-  filledGeneratorsFileText: string,
-
+  filledGeneratorsFileText: string
 ) {
   const alphabet =
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -51,14 +50,13 @@ export function useRunner(
   }, []);
 
   const addFullTemplateToPool = (name: string, template: Template) => {
-
-   postMessage({
-    command: "add_full_template",
-    name,
-    template: tts(template, false),
-    pathToConfig: configPath,
-   })
-  }
+    postMessage({
+      command: "add_full_template",
+      name,
+      template: tts(template, false),
+      pathToConfig: configPath,
+    });
+  };
 
   const addToTemplatePool = (key: string, template: Template) => {
     postMessage({
@@ -96,6 +94,6 @@ export function useRunner(
     filledGenerators,
     addToTemplatePool,
     addToFilledGeneratorPool,
-    addFullTemplateToPool
+    addFullTemplateToPool,
   };
 }
