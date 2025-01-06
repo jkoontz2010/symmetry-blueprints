@@ -113,6 +113,13 @@ const replaceTempl = genTemplateWithVars(
   },
   ["typeDefBody"]
 );
+export function buildGeneratorNamesFromMeta(generatorMeta: Template) {
+  return Object.keys(generatorMeta).map((key) => {
+    const value = generatorMeta[key]();
+    // of all the lousiest hacks, lol
+    return value.split("(")[0]
+  })
+}
 function buildGeneratorMeta(template: Template) {
   const replacedTypeNames = joinOnValue(
     "MapArg",

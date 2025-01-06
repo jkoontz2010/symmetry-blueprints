@@ -36,17 +36,18 @@ export const TemplateEditors = ({
   templateModule,
   allFileTemplates,
   runnableWords,
+  generatorNames,
 }: {
   templateDefinitions: WordDefinition[];
   postMessage: any;
   configPath: string;
   filledGeneratorsFileText: string;
   templateModule: any;
+  generatorNames: any;
   allFileTemplates: Template;
   runnableWords: string[];
 }) => {
   const {
-    generatorModule,
     addToTemplatePool,
     addToFilledGeneratorPool,
     filledGenerators,
@@ -69,7 +70,7 @@ export const TemplateEditors = ({
               <TemplateEditor
                 definition={def}
                 templateModule={templateModule}
-                generatorModule={generatorModule}
+                generatorNames={generatorNames}
                 generatorsTemplate={generatorsTemplate}
                 setStepsForPanel={setStepsForPanel}
                 runnableSteps={filledGenerators}
@@ -128,7 +129,7 @@ function getGeneratorSignatureFromKey(
 export const TemplateEditor = ({
   definition,
   templateModule,
-  generatorModule,
+  generatorNames,
   setStepsForPanel,
   generatorsTemplate,
   runnableSteps,
@@ -143,7 +144,7 @@ export const TemplateEditor = ({
 }: {
   definition: WordDefinition;
   templateModule: any;
-  generatorModule: any;
+  generatorNames: any;
   setStepsForPanel: any;
   generatorsTemplate: Template;
   runnableSteps: Template;
@@ -267,7 +268,7 @@ export const TemplateEditor = ({
             <SkeletonPanel
               handleTemplateClick={handleTemplateClick}
               templateModule={templateModule}
-              generatorModule={generatorModule}
+              generatorNames={generatorNames}
               handleGeneratorClick={handleGeneratorClick}
               handleAddDefinition={handleAddDefinition}
               generatorsTemplate={generatorsTemplate}
@@ -332,7 +333,7 @@ export const TemplateEditor = ({
 };
 export const SkeletonPanel = ({
   templateModule,
-  generatorModule,
+  generatorNames,
   handleTemplateClick,
   handleAddDefinition,
   handleGeneratorClick,
@@ -346,7 +347,7 @@ export const SkeletonPanel = ({
   handleRunnableWordNameClick,
 }: {
   templateModule: any;
-  generatorModule: any;
+  generatorNames: any;
   handleTemplateClick: (templateName: string) => void;
   handleAddDefinition: (key: string, value: string) => void;
   handleGeneratorClick: (generatorName: string) => void;
@@ -363,7 +364,7 @@ export const SkeletonPanel = ({
   const [defValue, setDefValue] = useState("");
   const [lastClickedGenerator, setLastClickedGenerator] = useState("");
   //console.log("WHAT IS TEMPLATE MODULE HERE", templateModule);
-  //console.log("is it null?", generatorModule);
+  //console.log("is it null?", generatorNames);
   return (
     <Panel defaultSize={20} minSize={20} style={{ overflowX: "scroll" }}>
       <div>
@@ -543,7 +544,7 @@ export const SkeletonPanel = ({
         );
       })}
 
-      {Object.keys(generatorModule)
+      {generatorNames
         ?.sort()
         ?.map((k) => {
           return (

@@ -1,9 +1,7 @@
 import { customAlphabet } from "nanoid";
 import React, { useEffect, useState } from "react";
 import {
-  genTemplateWithVars,
-  tts,
-  argsAndTemplateToFunction,
+  tts
 } from "symmetric-parser";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
 
@@ -17,7 +15,8 @@ export function useRunner(
   const nanoid = customAlphabet(alphabet, 4);
   //console.log("TEST??",filledGeneratorsFileText)
   const [msgId, setMsgId] = useState(nanoid());
-  const [generatorModule, setGeneratorModule] = React.useState<any>({});
+
+  // aka "runnable steps"
   const [filledGenerators, setFilledGenerators] = React.useState<Template>(
     new Function("return " + filledGeneratorsFileText)()
   );
@@ -25,13 +24,7 @@ export function useRunner(
   useEffect(() => {
     setFilledGenerators(new Function("return " + filledGeneratorsFileText)());
   }, [filledGeneratorsFileText]);
-  const fetchGenerators = async () => {
-    const data = await import("../../pools/utility-templates");
-    setGeneratorModule(data);
-  };
-  useEffect(() => {
-    fetchGenerators();
-  }, []);
+
 
   useEffect(() => {
     window.addEventListener("message", (event) => {
@@ -90,7 +83,6 @@ export function useRunner(
 
   return {
     handleSaveAllFiles,
-    generatorModule,
     filledGenerators,
     addToTemplatePool,
     addToFilledGeneratorPool,

@@ -7,7 +7,7 @@ import TemplateDirect from "./v2";
 import { TemplateEditors, TemplateTree } from "./TemplateTree";
 import { useRunner } from "../hooks/useRunner";
 import { tts } from "symmetric-parser";
-import { buildAllGeneratorsTemplate } from "../util/parsers/parseGenerators";
+import { buildAllGeneratorsTemplate, buildGeneratorNamesFromMeta } from "../util/parsers/parseGenerators";
 import { WordStep } from "../hooks/useTemplate";
 import { last } from "lodash";
 import Dropdown from "./Dropdown";
@@ -65,6 +65,9 @@ const App = () => {
     readAllFiles("blank template");
   }, []);
   const [showGTWVEditor, setShowGTWVEditor] = React.useState(false);
+  const generatorMeta = !loading ? buildAllGeneratorsTemplate(generatorsFileText) : {}
+  const generatorNames = !loading ? buildGeneratorNamesFromMeta(generatorMeta) : []
+  console.log("GENERATOR META", generatorMeta)
   return (
     <div>
       <div><QueueHeader/></div>
@@ -104,6 +107,7 @@ const App = () => {
           <>
             <TemplateEditors
               postMessage={vscode.postMessage}
+              generatorNames={generatorNames}
               configPath={CONFIG_PATH}
               filledGeneratorsFileText={filledGeneratorsFileText}
               templateModule={templateModule}
@@ -114,7 +118,7 @@ const App = () => {
                   name: currentWordName,
                   wordSteps: currentWord,
                   meta: {
-                    generators: buildAllGeneratorsTemplate(generatorsFileText),
+                    generators: generatorMeta,
                   },
                   subTemplate // added separately here bc it's for display purposes
                 },
@@ -122,7 +126,7 @@ const App = () => {
                   name: "generators",
                   wordSteps: [{ result: {} }],
                   meta: {
-                    generators: buildAllGeneratorsTemplate(generatorsFileText),
+                    generators: generatorMeta,
                   },
                 },
               ]}
