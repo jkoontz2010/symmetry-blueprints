@@ -47,7 +47,6 @@ export const TemplateEditors = ({
 }) => {
   const {
     generatorModule,
-    wordModule,
     addToTemplatePool,
     addToFilledGeneratorPool,
     filledGenerators,
@@ -72,7 +71,6 @@ export const TemplateEditors = ({
                 templateModule={templateModule}
                 generatorModule={generatorModule}
                 generatorsTemplate={generatorsTemplate}
-                wordModule={wordModule}
                 setStepsForPanel={setStepsForPanel}
                 runnableSteps={filledGenerators}
                 addToTemplatePool={addToTemplatePool}
@@ -131,7 +129,6 @@ export const TemplateEditor = ({
   definition,
   templateModule,
   generatorModule,
-  wordModule,
   setStepsForPanel,
   generatorsTemplate,
   runnableSteps,
@@ -147,11 +144,10 @@ export const TemplateEditor = ({
   definition: WordDefinition;
   templateModule: any;
   generatorModule: any;
-  wordModule: any;
   setStepsForPanel: any;
   generatorsTemplate: Template;
   runnableSteps: Template;
-  addToTemplatePool: (name: string, template: string, args: string[]) => void;
+  addToTemplatePool: (key:string, template: Template) => void;
   postMessage: any;
   addToFilledGeneratorPool: (filledGenerator: Template) => void;
   isMainEditor: boolean;
@@ -174,9 +170,6 @@ export const TemplateEditor = ({
     handleTransition,
   } = useTemplate(
     definition,
-    templateModule,
-    generatorModule,
-    wordModule,
     postMessage,
     isMainEditor
   );
@@ -249,14 +242,6 @@ export const TemplateEditor = ({
     }
   }
 
-  function handleAddSkeleton(key: string, value: string, args: string[]) {
-    const funcPart = argsAndTemplateToFunction([], value);
-    const templ = { [key]: funcPart };
-    const newTemplate = genTemplateWithVars(templ, args);
-    addToTemplatePool(key, value, args);
-    insertTemplateIntoTemplate(newTemplate);
-  }
-
   function handleInsertTemplateName(value: string) {
     const funcPart = argsAndTemplateToFunction([], value);
     insertTemplateIntoTemplateAtKey({ templateName: funcPart }, insertToKey);
@@ -268,6 +253,8 @@ export const TemplateEditor = ({
   }
 
   function handleSaveIsolatedTemplate(name: string, template: Template) {
+    setInsertMode(false);
+    setInsertToKey("");
     addFullTemplateToPool(name, template);
   }
 
@@ -283,7 +270,6 @@ export const TemplateEditor = ({
               generatorModule={generatorModule}
               handleGeneratorClick={handleGeneratorClick}
               handleAddDefinition={handleAddDefinition}
-              handleAddSkeleton={handleAddSkeleton}
               generatorsTemplate={generatorsTemplate}
               runnableSteps={runnableSteps}
               handleRunStep={handleRunStep}
@@ -349,7 +335,6 @@ export const SkeletonPanel = ({
   generatorModule,
   handleTemplateClick,
   handleAddDefinition,
-  handleAddSkeleton,
   handleGeneratorClick,
   generatorsTemplate,
   runnableSteps,
@@ -364,7 +349,6 @@ export const SkeletonPanel = ({
   generatorModule: any;
   handleTemplateClick: (templateName: string) => void;
   handleAddDefinition: (key: string, value: string) => void;
-  handleAddSkeleton: (key: string, value: string, args: string[]) => void;
   handleGeneratorClick: (generatorName: string) => void;
   generatorsTemplate: Template;
   runnableSteps: Template;
@@ -375,7 +359,6 @@ export const SkeletonPanel = ({
   handleRunnableWordClick: (key: string) => void;
   handleRunnableWordNameClick: (key: string) => void;
 }) => {
-  if (templateModule == null) return <div>loading templates...</div>;
   const [defKeyName, setDefKeyName] = useState("");
   const [defValue, setDefValue] = useState("");
   const [lastClickedGenerator, setLastClickedGenerator] = useState("");

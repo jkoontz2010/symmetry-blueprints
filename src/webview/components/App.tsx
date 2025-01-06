@@ -38,22 +38,6 @@ interface vscode {
 }
 declare const vscode: vscode;
 
-const sendMessage = () => {
-  console.log("button clicked");
-  vscode.postMessage({ command: "testing" });
-};
-
-const firsty: Template = {
-  firsty: () => `this is where we do it`,
-};
-
-const playTemplate = `({ 
-    'shop1/would1,test1': ({would1, test1})=>\`how \${run(would1, 'would1')} you \${run(test1, 'test1')} this too\`, 
-    'shop2/would2,test2': ({would2, test2})=>\`how \${run(would2, 'would2')} you \${run(test2, 'test2')} this too\`, 
-    'shop3/would3,test3': ({would3, test3})=>\`how \${run(would3, 'would3')} you \${run(test3, 'test3')} this too\`, 
-    'something1': ()=>\`some value\`, 
-    'something2': ()=>\`another one!\` 
-  })`;
 
 export const CONFIG_PATH =
   "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig";
@@ -78,7 +62,7 @@ const App = () => {
     subTemplate
   } = useFileSystem(vscode.postMessage);
   React.useEffect(() => {
-    readAllFiles("polTest");
+    readAllFiles("blank template");
   }, []);
   const [showGTWVEditor, setShowGTWVEditor] = React.useState(false);
   return (

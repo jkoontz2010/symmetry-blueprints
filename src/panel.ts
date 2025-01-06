@@ -428,11 +428,11 @@ export default class PanelClass {
               pathToConfig
             );
             const templatesFile = await readFromFile(templatesFilePath);
-            console.log("CURR TEMPLATES FILE", templatesFile);
+            //console.log("CURR TEMPLATES FILE", templatesFile);
             // write template to templates file
             const newTemplatesFile =
-              templatesFile + "\n" + `export const ${name} = ${template}`;
-            console.log("NEW TEMPLATES FILE", newTemplatesFile);
+              templatesFile + "\n" + `export const ${name} = ${template}\n\n`;
+            //console.log("NEW TEMPLATES FILE", newTemplatesFile)
             fs.writeFile(templatesFilePath, newTemplatesFile, (err) => {
               if (err) {
                 console.error(err);
@@ -458,13 +458,8 @@ export default class PanelClass {
             break;
           }
           case "add_template": {
-            const { key, args, value } = msg;
-            const funcPart = argsAndTemplateToFunction([], value);
-            const templ = { [key]: funcPart };
-            const templateString = `genTemplateWithVars(${tts(
-              templ,
-              false
-            )}, ${args});`;
+            const { key,template } = msg;
+            
             const pathToConfig = this.runner.currentStep.config;
             const templatesFilePath = await readFromConfig(
               "TEMPLATE_FILE",
@@ -474,7 +469,7 @@ export default class PanelClass {
             console.log("CURR TEMPLATES FILE", templatesFile);
             // write template to templates file
             const newTemplatesFile =
-              templatesFile + "\n" + `export const ${key} = ${templateString}`;
+              templatesFile + "\n" + `export const ${key} = ${template}\n\n`;
             console.log("NEW TEMPLATES FILE", newTemplatesFile);
             fs.writeFile(templatesFilePath, newTemplatesFile, (err) => {
               if (err) {

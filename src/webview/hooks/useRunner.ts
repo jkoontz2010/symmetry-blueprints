@@ -10,7 +10,8 @@ import { Template } from "symmetric-parser/dist/src/templator/template-group";
 export function useRunner(
   postMessage: any,
   configPath: string,
-  filledGeneratorsFileText: string
+  filledGeneratorsFileText: string,
+
 ) {
   const alphabet =
     "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -18,8 +19,6 @@ export function useRunner(
   //console.log("TEST??",filledGeneratorsFileText)
   const [msgId, setMsgId] = useState(nanoid());
   const [generatorModule, setGeneratorModule] = React.useState<any>({});
-  const [templateModule, setTemplateModule] = React.useState<any>(null);
-  const [wordModule, setWordModule] = React.useState<any>(null);
   const [filledGenerators, setFilledGenerators] = React.useState<Template>(
     new Function("return " + filledGeneratorsFileText)()
   );
@@ -31,17 +30,8 @@ export function useRunner(
     const data = await import("../../pools/utility-templates");
     setGeneratorModule(data);
   };
-  const fetchTemplates = async () => {
-    const data = await import("../../pools/template-pool");
-    //console.log("AFTER IMPORT", data);
-    // @ts-ignore
-    //console.log("GOOD LUCK", data);
-    setTemplateModule(data);
-  };
-
   useEffect(() => {
     fetchGenerators();
-    fetchTemplates();
   }, []);
 
   useEffect(() => {
@@ -61,9 +51,7 @@ export function useRunner(
   }, []);
 
   const addFullTemplateToPool = (name: string, template: Template) => {
-    if (templateModule[name] != null) {
-      throw new Error("Template with this name already exists");
-    }
+
    postMessage({
     command: "add_full_template",
     name,
@@ -72,25 +60,11 @@ export function useRunner(
    })
   }
 
-  const addToTemplatePool = (key: string, value: string, args: string[]) => {
-    const funcPart = argsAndTemplateToFunction([], value);
-    const templ = { [key]: funcPart };
-    const template = genTemplateWithVars(templ, args);
-    //console.log("addToTemplatePool", template);
-    if (templateModule[key] != null) {
-      throw new Error("Template with this name already exists");
-    }
-    setTemplateModule((prev) => {
-      return {
-        ...prev,
-        ...{ [key]: template },
-      };
-    });
+  const addToTemplatePool = (key: string, template: Template) => {
     postMessage({
       command: "add_template",
       key,
-      args: JSON.stringify(args),
-      value,
+      template: tts(template, false),
       pathToConfig: configPath,
     });
   };
@@ -116,13 +90,9 @@ export function useRunner(
     });
   };
 
-  //console.log("here we are", generatorModule, templateModule, wordModule);
-
   return {
-    templateModule,
     handleSaveAllFiles,
     generatorModule,
-    wordModule,
     filledGenerators,
     addToTemplatePool,
     addToFilledGeneratorPool,

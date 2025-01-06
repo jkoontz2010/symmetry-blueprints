@@ -25,9 +25,6 @@ export type WordStep = {
 
 export function useTemplate(
   definition: WordDefinition,
-  templateModule: any,
-  generatorModule: any,
-  wordModule: any,
   postMessage: any,
   isMainTemplate: boolean
 ) {
@@ -42,7 +39,7 @@ export function useTemplate(
 
   useEffect(() => {
     setTemplate(last(definition.wordSteps).result);
-  },[definition])
+  }, [definition]);
 
   const [wordSteps, setWordSteps] = useState<WordStep[]>(definition.wordSteps);
   function logStep(name, args, result, files = {}) {
@@ -113,7 +110,6 @@ export function useTemplate(
   }
 
   function insertTemplateIntoTemplate(templateToInsert: Template) {
-    console.log("inserting template into template", templateToInsert);
     let newTemplate = insertIntoTemplate(template, templateToInsert);
     let result = sortTemplateByDeps(sortTemplateByDeps(newTemplate));
     logStep("insertIntoTemplate", [template, templateToInsert], result);
@@ -124,13 +120,11 @@ export function useTemplate(
     templateToInsert: Template,
     toKey: string
   ) {
-    console.log(
-      "insertTemplateIntoTemplateAtKey",
-      templateToInsert,
-      toKey,
-      template
-    );
     const oldKeys = Object.keys(template);
+    if (!oldKeys.includes(toKey)) {
+      insertTemplateIntoTemplate(templateToInsert);
+      return;
+    }
     let newTemplate = insertIntoTemplate(template, templateToInsert);
     logStep("insertIntoTemplate", [template, templateToInsert], newTemplate);
 
@@ -165,20 +159,20 @@ export function useTemplate(
     setTemplate(new Function("return " + result)());
   };
 
-  const handleWordRunResult = (message:any) => {
+  const handleWordRunResult = (message: any) => {
     const { wordRunFilePath, resultFilePath, result, wordString } =
       message.data;
     console.log("word_run_result", result);
     const name = wordString.substring(0, wordString.indexOf("("));
 
-    const args = ["template"]
+    const args = ["template"];
 
     logStep(name, args, result, {
       wordRunFilePath,
       resultFilePath,
     });
     setTemplate(new Function("return " + result)());
-  }
+  };
 
   function handleGenericMessage(event: MessageEvent) {
     const message = event.data; // The json data that the extension sent
@@ -192,7 +186,7 @@ export function useTemplate(
           insertTemplateIntoTemplate(templ);
         }
         break;
-      } 
+      }
       default:
         break;
     }
@@ -208,11 +202,11 @@ export function useTemplate(
     const message = event.data; // The json data that the extension sent
     switch (message.command) {
       case "generator_result":
-        console.log("handling generator result")
+        console.log("handling generator result");
         handleGeneratorResult(message);
         break;
       case "word_run_result": {
-        console.log("handling word run result")
+        console.log("handling word run result");
         handleWordRunResult(message);
         break;
       }
@@ -235,36 +229,36 @@ export function useTemplate(
     postMessage({
       command: "run_generator",
       generatorString,
-      template: tts(template,false),
+      template: tts(template, false),
       msgId,
     });
   }
   const handleConvertWordSteps = () => {
-    const parsedWord=parseWordStepsIntoWord(definition.name, wordSteps)
+    const parsedWord = parseWordStepsIntoWord(definition.name, wordSteps);
     console.log("parsedWord", parsedWord, wordSteps);
     postMessage({
       command: "store_runnable_word",
       word: parsedWord,
-    })
-  }
-  const handleRunnableWordClick = (rWordName:string) => {
+    });
+  };
+  const handleRunnableWordClick = (rWordName: string) => {
     // postMessage
     // run word
     // get result back
 
     postMessage({
       command: "run_word",
-      wordName:rWordName,
-      template: tts(template,false),
+      wordName: rWordName,
+      template: tts(template, false),
       msgId,
-    })
-  }
+    });
+  };
   const handleTransition = () => {
     postMessage({
       command: "transition",
-      template: tts(template,false),
-    })
-  }
+      template: tts(template, false),
+    });
+  };
   //console.log("Word steps", wordSteps);
   return {
     template,
@@ -277,19 +271,26 @@ export function useTemplate(
     removeKey,
     handleConvertWordSteps,
     handleRunnableWordClick,
-    handleTransition
+    handleTransition,
   };
 }
 
-function parseWordStepsIntoWord(wordName:string, wordSteps: WordStep[]): string {
-	const callbacks = compact(wordSteps.map(step=> {
-		if(step.name==="insertIntoTemplate") {
-			return null
-		}
-    if(step.full==null) {return null}
-		return `(template)=>${step.full}`
-	}))
+function parseWordStepsIntoWord(
+  wordName: string,
+  wordSteps: WordStep[]
+): string {
+  const callbacks = compact(
+    wordSteps.map((step) => {
+      if (step.name === "insertIntoTemplate") {
+        return null;
+      }
+      if (step.full == null) {
+        return null;
+      }
+      return `(template)=>${step.full}`;
+    })
+  );
 
-	const word = `export const ${wordName} = flow(${callbacks.join(",")})`
+  const word = `export const ${wordName} = flow(${callbacks.join(",")})`;
   return word;
 }
