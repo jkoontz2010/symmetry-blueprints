@@ -525,7 +525,8 @@ export default class PanelClass {
             const result = await runTs(genFilePath);
             const { template: tresult, queue } = parseWordRunResult(result);
             this.runner.addSubTemplatesToQueue(queue);
-            await saveFile(resultFilePath, tresult);
+            // UNCOMMENT IF WE WANT RESULTS BACK!
+            // await saveFile(resultFilePath, tresult);
 console.log("SENDING RESULT", tresult.substring(0, 100));
             this._panel!.webview.postMessage({
               command: "generator_result",

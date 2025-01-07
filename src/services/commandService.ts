@@ -327,9 +327,26 @@ export const saveRunnableWord = async (pathToConfig: string, word: string) => {
       : "";
 
   const otherImports = `import flow from 'lodash/flow'`;
+  const queueFunctions = `
+export type TemplateFunc = (args?: Template) => string;
+export type Template = Record<string, TemplateFunc>;
+
+let QUEUE: Template[]=[]
+// DO NOT PLACE CONSOLE LOGS HERE EVER
+export function buildQueue(template: Template) {
+    QUEUE.push(template)
+    return template
+}
+export function getQueue() {
+    return QUEUE
+}
+export function clearQueue() {
+    QUEUE=[]
+}   
+`
 
   const splitOldWord = wordContents.split(otherImports)[1];
-  const wordContentsWithImports = `${templatesImport}\n${generatorsImport}\n${otherImports}\n${splitOldWord}\n${word}`;
+  const wordContentsWithImports = `${templatesImport}\n${generatorsImport}\n${otherImports}\n${queueFunctions}\n${splitOldWord}\n${word}`;
 
   await overwriteFile(wordPath, wordContentsWithImports);
 };
