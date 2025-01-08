@@ -1,6 +1,7 @@
 import { readFromConfig } from "./commandService";
-import { runTs, saveFile } from "../compiler";
+import { deleteFile, runTs, saveFile } from "../compiler";
 import { formWordRunFile, QUEUE_SPLITTER, RESULT_SPLITTER } from "./hardToParse/util";
+import { RunnerConfig } from "../runner/runner";
 
 export type TemplateAsString = string;
 
@@ -36,28 +37,37 @@ export function parseWordRunResult(result: string): WordRunParse {
 // and the return is also a string
 // this is bc it's from the command line.
 export async function runWord(
-  pathToConfig: string,
+  poolDir: string,
   wordName: string,
-  templateAsString: TemplateAsString
+  templateAsString: TemplateAsString,
+  keepResultFile: boolean,
+  keepWordRunFile: boolean
 ): Promise<WordRunResult> {
-  const projectDir = await readFromConfig("PROJECT_DIR", pathToConfig);
   const filePrefix = Date.now();
   const wordRunFile = formWordRunFile(wordName, templateAsString);
   const wordRunFileName = filePrefix + "_wordRun.ts";
   const resultFile = filePrefix + "_result";
-  const wordRunFilePath = projectDir + "/" + wordRunFileName;
-  const resultFilePath = projectDir + "/" + resultFile;
+
+  const wordRunFilePath = poolDir + "/" + wordRunFileName;
+  const resultFilePath = poolDir + "/" + resultFile;
   // saveFile doesn't belong here
   await saveFile(wordRunFilePath, wordRunFile);
   const result = await runTs(wordRunFilePath);
-  console.log("ran word")
+  //console.log("ran word")
   const { template, queue } = parseWordRunResult(result);
-  console.log("word run RESULTv,", template);
-  await saveFile(resultFilePath, template+"\n"+queue.join("\n"));
+  if(!keepResultFile) {
+    deleteFile(resultFilePath);
+  }
+  if(!keepWordRunFile) {
+    deleteFile(wordRunFilePath);
+  }
+  //console.log("word run RESULTv,", template);
+  // UNCOMMENT IF WE WANT THE RESULT FILE STILL
+  // await saveFile(resultFilePath, template+"\n"+queue.join("\n"));
   return {
     template,
     queuedTemplates: queue,
-    wordRunFilePath,
-    resultFilePath,
+    wordRunFilePath: keepWordRunFile ? wordRunFilePath : "deleted",
+    resultFilePath: keepResultFile ? resultFilePath : "deleted",
   };
 }

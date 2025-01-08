@@ -7,7 +7,8 @@
             "request": "launch",
             "runtimeExecutable": "${execPath}",
             "args": [
-                "--extensionDevelopmentPath=${workspaceFolder}"
+                "--extensionDevelopmentPath=${workspaceFolder}",
+                "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints"
             ],
             "outFiles": [
                 "${workspaceFolder}/out/**/*.js"

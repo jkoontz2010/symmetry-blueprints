@@ -1,1 +1,0 @@
-[{"result":"{\n\n}"},{"name":"insertIntoTemplate","args":[{},{}],"full":"insertIntoTemplate([object Object],[object Object])","result":"{\n'step1/genArgs1': ({genArgs1})=>`orderedParse(template, ${run(genArgs1, 'genArgs1')})`\n}","files":{}}]

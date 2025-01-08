@@ -55,12 +55,11 @@ const App = () => {
     subTemplate
   } = useFileSystem(vscode.postMessage);
   React.useEffect(() => {
-    readAllFiles("blank template");
+    readAllFiles("test");
   }, []);
   const [showGTWVEditor, setShowGTWVEditor] = React.useState(false);
   const generatorMeta = !loading ? buildAllGeneratorsTemplate(generatorsFileText) : {}
   const generatorNames = !loading ? buildGeneratorNamesFromMeta(generatorMeta) : []
-  console.log("GENERATOR META", generatorMeta)
   return (
     <div>
       <div><QueueHeader/></div>

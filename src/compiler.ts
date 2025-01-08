@@ -26,6 +26,7 @@ export async function runIndexFile(outputDirectory) {
   }
 }
 
+// not sure if actually used?
 export async function saveWord(wordContents: string, wordsFilePath: string) {
   const wordsContents = await fs.readFile(wordsFilePath, { encoding: "utf8" });
   const cleaned = stringCleaning(wordsContents)
@@ -42,6 +43,10 @@ export async function saveWord(wordContents: string, wordsFilePath: string) {
 
 export async function saveFile(filePath:string,fileContents:string) {
   return fs.writeFile(filePath, fileContents);
+}
+
+export async function deleteFile(filePath:string) {
+  return fs.unlink(filePath);
 }
 
 export async function readFile(filePath:string) {

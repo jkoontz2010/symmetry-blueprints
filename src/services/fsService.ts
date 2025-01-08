@@ -10,24 +10,32 @@ import { promises as fs } from "fs";
 import * as path from "path";
 import { insertIntoTemplate, orderedParse, tts } from "symmetric-parser";
 import { formFilePathHash } from "../panel";
+import { RunnerConfig } from "../runner/runner";
 
 export const identity = async (
-  pathToConfig: string,
+  config: RunnerConfig,
   input: TemplateAsString
 ) => {
   return input;
 };
 
-export const get = async (pathToConfig: string, input: TemplateAsString) => {
-  const baseDir = await readFromConfig("BASE_DIR", pathToConfig);
-  const ignore = await readFromConfig("IGNORE", pathToConfig);
+export const get = async (config: RunnerConfig, input: TemplateAsString) => {
+  const baseDir = config.fsReadFromBaseDir;
+  const ignore = config.fsIgnoreFileWithStringCSV;
   const parseTemplate = new Function("return " + input)();
   const excludeTempl = {};
-  Object.keys(parseTemplate).filter((key) => key.includes("excludePath")).forEach((key) => {
-    excludeTempl[key] = parseTemplate[key]
-  })
-  const excludeValues = Object.keys(excludeTempl).map((key) => excludeTempl[key]());
-  const allFilePaths = await getAllFilePaths(baseDir, [ignore,...excludeValues]);
+  Object.keys(parseTemplate)
+    .filter((key) => key.includes("excludePath"))
+    .forEach((key) => {
+      excludeTempl[key] = parseTemplate[key];
+    });
+  const excludeValues = Object.keys(excludeTempl).map((key) =>
+    excludeTempl[key]()
+  );
+  const allFilePaths = await getAllFilePaths(baseDir, [
+    ignore,
+    ...excludeValues,
+  ]);
 
   const allFilePathsTemplate: Template = allFilePaths.reduce(
     (t: Template, path: string) => {
@@ -36,51 +44,43 @@ export const get = async (pathToConfig: string, input: TemplateAsString) => {
     },
     {}
   );
-
-console.log("THE PARSE TEMPLAT", tts(parseTemplate, false))
-
   const includeTempl = {};
-  Object.keys(parseTemplate).filter((key) => key.includes("filePath")).forEach((key) => {
-    includeTempl[key] = parseTemplate[key]
-  })
-
+  Object.keys(parseTemplate)
+    .filter((key) => key.includes("filePath"))
+    .forEach((key) => {
+      includeTempl[key] = parseTemplate[key];
+    });
 
   const division = orderedParse(allFilePathsTemplate, [includeTempl]);
 
   // find all keys with filePath in the denominator
   const filePaths = Object.keys(division)
     .filter((key) => key.includes("/filePath"))
-    .map((test) => {
-      console.log("TEST", test);
-      return test;
-    })
     .map((key) => key.split("/")[0])
     .map((numerator) => allFilePathsTemplate[numerator]());
 
-
-
-
   const filePathHashesMap = {};
-
   filePaths.forEach(
     (filePath) => (filePathHashesMap[filePath] = formFilePathHash(filePath))
   );
 
-  await storeFileHashes(pathToConfig, filePathHashesMap);
-
-  const fileTemplates = await getAllFileTemplates(pathToConfig, filePaths);
+  await storeFileHashes(config.fsPoolDir, filePathHashesMap);
+  const fileTemplates = await getAllFileTemplates(config.fsPoolDir, filePaths);
 
   return tts(fileTemplates, false);
 };
 
 export const getOrCreate = async (
-  pathToConfig: string,
+  config: RunnerConfig,
   input: TemplateAsString
 ) => {
   return input;
 };
 
-async function getAllFilePaths(dir: string, ignoreAll: string[]): Promise<string[]> {
+async function getAllFilePaths(
+  dir: string,
+  ignoreAll: string[]
+): Promise<string[]> {
   let results: string[] = [];
 
   // Read directory entries (files & folders)
@@ -91,7 +91,7 @@ async function getAllFilePaths(dir: string, ignoreAll: string[]): Promise<string
     const fullPath = path.join(dir, entry.name);
 
     // Skip if the path includes the ignore string
-    if (ignoreAll && ignoreAll.some(i=>fullPath.includes(i))) {
+    if (ignoreAll && ignoreAll.some((i) => fullPath.includes(i))) {
       continue;
     }
 

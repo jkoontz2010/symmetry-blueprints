@@ -30,7 +30,34 @@
         "command": "symmetric-blueprints.insertActiveEditorFile",
         "title": "SymB: Insert File Into Blueprints"
       }
-    ]
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Symmetric Blueprints",
+      "properties": {
+        "symmetric-blueprints.fsIgnoreFileWithStringCSV": {
+          "type": "string"
+        },
+        "symmetric-blueprints.fsReadFromBaseDir": {
+          "type": "string"
+        },
+        "symmetric-blueprints.storageDir": {
+          "type": "string"
+        },
+        "symmetric-blueprints.storeResultsFile": {
+          "type": "boolean",
+          "default": false
+        },
+        "symmetric-blueprints.keepWordRunFile": {
+          "type": "boolean",
+          "default": false
+        },
+        "symmetric-blueprints.keepGeneratorRunFile": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -77,6 +104,7 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.52.1",
     "react-hotkeys-hook": "^4.5.0",
-    "react-resizable-panels": "^2.1.6"
+    "react-resizable-panels": "^2.1.6",
+    "symmetric-parser": "^0.2.0"
   }
 }

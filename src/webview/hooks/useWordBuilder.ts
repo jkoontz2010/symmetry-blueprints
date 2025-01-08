@@ -169,8 +169,6 @@ export function useWordBuilder({
     postMessage({
       command: "save_word",
       word: fullWord.fullWord(),
-      pathToConfig:
-        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig",
     });
     console.log("POSTED MESSAGE");
   }

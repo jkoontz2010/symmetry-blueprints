@@ -1,4 +1,3 @@
-import { tts } from "symmetric-parser";
 import * as fsService from "../services/fsService";
 import { runWord, TemplateAsString } from "../services/wordRunService";
 import { compact } from "lodash";
@@ -10,7 +9,6 @@ export type DequeueConfig = {
 };
 export type DequeueStep = {
   type: "fs" | "template";
-  config: string;
   name: string;
   description: string; // tooltip, explanations, etc
   word?: string; // just the name. runs before sending template to the frontend
@@ -20,6 +18,16 @@ export type DequeueStep = {
   subTemplate?: TemplateAsString;
 };
 
+export type RunnerConfig = {
+  templatePoolDir: string;
+  fsPoolDir: string;
+  fsIgnoreFileWithStringCSV: string;
+  fsReadFromBaseDir: string;
+  storeResultsFile: boolean;
+  keepWordRunFile: boolean;
+  keepGeneratorRunFile: boolean;
+}
+
 const typeToHandlerMap = {
   fs: handleFs,
   template: handleTemplate,
@@ -27,6 +35,7 @@ const typeToHandlerMap = {
 
 async function handleRunStep(
   step: DequeueStep,
+  config: RunnerConfig,
   templateAsString: TemplateAsString
 ): Promise<TemplateAsString> {
   // basically a super-router.
@@ -35,7 +44,7 @@ async function handleRunStep(
     const handler = typeToHandlerMap[type];
     if (handler == null)
       throw new Error(`handleRunStep: handler doesn't exist for type ${type}`);
-    const result = await handler(step, templateAsString);
+    const result = await handler(step, config, templateAsString);
     return result;
   } catch (e) {
     throw new Error(e);
@@ -52,9 +61,10 @@ const fsActionToServiceMap = {
 // can be made generic?
 async function handleFs(
   step: DequeueStep,
+  config: RunnerConfig,
   input: TemplateAsString
 ): Promise<TemplateAsString> {
-  const { config, transitionAction } = step;
+  const { transitionAction } = step;
   const action = fsActionToServiceMap[transitionAction];
   const result = await action(config, input);
   return result;
@@ -62,6 +72,7 @@ async function handleFs(
 
 async function handleTemplate(
   step: DequeueStep,
+  config: RunnerConfig,
   templateAsString: TemplateAsString
 ): Promise<TemplateAsString> {
   // ...
@@ -77,12 +88,14 @@ export default class Runner {
   currentTemplate: TemplateAsString;
   subscribed: Map<string, SubscribeCb>;
   isRunning: boolean;
-  constructor(steps: DequeueStep[]) {
+  config: RunnerConfig;
+  constructor(steps: DequeueStep[], config: RunnerConfig) {
     if (steps == null || steps.length === 0) {
       this.steps = [];
     } else {
       this.steps = steps;
     }
+    this.setConfig(config);
     this.subscribed = new Map();
     this.isRunning = false;
     this.currentStep = this.steps[0];
@@ -109,8 +122,20 @@ export default class Runner {
       }
     });
   }
+  private getPoolDir() {
+    switch (this.currentStep.type) {
+      case "fs":
+        return this.config.fsPoolDir;
+      case "template":
+        return this.config.templatePoolDir;
+      default:
+        throw new Error("getPoolDir: unknown")
+    }
+  }
+  setConfig(config: RunnerConfig) {
+    this.config = config;
+  }
   addSubTemplatesToQueue(templates: TemplateAsString[]) {
-
     // this is nasty. we basically want to delay the transition action
     // until the subTemplates queue'd steps are ran.
     // then we run the currentStep's transition action.
@@ -119,10 +144,8 @@ export default class Runner {
     // use config from current step to deduce what the new config is
     // then add to the queue
     const queueSteps: DequeueStep[] = compact(templates).map((t) => {
-      console.log("queueing", t)
       return {
         type: this.currentStep.type,
-        config: this.currentStep.config,
         runWithEmptyTemplate: false,
         subTemplate: t,
         waitForTransitionCommand: true,
@@ -143,7 +166,6 @@ export default class Runner {
     this.onQueueChange();
     // every handler must implement identity
     this.currentStep.transitionAction = "identity";
-    console.log("APPENEDED STEPS", this.steps);
   }
 
   async initNextStep(
@@ -161,7 +183,7 @@ export default class Runner {
     this.currentStep = step;
     // someone else's event handler, returns void, affects nothing
     
-    const { config, word } = step;
+    const { word } = step;
 
     let stepTemplate =
       step.runWithEmptyTemplate === true ? "{}" : templateAsString;
@@ -169,9 +191,11 @@ export default class Runner {
       const runWordTemplate =
         step.runWithEmptyTemplate === true ? "{}" : templateAsString;
       const { template: runResult, queuedTemplates } = await runWord(
-        config,
+        this.getPoolDir(),
         word,
-        runWordTemplate
+        runWordTemplate,
+        false,
+        false
       );
       if (queuedTemplates.length > 0) {
         console.log("FOUND SUB TEMPLATES", queuedTemplates.length);
@@ -192,7 +216,7 @@ export default class Runner {
   // then on transition, we run the transition action and pass to the next step
   async transition(input: TemplateAsString = "{}"): Promise<TemplateAsString> {
     // the actual internal runner, returns Template, affects so many things
-    const stepResult = await handleRunStep(this.currentStep, input);
+    const stepResult = await handleRunStep(this.currentStep, this.config, input);
     const fullResult = await this.initNextStep(stepResult);
     return fullResult;
   }

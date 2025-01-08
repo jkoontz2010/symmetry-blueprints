@@ -1,8 +1,0 @@
-{
-'step1': ()=>`dumbCombine(template, panelPath)`,
-'step2': ()=>`dumbCombine(template, servicesPath)`,
-'step3': ()=>`dumbCombine(template, servicesPath)`,
-'step4': ()=>`dumbCombine(template, panelSrcFile)`,
-'step5': ()=>`orderedParse(template, arrayDef)`,
-'step6': ()=>`dumbCombine(template, useTemplatePath)`
-}

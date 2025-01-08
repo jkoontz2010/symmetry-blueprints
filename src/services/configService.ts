@@ -1,6 +1,6 @@
 import { tts } from "symmetric-parser";
 import { runTs } from "../compiler";
-import { readFromFile } from "../panel";
+import { getFilledGeneratorsFile, getTemplateFile, getTemplateGetterFile, readFromFile } from "../panel";
 import {
   getAllFileTemplates,
   getAllRunnableWords,
@@ -12,6 +12,7 @@ import {
 } from "./commandService";
 import Runner from "../runner/runner";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
+
 
 type DataFromConfigSO = {
   generators: string;
@@ -30,25 +31,21 @@ type DataFromConfigSO = {
 // outside this function is just a weird layer of indirection.
 // though maybe we'll eat our words. til then
 export async function fetchFromConfig(
-  pathToConfig: string,
+  pathToStorage: string,
   runner: Runner
 ): Promise<DataFromConfigSO> {
   try {
-    const [projectDir, generatorPath, templatePath] =
-      await readMultipleFromConfig(
-        ["PROJECT_DIR", "GENERATOR_FILE", "TEMPLATE_FILE"],
-        pathToConfig
-      );
-    const filledGeneratorsPath = projectDir + "/filledGenerators.json";
-
+    const filledGeneratorsPath = getFilledGeneratorsFile(pathToStorage);
+    const generatorPath = '/Users/jaykoontz/Documents/GitHub/react-for-code/src/templator/utility-templates.ts'
+    const templatePath  = getTemplateFile(pathToStorage);
     const promises = [
       readFromFile(generatorPath),
       readFromFile(templatePath),
       readFromFile(filledGeneratorsPath),
-      getAllRunnableWords(pathToConfig),
-      getAllWordPathsByLastModified(pathToConfig),
-      runTs(projectDir + "/template-getter.ts"),
-      getAllFileTemplates(pathToConfig),
+      getAllRunnableWords(pathToStorage),
+      getAllWordPathsByLastModified(pathToStorage),
+      runTs(getTemplateGetterFile(pathToStorage)),
+      getAllFileTemplates(pathToStorage),
       // once upon a time, we initialized the UI
       // with word = last edited word.
       // it had downsides, like what if you just

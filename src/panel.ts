@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { getNonce } from "./getNonce";
 import * as fs from "fs";
-import { readFile, runTs, saveFile, saveWord } from "./compiler";
+import { deleteFile, readFile, runTs, saveFile, saveWord } from "./compiler";
 import {
   argsAndTemplateToFunction,
   insertIntoTemplate,
@@ -27,6 +27,8 @@ import { sha1 } from "js-sha1";
 import { parseWordRunResult, runWord } from "./services/wordRunService";
 import Runner, { DequeueConfig } from "./runner/runner";
 import { fetchFromConfig } from "./services/configService";
+import { get } from "lodash";
+import { getQueues } from "./services/queueService";
 
 export function formFilePathHash(filePath: string) {
   const fileName = filePath.split("/").pop();
@@ -47,142 +49,34 @@ export function readFromFile(file) {
   });
 }
 
-const TEST_DEQUEUE: DequeueConfig = {
-  name: "test",
-  description: "runs fs, grabs the useTemplate file, and takes off parsing it!",
-  steps: [
-    {
-      type: "fs",
-      config:
-        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.fsconfig",
-      name: "testGrab",
-      description: "test fs!!",
-      waitForTransitionCommand: false,
-      transitionAction: "get",
-      runWithEmptyTemplate: false,
-      word: "getUseTemplate",
-    },
-    {
-      type: "template",
-      config:
-        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig",
-      name: "blank",
-      description:
-        "starts with blank template. fill with fifth.tsx to ready for next step!",
-      waitForTransitionCommand: false,
-      transitionAction: "identity",
-      runWithEmptyTemplate: false,
-    },
-    {
-      type: "template",
-      config:
-        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig",
-      name: "parseFifth",
-      description: "runs the word that parses fifth.tsx",
-      word: "ponTesterQueue",
-      waitForTransitionCommand: true,
-      transitionAction: "identity", // nothing
-      runWithEmptyTemplate: false,
-    },
-  ],
-};
-const BLANK_TEMPL_DEQUEUE: DequeueConfig = {
-  name: "blank template",
-  description: "starts out with an empty word",
-  steps: [
-    {
-      type: "template",
-      config:
-        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig",
-      name: "blankTempl",
-      description:
-        "starts with blank template. fill with fifth.tsx to ready for next step!",
-      waitForTransitionCommand: true,
-      transitionAction: "identity",
-      runWithEmptyTemplate: false,
-    },
-  ],
-};
-const POL_DEUQUE: DequeueConfig = {
-  name: "polTest",
-  description: "grabs anything postMessage-related and queues the links",
-  steps: [
-    {
-      type: "fs",
-      config:
-        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.fsconfig",
-      name: "polFs",
-      description:
-      "grabs anything postMessage-related",
-      waitForTransitionCommand: true,
-      transitionAction: "get",
-      runWithEmptyTemplate: false,
-    },{
-      type: "template",
-      config:
-        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig",
-      name: "blankTempl",
-      description:
-        "starts with blank template. fill with files found from polTest step!",
-      waitForTransitionCommand: true,
-      word: "fromParserTest",
-      transitionAction: "identity",
-      runWithEmptyTemplate: false,
-    },
-  ]
+export function getTemplateFile(poolDir: string) {
+  return poolDir + "/template-pool.ts";
 }
-const BLANK_FS_DEQUEUE: DequeueConfig = {
-  name: "blank fs",
-  description: "starts out with an empty word",
-  steps: [
-    {
-      type: "fs",
-      config:
-        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.fsconfig",
-      name: "blankFs",
-      description:
-        "starts with blank template. fill with fifth.tsx to ready for next step!",
-      waitForTransitionCommand: true,
-      transitionAction: "identity",
-      runWithEmptyTemplate: false,
-    },
-  ],
-};
-const ALL_SERVICES_DEQUEUE: DequeueConfig = {
-  name: "show all service files",
-  description: "testing out how a multi-grab works",
-  steps: [
-    {
-      type: "fs",
-      config:
-        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.fsconfig",
-      name: "blankFs",
-      description:
-        "starts with blank template. fill with fifth.tsx to ready for next step!",
-      waitForTransitionCommand: false,
-      transitionAction: "get",
-      runWithEmptyTemplate: false,
-      word: "getServices",
-    },
-    {
-      type: "template",
-      config:
-        "/Users/jaykoontz/Documents/GitHub/symmetric-blueprints/.spconfig",
-      name: "allServicesTempl",
-      description: "all the service files!",
-      waitForTransitionCommand: true,
-      transitionAction: "identity",
-      runWithEmptyTemplate: false,
-    },
-  ],
-};
-const ALL_QUEUES = [
-  TEST_DEQUEUE,
-  BLANK_FS_DEQUEUE,
-  BLANK_TEMPL_DEQUEUE,
-  ALL_SERVICES_DEQUEUE,
-  POL_DEUQUE
-];
+
+export function getWordsFile(poolDir: string) {
+  return poolDir + "/word-pool.ts";
+}
+
+export function getTemplateGetterFile(poolDir: string) {
+  return poolDir + "/template-getter.ts";
+}
+
+export function getFilledGeneratorsFile(poolDir: string) {
+  return poolDir + "/filledGenerators.json";
+}
+
+export function getPoolDirFromConfig(config: vscode.WorkspaceConfiguration) {
+  const queueType = this.runner.currentStep.type;
+  let storageDir = config.get<string>("storageDir");
+  if (storageDir[storageDir.length - 1] !== "/") {
+    storageDir += "/";
+  }
+  if (queueType === "fs") {
+    return storageDir + "fs-pool";
+  } else if (queueType === "template") {
+    return storageDir + "template-pool";
+  }
+}
 
 export default class PanelClass {
   public static currentPanel: PanelClass | undefined;
@@ -196,6 +90,36 @@ export default class PanelClass {
   private pathToConfig: string;
   private runner: Runner;
 
+  getConfig() {
+    return vscode.workspace.getConfiguration("symmetric-blueprints");
+  }
+  buildRunnerConfig() {
+    const config = this.getConfig();
+    return {
+      fsPoolDir: config.get<string>("storageDir") + "/fs-pool",
+      templatePoolDir: config.get<string>("storageDir") + "/template-pool",
+      fsReadFromBaseDir: config.get<string>("fsReadFromBaseDir"),
+      fsIgnoreFileWithStringCSV: config.get<string>(
+        "fsIgnoreFileWithStringCSV"
+      ),
+      storeResultsFile: config.get<boolean>("storeResultsFile"),
+      keepWordRunFile: config.get<boolean>("keepWordRunFile"),
+      keepGeneratorRunFile: config.get<boolean>("keepGeneratorRunFile"),
+    };
+  }
+  getPoolDir() {
+    const config = this.getConfig();
+    const queueType = this.runner.currentStep.type;
+    let storageDir = config.get<string>("storageDir");
+    if (storageDir[storageDir.length - 1] !== "/") {
+      storageDir += "/";
+    }
+    if (queueType === "fs") {
+      return storageDir + "fs-pool";
+    } else if (queueType === "template") {
+      return storageDir + "template-pool";
+    }
+  }
   public static createOrShow(extContext: vscode.ExtensionContext) {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
@@ -278,15 +202,15 @@ export default class PanelClass {
 
     // Create and show a new webview panel
     function handleQueueUpdate() {
-      
-      const currentQueue = this.runner.steps?.map((step) => ({
-        type: step.type,
-        name: step.name,
-        description: step.description,
-        word: step.word ?? "-",
-        isWaitingForCommand: step.waitForTransitionCommand,
-        transitionAction: step.transitionAction,
-      }))??[];
+      const currentQueue =
+        this.runner.steps?.map((step) => ({
+          type: step.type,
+          name: step.name,
+          description: step.description,
+          word: step.word ?? "-",
+          isWaitingForCommand: step.waitForTransitionCommand,
+          transitionAction: step.transitionAction,
+        })) ?? [];
       console.log("queue update", currentQueue);
       this._panel!.webview.postMessage({
         command: "queue_update",
@@ -316,7 +240,6 @@ export default class PanelClass {
     //Listen to messages
     this._panel.webview.onDidReceiveMessage(
       async (msg: any) => {
-;
         switch (msg.command) {
           case "save_all_files": {
             const { template } = msg;
@@ -327,8 +250,8 @@ export default class PanelClass {
               (k) => k.indexOf(".") > -1
             );
             //console.log("TEMPL FILE KEYS", templFileKeys);
-            const pathToConfig = this.runner.currentStep.config;
-            const filePathHashes = await getFilePathHashes(pathToConfig);
+
+            const filePathHashes = await getFilePathHashes(this.getPoolDir());
             //console.log("FILE PATH HASHES", filePathHashes);
             for (const filePathHash of templFileKeys) {
               //console.log("filepathhash", filePathHash);
@@ -355,19 +278,19 @@ export default class PanelClass {
             break;
           case "save_word": {
             const { word } = msg;
-            const pathToConfig = this.runner.currentStep.config;
-            const wordsFile = await readFromConfig("WORDS_FILE", pathToConfig);
+
+            const wordsFile = getWordsFile(this.getPoolDir());
             // save to word file
             const result = await saveWord(word, wordsFile);
             break;
           }
           case "store_runnable_word": {
             const { word } = msg;
-            const pathToConfig = this.runner.currentStep.config;
-            console.log("STORING RUNNABLE WORD", word, pathToConfig);
+            const poolDir = this.getPoolDir();
+
             try {
-              await saveRunnableWord(pathToConfig, word);
-              const runnableWords = await getAllRunnableWords(pathToConfig);
+              await saveRunnableWord(poolDir, word);
+              const runnableWords = await getAllRunnableWords(poolDir);
               this._panel!.webview.postMessage({
                 command: "all_runnable_words",
                 data: {
@@ -381,8 +304,8 @@ export default class PanelClass {
           }
           case "get_word": {
             const { wordName } = msg;
-            const pathToConfig = this.runner.currentStep.config;
-            const wordPath = await getWordPath(pathToConfig, wordName);
+            const poolDir = this.getPoolDir();
+            const wordPath = await getWordPath(poolDir, wordName);
             const wordContents = await getWordContents(wordPath);
             this._panel!.webview.postMessage({
               command: "word_contents",
@@ -395,12 +318,8 @@ export default class PanelClass {
           }
           case "create_word": {
             const { wordName, template } = msg;
-            const pathToConfig = this.runner.currentStep.config;
-            const projectDir = await readFromConfig(
-              "PROJECT_DIR",
-              pathToConfig
-            );
-            const wordFile = projectDir + "/word_" + wordName + ".json";
+            const poolDir = this.getPoolDir();
+            const wordFile = poolDir + "/word_" + wordName + ".json";
             // eventually, result might be something more, like a file insertion
             let wordTemplate = "{}";
             if (template != null) {
@@ -422,11 +341,8 @@ export default class PanelClass {
             // it's the actual object that is a template
             // we just need to add it to the template pool
             const { template, name } = msg;
-            const pathToConfig = this.runner.currentStep.config;
-            const templatesFilePath = await readFromConfig(
-              "TEMPLATE_FILE",
-              pathToConfig
-            );
+            const poolDir = this.getPoolDir();
+            const templatesFilePath = getTemplateFile(poolDir);
             const templatesFile = await readFromFile(templatesFilePath);
             //console.log("CURR TEMPLATES FILE", templatesFile);
             // write template to templates file
@@ -441,13 +357,8 @@ export default class PanelClass {
             });
 
             // bun run the file and send the result to the frontend
-            const projectDir = await readFromConfig(
-              "PROJECT_DIR",
-              pathToConfig
-            );
-            const templateModule = await runTs(
-              projectDir + "/template-getter.ts"
-            );
+
+            const templateModule = await runTs(getTemplateGetterFile(poolDir));
             console.log("ALL OF TEMPLATE MODULE", templateModule);
             this._panel!.webview.postMessage({
               command: "all_templates",
@@ -458,34 +369,24 @@ export default class PanelClass {
             break;
           }
           case "add_template": {
-            const { key,template } = msg;
-            
-            const pathToConfig = this.runner.currentStep.config;
-            const templatesFilePath = await readFromConfig(
-              "TEMPLATE_FILE",
-              pathToConfig
-            );
-            const templatesFile = await readFromFile(templatesFilePath);
+            const { key, template } = msg;
+
+            const poolDir = this.getPoolDir();
+
+            const templatesFile = await readFromFile(getTemplateFile(poolDir));
             console.log("CURR TEMPLATES FILE", templatesFile);
             // write template to templates file
             const newTemplatesFile =
               templatesFile + "\n" + `export const ${key} = ${template}\n\n`;
             console.log("NEW TEMPLATES FILE", newTemplatesFile);
-            fs.writeFile(templatesFilePath, newTemplatesFile, (err) => {
+            fs.writeFile(getTemplateFile(poolDir), newTemplatesFile, (err) => {
               if (err) {
                 console.error(err);
               }
               console.log("success");
             });
-
-            // bun run the file and send the result to the frontend
-            const projectDir = await readFromConfig(
-              "PROJECT_DIR",
-              pathToConfig
-            );
-            const templateModule = await runTs(
-              projectDir + "/template-getter.ts"
-            );
+            // bun run the file!
+            const templateModule = await runTs(getTemplateGetterFile(poolDir));
             this._panel!.webview.postMessage({
               command: "all_templates",
               data: {
@@ -496,44 +397,46 @@ export default class PanelClass {
             break;
           }
           case "run_generator": {
-            const pathToConfig = this.runner.currentStep.config;
             const { generatorString, template, msgId } = msg;
-            console.log(
-              "RUNNING",
-              "msgId",
-              msgId,
-              "AND",
 
-              generatorString,
-              pathToConfig
-            );
-            const projectDir = await readFromConfig(
-              "PROJECT_DIR",
-              pathToConfig
-            );
+            const poolDir = this.getPoolDir();
             const filePrefix = Date.now();
             const generatorRunFile = await createRunnableGeneratorFileContents(
-              pathToConfig,
+              poolDir,
               generatorString,
               template
             );
             const generatorFile = filePrefix + "_generator.ts";
             const resultFile = filePrefix + "_result";
-            const genFilePath = projectDir + "/" + generatorFile;
-            const resultFilePath = projectDir + "/" + resultFile;
+            const genFilePath = poolDir + "/" + generatorFile;
+            const resultFilePath = poolDir + "/" + resultFile;
             await saveFile(genFilePath, generatorRunFile);
             const result = await runTs(genFilePath);
             const { template: tresult, queue } = parseWordRunResult(result);
             this.runner.addSubTemplatesToQueue(queue);
-            // UNCOMMENT IF WE WANT RESULTS BACK!
-            // await saveFile(resultFilePath, tresult);
-console.log("SENDING RESULT", tresult.substring(0, 100));
+            const config = this.getConfig();
+            const willStoreResultsFile = config.get<boolean>(
+              "storeResultsFile",
+              false
+            );
+            if (willStoreResultsFile) {
+              await saveFile(resultFilePath, tresult);
+            }
+            const willKeepRunFile = config.get<boolean>(
+              "keepGeneratorRunFile",
+              false
+            );
+            if (!willKeepRunFile) {
+              deleteFile(genFilePath);
+            }
             this._panel!.webview.postMessage({
               command: "generator_result",
               data: {
                 msgId,
-                generatorFilePath: genFilePath,
-                resultFilePath: resultFilePath,
+                generatorFilePath: willKeepRunFile ? genFilePath : "deleted",
+                resultFilePath: willStoreResultsFile
+                  ? resultFilePath
+                  : "deleted",
                 result: tresult,
                 generatorString,
               },
@@ -542,13 +445,29 @@ console.log("SENDING RESULT", tresult.substring(0, 100));
           }
           case "run_word": {
             const { wordName, template, msgId } = msg;
-            const pathToConfig = this.runner.currentStep.config;
+            const poolDir = this.getPoolDir();
+            const keepWordRunFile = get(
+              this.getConfig(),
+              "keepWordRunFile",
+              false
+            );
+            const keepResultsFile = get(
+              this.getConfig(),
+              "storeResultsFile",
+              false
+            );
             const {
               template: result,
               wordRunFilePath,
               resultFilePath,
               queuedTemplates,
-            } = await runWord(pathToConfig, wordName, template);
+            } = await runWord(
+              this.getPoolDir(),
+              wordName,
+              template,
+              keepResultsFile,
+              keepWordRunFile
+            );
             // ADD queuedTemplates TO RUNNER
             this.runner.addSubTemplatesToQueue(queuedTemplates);
             // the queued items will change in the queue header
@@ -567,12 +486,8 @@ console.log("SENDING RESULT", tresult.substring(0, 100));
           }
           case "add_filled_generator": {
             const { msgId, filledGenerator } = msg;
-            const pathToConfig = this.runner.currentStep.config;
-            const projectDir = await readFromConfig(
-              "PROJECT_DIR",
-              pathToConfig
-            );
-            const filledGeneratorsPath = projectDir + "/filledGenerators.json";
+            const poolDir = this.getPoolDir();
+            const filledGeneratorsPath = getFilledGeneratorsFile(poolDir);
 
             let currentFilledGenerators;
             try {
@@ -612,12 +527,8 @@ console.log("SENDING RESULT", tresult.substring(0, 100));
             ) {
               throw new Error("No steps to save");
             }
-            const pathToConfig = this.runner.currentStep.config;
-            const projectDir = await readFromConfig(
-              "PROJECT_DIR",
-              pathToConfig
-            );
-            const wordFile = projectDir + "/word_" + wordName + ".json";
+
+            const wordFile = this.getPoolDir() + "/word_" + wordName + ".json";
             await saveFile(wordFile, wordSteps);
             this._panel!.webview.postMessage({
               command: "word_saved",
@@ -630,60 +541,68 @@ console.log("SENDING RESULT", tresult.substring(0, 100));
           case "transition": {
             const { template } = msg;
             await this.runner.transition(template);
-            const pathToConfig = this.runner.currentStep.config;
-            console.time("fetchFromConfig");
-            const data = await fetchFromConfig(pathToConfig, this.runner);
-            console.timeEnd("fetchFromConfig");
+
+            const poolDir = this.getPoolDir();
+            const data = await fetchFromConfig(poolDir, this.runner);
+
             // so on transition:
             // get the config from the step
             // fetch it all (make a service for it)
             // send it to the frontend like we do on startup
             // also send the current template as a new word result
+            const config = this.getConfig();
+            const storageDir = config.get<string>("storageDir");
+            const queues = await getQueues(storageDir);
             this._panel!.webview.postMessage({
               command: "config_data",
               data: {
                 ...data,
-                queueNames: JSON.stringify(ALL_QUEUES.map((q) => q.name)),
+                queueNames: JSON.stringify(queues.map((q) => q.name)),
                 subTemplate: this.runner.currentStep.subTemplate,
               },
             });
             break;
           }
           case "select_queue": {
-            if (!ALL_QUEUES.some((q) => q.name === msg.queueName)) {
-              console.log(
-                "queue name vs ALL_QUEUES",
-                msg.queueName,
-                ALL_QUEUES
-              );
+            const config = this.getConfig();
+            const storageDir = config.get<string>("storageDir");
+            const queues = await getQueues(storageDir);
+            if (!queues.some((q) => q.name === msg.queueName)) {
+              console.log("queue name vs ALL_QUEUES", msg.queueName, queues);
               throw new Error("Queue not found, how did this happen?");
             }
             this.runner = new Runner(
-              ALL_QUEUES.find((q) => q.name === msg.queueName).steps
+              queues.find((q) => q.name === msg.queueName).steps,
+              this.buildRunnerConfig()
             );
             await this.runner.initNextStep();
-            const pathToConfig = this.runner.currentStep.config;
-            const data = await fetchFromConfig(pathToConfig, this.runner);
+            const data = await fetchFromConfig(this.getPoolDir(), this.runner);
             this._panel!.webview.postMessage({
               command: "config_data",
               data: {
                 ...data,
-                queueNames: JSON.stringify(ALL_QUEUES.map((q) => q.name)),
+                queueNames: JSON.stringify(queues.map((q) => q.name)),
               },
             });
             break;
           }
           case "fetch_from_config":
             try {
-              const {queueName} = msg;
-              if(queueName == null) {
+              const { queueName } = msg;
+              if (queueName == null) {
                 throw new Error("Queue name is null");
               }
-              const queue = ALL_QUEUES.find((q) => q.name === queueName);
-              this.runner = new Runner(queue.steps);
+              const config = this.getConfig();
+              const storageDir = config.get<string>("storageDir");
+              const queues = await getQueues(storageDir);
+              const queue = queues.find((q) => q.name === queueName);
+              this.runner = new Runner(queue.steps, this.buildRunnerConfig());
               this.runner.unsubscribe("queueUpdate");
-              this.runner.subscribe("queueUpdate", handleQueueUpdate.bind(this));
-             
+              this.runner.subscribe(
+                "queueUpdate",
+                handleQueueUpdate.bind(this)
+              );
+
               await this.runner.initNextStep();
               // data will equal:
               // GENERATOR_FILE=src/generators/wordBuilder.ts
@@ -691,14 +610,15 @@ console.log("SENDING RESULT", tresult.substring(0, 100));
               // WORDS_FILE=src/words/wordBuilder.ts
               // we want to parse each file path and send it back to the webview
               const data = await fetchFromConfig(
-                this.runner.currentStep.config,
+                this.getPoolDir(),
                 this.runner
               );
+
               this._panel!.webview.postMessage({
                 command: "config_data",
                 data: {
                   ...data,
-                  queueNames: JSON.stringify(ALL_QUEUES.map((q) => q.name)),
+                  queueNames: JSON.stringify(queues.map((q) => q.name)),
                 },
               });
 

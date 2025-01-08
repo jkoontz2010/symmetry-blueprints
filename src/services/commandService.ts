@@ -11,6 +11,7 @@ import {
   tts,
 } from "symmetric-parser";
 import { QUEUE_SPLITTER, RESULT_SPLITTER } from "./hardToParse/util";
+import { getTemplateFile, getWordsFile } from "../panel";
 
 export async function appendToFile(filePath: string, data: string) {
   try {
@@ -53,37 +54,35 @@ export async function readMultipleFromConfig(configVars: string[], pathToConfig:
     throw error;
   }
 }
-export const getWordPath = async (pathToConfig: string, wordName: string) => {
-  const projectDir = await readFromConfig("PROJECT_DIR", pathToConfig);
-  const wordPaths = await getWordJsonFiles(projectDir);
+export const getWordPath = async (pathToStorage: string, wordName: string) => {
+  const wordPaths = await getWordJsonFiles(pathToStorage+"words");
   const wordNames = getWordNamesFromWordPaths(wordPaths);
   const wordIndex = wordNames.indexOf(wordName);
   return wordPaths[wordIndex];
 };
 
-const getHashFilePath = async (pathToConfig) => {
-  const projectDir = await readFromConfig("PROJECT_DIR", pathToConfig);
-  const hashFilePath = path.join(projectDir, "filePathHashes.txt");
+const getHashFilePath = async (pathToStorage) => {
+  const hashFilePath = path.join(pathToStorage, "/filePathHashes.txt");
   return hashFilePath;
 };
 export const storeFileHashes = async (
-  pathToConfig: string,
+  pathToStorage: string,
   filePathHashesMap: Record<string, string>
 ) => {
   const allStores = Object.entries(filePathHashesMap).map(
     async ([filePath, fileHash]) => {
-      return storeFileHash(pathToConfig, fileHash, filePath);
+      return storeFileHash(pathToStorage, fileHash, filePath);
     }
   );
   return await Promise.all(allStores);
 };
 export const storeFileHash = async (
-  pathToConfig: string,
+  pathToStorage: string,
   fileHash: string,
   filePath: string
 ) => {
-  const hashFilePath = await getHashFilePath(pathToConfig);
-  const currentHashes = await getFilePathHashes(pathToConfig);
+  const hashFilePath = await getHashFilePath(pathToStorage);
+  const currentHashes = await getFilePathHashes(pathToStorage);
   if (currentHashes[fileHash] !== undefined) {
     return;
   }
@@ -91,13 +90,13 @@ export const storeFileHash = async (
 };
 
 export const getAllFileTemplates = async (
-  pathToConfig: string,
+  pathToStorage: string,
   onlyIncludePaths?: string[]
 ) => {
-  if (pathToConfig == null) {
+  if (pathToStorage == null) {
     throw new Error("pathToConfig is null in getAllFileTemplates");
   }
-  const currentHashes = await getFilePathHashes(pathToConfig);
+  const currentHashes = await getFilePathHashes(pathToStorage);
   const filePaths = new Set<string>();
   for (const filePath of Object.values(currentHashes)) {
     if (onlyIncludePaths?.length > 0) {
@@ -152,16 +151,16 @@ export const getAllFileTemplates = async (
   //console.log("ALL FILE TEMPLATES", allFileTemplates)
   return allFileTemplates;
 };
-export const getRawFilePathHashes = async (pathToConfig: string) => {
-  const hashFilePath = await getHashFilePath(pathToConfig);
+export const getRawFilePathHashes = async (pathToStorage: string) => {
+  const hashFilePath = await getHashFilePath(pathToStorage);
   const data = await fs.readFile(hashFilePath, { encoding: "utf8" });
   const lines = data.split("\n");
   return lines;
 };
 export const getFilePathHashes = async (
-  pathToConfig: string
+  pathToStorage: string
 ): Promise<Record<string, string>> => {
-  const lines = await getRawFilePathHashes(pathToConfig);
+  const lines = await getRawFilePathHashes(pathToStorage);
   // go from "hash=file/path/thing.ts" to {[hash]: "file/path/thing.ts"} in one object
   const cleanLines = uniq(compact(lines));
   const result = cleanLines.reduce((acc, line) => {
@@ -172,11 +171,10 @@ export const getFilePathHashes = async (
   return result;
 };
 export const getFilePathFromHash = async (
-  pathToConfig: string,
+  pathToStorage: string,
   fileHash: string
 ) => {
-  const projectDir = await readFromConfig("PROJECT_DIR", pathToConfig);
-  const hashFilePath = path.join(projectDir, "filePathHashes.txt");
+  const hashFilePath = path.join(pathToStorage, "filePathHashes.txt");
   const data = await fs.readFile(hashFilePath, { encoding: "utf8" });
   const lines = data.split("\n");
   const result = lines.find((line) => line.includes(fileHash)).split("=")[1];
@@ -216,9 +214,8 @@ export const sortFilesByLastModified = async (filePaths: string[]) => {
   return filesWithStats.map((item) => item.file);
 };
 
-export const getAllWordPathsByLastModified = async (pathToConfig: string) => {
-  const projectDir = await readFromConfig("PROJECT_DIR", pathToConfig);
-  const wordPaths = await getWordJsonFiles(projectDir);
+export const getAllWordPathsByLastModified = async (pathToStorage: string) => {
+  const wordPaths = await getWordJsonFiles(pathToStorage);
   return wordPaths;
 };
 async function getWordJsonFiles(directory) {
@@ -249,11 +246,10 @@ export const overwriteFile = async (filePath: string, data: string) => {
   }
 };
 
-export const getAllGeneratorsExports = async (pathToConfig: string) => {
-  const generatorFilePath = await readFromConfig(
-    "GENERATOR_FILE",
-    pathToConfig
-  );
+// WILL BREAK, NEED TO PULL FROM NODE_MODULES, which will always exist in the extension
+export const getAllGeneratorsExports = async () => {
+  const generatorFilePath = "/Users/jaykoontz/Documents/GitHub/react-for-code/src/templator/utility-templates.ts";
+
   const generatorFileContents = await fs.readFile(generatorFilePath, {
     encoding: "utf8",
   });
@@ -277,9 +273,9 @@ export const getAllGeneratorsExports = async (pathToConfig: string) => {
   return nameValues;
 };
 
-export const getAllTemplateExports = async (pathToConfig: string) => {
+export const getAllTemplateExports = async (pathToStorage: string) => {
   //console.log("get all template exports");
-  const templateFilePath = await readFromConfig("TEMPLATE_FILE", pathToConfig);
+  const templateFilePath = getTemplateFile(pathToStorage);
   const templateFileContents = await fs.readFile(templateFilePath, {
     encoding: "utf8",
   });
@@ -305,11 +301,11 @@ export const getAllTemplateExports = async (pathToConfig: string) => {
   return nameValues;
 };
 
-export const saveRunnableWord = async (pathToConfig: string, word: string) => {
-  const wordPath = await readFromConfig("WORDS_FILE", pathToConfig);
+export const saveRunnableWord = async (pathToStorage: string, word: string) => {
+  const wordPath = getWordsFile(pathToStorage);
   const wordContents = await getWordContents(wordPath);
-  const templates = await getAllTemplateExports(pathToConfig);
-  const generators = await getAllGeneratorsExports(pathToConfig);
+  const templates = await getAllTemplateExports(pathToStorage);
+  const generators = await getAllGeneratorsExports();
   const fullWordContents = `${wordContents}\n${word}`;
   const importedTemplates = templates.filter((t) =>
     fullWordContents.includes(t)
@@ -326,11 +322,8 @@ export const saveRunnableWord = async (pathToConfig: string, word: string) => {
       ? `import { ${importedGenerators.join(",\n")} } from "symmetric-parser";`
       : "";
 
-  const otherImports = `import flow from 'lodash/flow'`;
+  const otherImports = `import flow from 'lodash/flow'; import { Template } from './types';`;
   const queueFunctions = `
-export type TemplateFunc = (args?: Template) => string;
-export type Template = Record<string, TemplateFunc>;
-
 let QUEUE: Template[]=[]
 // DO NOT PLACE CONSOLE LOGS HERE EVER
 export function buildQueue(template: Template) {
@@ -352,13 +345,13 @@ export function clearQueue() {
 };
 
 export const createRunnableGeneratorFileContents = async (
-  pathToConfig: string,
+  pathToStorage: string,
   generatorString: string,
   template: string
 ): Promise<string> => {
-  const words = await getAllRunnableWords(pathToConfig);
-  const templates = await getAllTemplateExports(pathToConfig);
-  const generators = await getAllGeneratorsExports(pathToConfig);
+  const words = await getAllRunnableWords(pathToStorage);
+  const templates = await getAllTemplateExports(pathToStorage);
+  const generators = await getAllGeneratorsExports();
 
   const importedTemplates = templates.filter((t) =>
     generatorString.includes(t)
@@ -387,8 +380,8 @@ export const createRunnableGeneratorFileContents = async (
   return `${allImports}\n${templateString}\n${generatorRun}`;
 };
 
-export const getAllRunnableWords = async (pathToConfig: string) => {
-  const wordFilePath = await readFromConfig("WORDS_FILE", pathToConfig);
+export const getAllRunnableWords = async (pathToStorage: string) => {
+  const wordFilePath = getWordsFile(pathToStorage);
   const wordFileContents = await fs.readFile(wordFilePath, {
     encoding: "utf8",
   });
