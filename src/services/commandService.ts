@@ -135,7 +135,8 @@ export const getAllFileTemplates = async (
         "funcPart is null or not a Function type in getAllFileTemplates, it should exist!!"
       );
     }
-    const readableFileHash = fileHash.split("_")[1] + fileHash.split("_")[0];
+    // don't try to make this readable. it fucks up the template.
+    const readableFileHash = fileHash;
     const fileTempl = {};
     const newKey = "fileContents" + idx;
     fileTempl[newKey] = funcPart;
@@ -174,8 +175,10 @@ export const getFilePathFromHash = async (
   pathToStorage: string,
   fileHash: string
 ) => {
+  console.log("getFilePathFromHash", fileHash, pathToStorage);
   const hashFilePath = path.join(pathToStorage, "filePathHashes.txt");
   const data = await fs.readFile(hashFilePath, { encoding: "utf8" });
+  console.log("DATA", data);
   const lines = data.split("\n");
   const result = lines.find((line) => line.includes(fileHash)).split("=")[1];
   return result;
@@ -323,8 +326,7 @@ export const saveRunnableWord = async (pathToStorage: string, word: string) => {
       : "";
 
   const otherImports = `import flow from 'lodash/flow'; import { Template } from './types';`;
-  const queueFunctions = `
-let QUEUE: Template[]=[]
+  const queueDeclaration = `let QUEUE: Template[]=[]
 // DO NOT PLACE CONSOLE LOGS HERE EVER
 export function buildQueue(template: Template) {
     QUEUE.push(template)
@@ -335,11 +337,10 @@ export function getQueue() {
 }
 export function clearQueue() {
     QUEUE=[]
-}   
-`
+}`
 
-  const splitOldWord = wordContents.split(otherImports)[1];
-  const wordContentsWithImports = `${templatesImport}\n${generatorsImport}\n${otherImports}\n${queueFunctions}\n${splitOldWord}\n${word}`;
+  const splitOldWord = wordContents.split(queueDeclaration)[1];
+  const wordContentsWithImports = `${templatesImport}\n${generatorsImport}\n${otherImports}\n${queueDeclaration}\n${splitOldWord}\n${word}`;
 
   await overwriteFile(wordPath, wordContentsWithImports);
 };

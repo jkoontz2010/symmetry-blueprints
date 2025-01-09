@@ -56,10 +56,10 @@ export async function runWord(
   //console.log("ran word")
   const { template, queue } = parseWordRunResult(result);
   if(!keepResultFile) {
-    deleteFile(resultFilePath);
+   // deleteFile(resultFilePath);
   }
   if(!keepWordRunFile) {
-    deleteFile(wordRunFilePath);
+   // deleteFile(wordRunFilePath);
   }
   //console.log("word run RESULTv,", template);
   // UNCOMMENT IF WE WANT THE RESULT FILE STILL

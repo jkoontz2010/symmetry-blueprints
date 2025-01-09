@@ -61,7 +61,10 @@ export const TemplateEditors = ({
 
   return (
     <div>
-      <PanelGroup direction="horizontal">
+      <PanelGroup
+        direction="horizontal"
+        style={{ width: "1500px", height: "600px" }}
+      >
         {templateDefinitions.map((def, i) => {
           const generatorsTemplate = def.meta?.generators ?? {};
 
@@ -148,7 +151,7 @@ export const TemplateEditor = ({
   setStepsForPanel: any;
   generatorsTemplate: Template;
   runnableSteps: Template;
-  addToTemplatePool: (key:string, template: Template) => void;
+  addToTemplatePool: (key: string, template: Template) => void;
   postMessage: any;
   addToFilledGeneratorPool: (filledGenerator: Template) => void;
   isMainEditor: boolean;
@@ -169,12 +172,9 @@ export const TemplateEditor = ({
     handleConvertWordSteps,
     handleRunnableWordClick,
     handleTransition,
-  } = useTemplate(
-    definition,
-    postMessage,
-    isMainEditor
-  );
-  const {subTemplate} = definition;
+    handleOpenFileAtKey,
+  } = useTemplate(definition, postMessage, isMainEditor);
+  const { subTemplate } = definition;
   const [insertMode, setInsertMode] = React.useState(false);
   const [insertToKey, setInsertToKey] = React.useState("");
 
@@ -182,9 +182,11 @@ export const TemplateEditor = ({
     setStepsForPanel((prev) => ({ ...prev, [definition.name]: wordSteps }));
   }, [wordSteps]);
 
-  const [filteredTemplates, setFilteredTemplates] = useState(compact([subTemplate??null]));
+  const [filteredTemplates, setFilteredTemplates] = useState(
+    compact([subTemplate ?? null])
+  );
   useEffect(() => {
-    setFilteredTemplates(compact([subTemplate??null]));
+    setFilteredTemplates(compact([subTemplate ?? null]));
   }, [subTemplate]);
   function handleOpenFilter(key: string) {
     const newFilteredTemplates = [
@@ -282,20 +284,14 @@ export const TemplateEditor = ({
             />
             <Panel
               defaultSize={30}
-              minSize={20}
-              style={{ overflowX: "scroll" }}
+              minSize={30}
+              style={{ overflowX: "scroll", overflowY: "scroll" }}
             >
               {isMainEditor && (
                 <button onClick={handleTransition}>RUN TRANSITION</button>
               )}
               <h3 style={{ color: "black" }}>{definition.name}</h3>{" "}
-              <button
-                onClick={() => {
-                  handleConvertWordSteps();
-                }}
-              >
-                Convert wordSteps
-              </button>
+              <SaveWordAs handleSave={(name) => handleConvertWordSteps(name)} />
               {i > 0 && (
                 <button onClick={() => handleClosePanel(i - 1)}>Close</button>
               )}
@@ -311,16 +307,19 @@ export const TemplateEditor = ({
                 handleRemoveKey={handleRemoveKey}
                 handleSaveAllFiles={handleSaveAllFiles}
                 handleSaveIsolatedTemplate={handleSaveIsolatedTemplate}
+                handleOpenFileAtKey={handleOpenFileAtKey}
               />
-              <button
-                onClick={() =>
-                  addToFilledGeneratorPool(
-                    multiply(sortTemplateByDeps(template), {})
-                  )
-                }
-              >
-                SAVE step1
-              </button>
+              {!isMainEditor && (
+                <button
+                  onClick={() =>
+                    addToFilledGeneratorPool(
+                      multiply(sortTemplateByDeps(template), {})
+                    )
+                  }
+                >
+                  SAVE step1
+                </button>
+              )}
             </Panel>
             <PanelResizeHandle
               style={{ border: "1px solid black", marginRight: "6px" }}
@@ -366,7 +365,11 @@ export const SkeletonPanel = ({
   //console.log("WHAT IS TEMPLATE MODULE HERE", templateModule);
   //console.log("is it null?", generatorNames);
   return (
-    <Panel defaultSize={20} minSize={20} style={{ overflowX: "scroll" }}>
+    <Panel
+      defaultSize={15}
+      minSize={15}
+      style={{ overflowX: "scroll", overflowY: "scroll" }}
+    >
       <div>
         <input
           value={defKeyName}
@@ -388,166 +391,172 @@ export const SkeletonPanel = ({
           Add Definition
         </button>
       </div>
-
-      {Object.keys(runnableSteps)?.map((rs) => {
-        //console.log("HERE WE ARE WITH RUNNABLE STEPS", rs.toString(), rs);
-        const full = runnableSteps[rs]();
-        return (
-          <div
-            style={{
-              cursor: "pointer",
-              color: "blue",
-              textDecoration: "underline",
-            }}
-            onClick={() => handleRunStep(full)}
-          >
-            {full}
-          </div>
-        );
-      })}
-      <div style={{ color: "black" }}>Runnable Words:</div>
-      {runnableWords.map((k) => {
-        return (
-          <div>
-            <span
+      <div style={{ height: "550px", overflowY: "scroll" }}>
+        {Object.keys(runnableSteps)?.map((rs) => {
+          //console.log("HERE WE ARE WITH RUNNABLE STEPS", rs.toString(), rs);
+          const full = runnableSteps[rs]();
+          return (
+            <div
               style={{
                 cursor: "pointer",
                 color: "blue",
                 textDecoration: "underline",
               }}
-              onClick={() => handleRunnableWordClick(k)}
+              onClick={() => handleRunStep(full)}
             >
-              {k}
-            </span>
-            <span
-              onClick={() => handleRunnableWordNameClick(k)}
-              style={{
-                width: "8px",
-                height: "8px",
-                padding: "0px",
-                border: "1px solid black",
-                backgroundColor: "#eee",
-                color: "black",
-                cursor: "pointer",
-              }}
-            >
-              N
-            </span>
-          </div>
-        );
-      })}
-      <div style={{ color: "black" }}>Common:</div>
-      {COMMON_CHARS.map((k) => {
-        return (
-          <div
-            style={{
-              cursor: "pointer",
-              color: "blue",
-              textDecoration: "underline",
-            }}
-            onClick={() => {
-              handleAddDefinition(k.name, k.value);
-            }}
-          >
-            {k.name}
-          </div>
-        );
-      })}
-
-      <div style={{ color: "black" }}>Templates:</div>
-      {Object.keys(templateModule)?.map((k) => {
-        return (
-          <div>
-            <span
+              {full}
+            </div>
+          );
+        })}
+        <div style={{ color: "black" }}>Runnable Words:</div>
+        {runnableWords.map((k) => {
+          return (
+            <div>
+              <span
+                style={{
+                  cursor: "pointer",
+                  color: "blue",
+                  textDecoration: "underline",
+                }}
+                onClick={() => handleRunnableWordClick(k)}
+              >
+                {k}
+              </span>
+              <span
+                onClick={() => handleRunnableWordNameClick(k)}
+                style={{
+                  width: "8px",
+                  height: "8px",
+                  padding: "0px",
+                  border: "1px solid black",
+                  backgroundColor: "#eee",
+                  color: "black",
+                  cursor: "pointer",
+                }}
+              >
+                N
+              </span>
+            </div>
+          );
+        })}
+        <div style={{ color: "black" }}>Common:</div>
+        {COMMON_CHARS.map((k) => {
+          return (
+            <div
               style={{
                 cursor: "pointer",
                 color: "blue",
                 textDecoration: "underline",
               }}
-              onClick={() => handleTemplateClick(k)}
-            >
-              {k}
-            </span>
-            <span
-              onClick={() => handleTemplateNameClick(k)}
-              style={{
-                width: "8px",
-                height: "8px",
-                padding: "0px",
-                border: "1px solid black",
-                backgroundColor: "#eee",
-                color: "black",
-                cursor: "pointer",
+              onClick={() => {
+                handleAddDefinition(k.name, k.value);
               }}
             >
-              N
-            </span>
+              {k.name}
+            </div>
+          );
+        })}
+
+        <div style={{ color: "black" }}>Templates:</div>
+        {Object.keys(templateModule)?.map((k) => {
+          return (
+            <div>
+              <span
+                style={{
+                  cursor: "pointer",
+                  color: "blue",
+                  textDecoration: "underline",
+                }}
+                onClick={() => handleTemplateClick(k)}
+              >
+                {k}
+              </span>
+              <span
+                onClick={() => handleTemplateNameClick(k)}
+                style={{
+                  width: "8px",
+                  height: "8px",
+                  padding: "0px",
+                  border: "1px solid black",
+                  backgroundColor: "#eee",
+                  color: "black",
+                  cursor: "pointer",
+                }}
+              >
+                N
+              </span>
+            </div>
+          );
+        })}
+        {false && (
+          <>
+            <div style={{ color: "black" }}>
+              I don't wanna display these anymore now that we have filesystem
+              queue items. But I'm leaving this here in case we decide it's
+              worthwhile. File Templates:
+            </div>
+            <>
+              {Object.keys(allFileTemplates)?.map((k) => {
+                return (
+                  <div>
+                    <span
+                      style={{
+                        cursor: "pointer",
+                        color: "blue",
+                        textDecoration: "underline",
+                      }}
+                      onClick={() => handleTemplateClick(k)}
+                    >
+                      {k}
+                    </span>
+                    <span
+                      onClick={() => handleTemplateNameClick(k)}
+                      style={{
+                        width: "8px",
+                        height: "8px",
+                        padding: "0px",
+                        border: "1px solid black",
+                        backgroundColor: "#eee",
+                        color: "black",
+                        cursor: "pointer",
+                      }}
+                    >
+                      N
+                    </span>
+                  </div>
+                );
+              })}
+            </>
+          </>
+        )}
+        <div style={{ color: "black" }}>Generators</div>
+        {lastClickedGenerator != null && (
+          <div style={{ color: "red", textDecoration: "none" }}>
+            {getGeneratorSignatureFromKey(
+              lastClickedGenerator,
+              generatorsTemplate
+            )}
           </div>
-        );
-      })}
-      {false &&(<>
-      <div style={{ color: "black" }}>I don't wanna display these anymore now that we have filesystem queue items. But I'm leaving this here in case we decide it's worthwhile. File Templates:</div>
-      <>{Object.keys(allFileTemplates)?.map((k) => {
-        return (
-          <div>
-            <span
+        )}
+        {FAVORITE_GENERATORS.map((k) => {
+          return (
+            <div
               style={{
                 cursor: "pointer",
                 color: "blue",
                 textDecoration: "underline",
               }}
-              onClick={() => handleTemplateClick(k)}
-            >
-              {k}
-            </span>
-            <span
-              onClick={() => handleTemplateNameClick(k)}
-              style={{
-                width: "8px",
-                height: "8px",
-                padding: "0px",
-                border: "1px solid black",
-                backgroundColor: "#eee",
-                color: "black",
-                cursor: "pointer",
+              onClick={() => {
+                handleGeneratorClick(k);
+                setLastClickedGenerator(k);
               }}
             >
-              N
-            </span>
-          </div>
-        );
-      })}</></>)
-    }
-      <div style={{ color: "black" }}>Generators</div>
-      {lastClickedGenerator != null && (
-        <div style={{ color: "red", textDecoration: "none" }}>
-          {getGeneratorSignatureFromKey(
-            lastClickedGenerator,
-            generatorsTemplate
-          )}
-        </div>
-      )}
-      {FAVORITE_GENERATORS.map((k) => {
-        return (
-          <div
-            style={{
-              cursor: "pointer",
-              color: "blue",
-              textDecoration: "underline",
-            }}
-            onClick={() => {
-              handleGeneratorClick(k);
-              setLastClickedGenerator(k);
-            }}
-          >
-            {k}
-          </div>
-        );
-      })}
+              {k}
+            </div>
+          );
+        })}
 
-      {generatorNames
-        ?.sort()
-        ?.map((k) => {
+        {generatorNames?.sort()?.map((k) => {
           return (
             <div
               style={{
@@ -564,6 +573,7 @@ export const SkeletonPanel = ({
             </div>
           );
         })}
+      </div>
     </Panel>
   );
 };
@@ -580,6 +590,7 @@ export const TemplateTree = ({
   setInsertToKey,
   handleSaveAllFiles,
   handleSaveIsolatedTemplate,
+  handleOpenFileAtKey,
 }: {
   addKey: any;
   addKeyToNumerator: any;
@@ -592,6 +603,7 @@ export const TemplateTree = ({
   setInsertToKey: any;
   handleSaveAllFiles: (template: Template) => void;
   handleSaveIsolatedTemplate: (name: string, template: Template) => void;
+  handleOpenFileAtKey: (key: string) => void;
 }) => {
   const [compiledTemplate, setCompiledTemplate] = React.useState("");
   const [collapsedSet, setCollapsedSet] = React.useState(new Set<string>());
@@ -650,22 +662,47 @@ export const TemplateTree = ({
       <div>
         <IsolatedTemplateSaver handleSave={handleSaveTemplate} />
       </div>
-      {Object.keys(template)?.map((k, i) => {
-        const denoms = k.split("/")[1]?.split(",");
+      <div style={{ maxHeight: "400px", overflowY: "scroll" }}>
+        {Object.keys(template)?.map((k, i) => {
+          const denoms = k.split("/")[1]?.split(",");
 
-        const numerator = k.split("/")[0];
-        const indentionMultiplier = indentHash.get(numerator) ?? 0;
-        denoms?.forEach((d) => {
-          indentHash.set(d, indentionMultiplier + 1);
-        });
+          const numerator = k.split("/")[0];
+          const indentionMultiplier = indentHash.get(numerator) ?? 0;
+          denoms?.forEach((d) => {
+            indentHash.set(d, indentionMultiplier + 1);
+          });
 
-        const peekTreeNodes = denoms?.map((d) => {
-          if (template[d] != null) {
-            // we have a non-denom key, need to display and extra TreeNode while giving it the proper indentation
-            return (
+          const peekTreeNodes = denoms?.map((d) => {
+            if (template[d] != null) {
+              // we have a non-denom key, need to display and extra TreeNode while giving it the proper indentation
+              return (
+                <TreeNode
+                  tKey={d}
+                  indentionMultiplier={indentionMultiplier + 1}
+                  insertMode={insertMode}
+                  insertToKey={insertToKey}
+                  hiddenSet={hiddenSet}
+                  handleCollapse={handleCollapse}
+                  handleNumeratorClick={handleNumeratorClick}
+                  collapsedSet={collapsedSet}
+                  template={template}
+                  handleRsClick={handleRsClick}
+                  denoms={denoms}
+                  handleOpenFilter={handleOpenFilter}
+                  handleOpenFileAtKey={handleOpenFileAtKey}
+                  handleRemoveKey={handleRemoveKey}
+                />
+              );
+            } else {
+              return null;
+            }
+          });
+
+          return (
+            <>
               <TreeNode
-                tKey={d}
-                indentionMultiplier={indentionMultiplier + 1}
+                tKey={k}
+                indentionMultiplier={indentionMultiplier}
                 insertMode={insertMode}
                 insertToKey={insertToKey}
                 hiddenSet={hiddenSet}
@@ -677,38 +714,24 @@ export const TemplateTree = ({
                 denoms={denoms}
                 handleOpenFilter={handleOpenFilter}
                 handleRemoveKey={handleRemoveKey}
+                handleOpenFileAtKey={handleOpenFileAtKey}
               />
-            );
-          } else {
-            return null;
-          }
-        });
-
-        return (
-          <>
-            <TreeNode
-              tKey={k}
-              indentionMultiplier={indentionMultiplier}
-              insertMode={insertMode}
-              insertToKey={insertToKey}
-              hiddenSet={hiddenSet}
-              handleCollapse={handleCollapse}
-              handleNumeratorClick={handleNumeratorClick}
-              collapsedSet={collapsedSet}
-              template={template}
-              handleRsClick={handleRsClick}
-              denoms={denoms}
-              handleOpenFilter={handleOpenFilter}
-              handleRemoveKey={handleRemoveKey}
-            />
-            {peekTreeNodes?.map((node) => node)}
-          </>
-        );
-      })}
-
+              {peekTreeNodes?.map((node) => node)}
+            </>
+          );
+        })}
+      </div>
       <button onClick={handleCompile}>Compile</button>
       {compiledTemplate !== "" && (
-        <pre style={{ color: "black", fontSize: "12px" }}>
+        <pre
+          style={{
+            color: "black",
+            fontSize: "12px",
+            fontFamily: "system-ui",
+            maxHeight: "400px",
+            overflowY: "scroll",
+          }}
+        >
           {compiledTemplate}
         </pre>
       )}
@@ -745,6 +768,7 @@ const TreeNode = ({
   denoms,
   indentionMultiplier,
   handleOpenFilter,
+  handleOpenFileAtKey,
   handleRemoveKey,
 }) => {
   const numerator = tKey.split("/")[0];
@@ -775,6 +799,7 @@ const TreeNode = ({
       >
         R
       </button>
+      <button onClick={() => handleOpenFileAtKey(tKey)}>V</button>
 
       {collapsedSet.has(tKey) ? (
         <span
@@ -830,9 +855,18 @@ function renderPart(part: string, handleRsClick: (arg: string) => void) {
   const parts = funcPart.split(/(\${[^}]+})/g);
   if (parts.length === 1) {
     return (
-      <div style={{ color: "red", padding: "0px 5px" }}>
+      <pre
+        style={{
+          color: "red",
+          padding: "0px 5px",
+          margin: "0",
+          display: "inline",
+          fontSize: "12px",
+          fontFamily: "system-ui",
+        }}
+      >
         {nakedPartToString(part)}
-      </div>
+      </pre>
     );
   }
   let finalParts = [];
@@ -855,8 +889,32 @@ function renderPart(part: string, handleRsClick: (arg: string) => void) {
         </span>
       );
     } else {
-      finalParts.push(part);
+      finalParts.push(
+        <pre
+          style={{
+            margin: "0",
+            display: "inline",
+            fontSize: "12px",
+            fontFamily: "system-ui",
+          }}
+        >
+          {part}
+        </pre>
+      );
     }
   });
   return <div style={{ color: "red", padding: "0px 5px" }}>{finalParts}</div>;
 }
+
+const SaveWordAs = ({ handleSave }) => {
+  const [wordName, setWordName] = useState("");
+  return (
+    <div>
+      <input
+        placeholder="word name"
+        onChange={(e) => setWordName(e.target.value)}
+      ></input>
+      <button onClick={() => handleSave(wordName)}>Save Steps as Word</button>
+    </div>
+  );
+};

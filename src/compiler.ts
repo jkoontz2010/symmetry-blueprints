@@ -56,7 +56,7 @@ export async function readFile(filePath:string) {
 export async function runTs(generatorFilePath: string) {
   try {
     const { stdout, stderr } = await execAsync(`bun run ${generatorFilePath}`);
-    console.log("generator FROM STDOUT", stdout);
+    //console.log("generator FROM STDOUT", stdout);
     if (stderr) console.error(stderr);
     return stdout;
   } catch (error) {

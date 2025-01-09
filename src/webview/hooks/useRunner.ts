@@ -28,7 +28,7 @@ export function useRunner(
 
   useEffect(() => {
     window.addEventListener("message", (event) => {
-      if (event.data.data.msgId !== msgId) return;
+      if (event.data?.data?.msgId !== msgId) return;
       const message = event.data; // The json data that the extension sent
       switch (message.command) {
         case "all_filled_generators": {

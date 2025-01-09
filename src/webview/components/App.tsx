@@ -52,10 +52,10 @@ const App = () => {
     runnableWords,
     selectQueue,
     queueNames,
-    subTemplate
+    subTemplate,
   } = useFileSystem(vscode.postMessage);
   React.useEffect(() => {
-    readAllFiles("test");
+    readAllFiles("blank template");
   }, []);
   const [showGTWVEditor, setShowGTWVEditor] = React.useState(false);
   const generatorMeta = !loading ? buildAllGeneratorsTemplate(generatorsFileText) : {}
@@ -69,7 +69,7 @@ const App = () => {
           onSelect={(value) => {
             selectQueue(value);
           }}
-          placeholder="Select a word"
+          placeholder="Select a queue"
         />
         <Dropdown
           options={wordNames}

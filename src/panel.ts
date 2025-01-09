@@ -4,6 +4,11 @@ import * as fs from "fs";
 import { deleteFile, readFile, runTs, saveFile, saveWord } from "./compiler";
 import {
   argsAndTemplateToFunction,
+  buildPositionMeta,
+  findAncestorFromChild,
+  getDescendentsOfKey,
+  getRootFromChildKey,
+  getRootKeys,
   insertIntoTemplate,
   tts,
 } from "symmetric-parser";
@@ -22,10 +27,11 @@ import {
   saveRunnableWord,
   getAllRunnableWords,
   createRunnableGeneratorFileContents,
+  getFilePathFromHash,
 } from "./services/commandService";
 import { sha1 } from "js-sha1";
 import { parseWordRunResult, runWord } from "./services/wordRunService";
-import Runner, { DequeueConfig } from "./runner/runner";
+import Runner, { DequeueConfig, DequeueStep } from "./runner/runner";
 import { fetchFromConfig } from "./services/configService";
 import { get } from "lodash";
 import { getQueues } from "./services/queueService";
@@ -201,24 +207,7 @@ export default class PanelClass {
     this._extensionUri = _extContext.extensionUri;
 
     // Create and show a new webview panel
-    function handleQueueUpdate() {
-      const currentQueue =
-        this.runner.steps?.map((step) => ({
-          type: step.type,
-          name: step.name,
-          description: step.description,
-          word: step.word ?? "-",
-          isWaitingForCommand: step.waitForTransitionCommand,
-          transitionAction: step.transitionAction,
-        })) ?? [];
-      console.log("queue update", currentQueue);
-      this._panel!.webview.postMessage({
-        command: "queue_update",
-        data: {
-          currentQueue: JSON.stringify(currentQueue),
-        },
-      });
-    }
+   
     this._panel = vscode.window.createWebviewPanel(
       PanelClass.viewType,
       "Blueprints",
@@ -236,11 +225,84 @@ export default class PanelClass {
     // Listen for when the panel is disposed
     // This happens when the user closes the panel or when the panel is closed programatically
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
-
+    function handleQueueUpdate(newSteps: DequeueStep[]) {
+      const currentQueue =
+        newSteps?.map((step) => ({
+          type: step.type,
+          name: step.name,
+          description: step.description,
+          word: step.word ?? "-",
+          isWaitingForCommand: step.waitForTransitionCommand,
+          transitionAction: step.transitionAction,
+        })) ?? [];
+      this._panel!.webview.postMessage({
+        command: "queue_update",
+        data: {
+          currentQueue: JSON.stringify(currentQueue),
+        },
+      });
+    }
     //Listen to messages
     this._panel.webview.onDidReceiveMessage(
       async (msg: any) => {
         switch (msg.command) {
+          case "open_file_at_key": {
+            const { template, findKey } = msg;
+            //console.log("receiving template", template)
+            //console.log("opening file at key", findKey);
+            const t = new Function("return " + template)();
+            //console.log("ALL KEYS", Object.keys(t));
+            //const searchString = `handleGeneratorResult(message);`;
+            const fileHashKey = getRootFromChildKey(t, findKey);
+            const searchTemplKeys = getDescendentsOfKey(fileHashKey, t, true);
+            const searchTempl = {};
+            searchTemplKeys.forEach((k) => {
+              searchTempl[k] = t[k];
+            });
+            //console.log("FILE HASH KEY", fileHashKey);
+            const positionMeta = buildPositionMeta(
+              searchTempl,
+              fileHashKey.split("/")[0]
+            );
+            //console.log("position meta", positionMeta);
+            const keyMeta = positionMeta[findKey.split("/")[0]];
+            //console.log("key meta", keyMeta);
+
+            const filePath = await getFilePathFromHash(
+              this.getPoolDir(),
+              fileHashKey.split("/")[0]
+            );
+            //console.log("file path", filePath);
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+              vscode.window.showErrorMessage("No workspace folder found.");
+              return;
+            }
+            //console.log("workspace folder", workspaceFolder.uri);
+            const fileUri = vscode.Uri.file(filePath);
+
+            try {
+              const document = await vscode.workspace.openTextDocument(fileUri);
+              //console.log("document", document);
+
+              const start = document.positionAt(keyMeta.startPos - 1);
+              const end = document.positionAt(keyMeta.endPos - 1);
+              //console.log("start and end", start, end);
+              if (start && end) {
+                await vscode.window.showTextDocument(document, {
+                  selection: new vscode.Selection(start, end),
+                  viewColumn: vscode.ViewColumn.One,
+                });
+              } else {
+                vscode.window.showInformationMessage(
+                  `String not found in the document.`
+                );
+              }
+            } catch (error) {
+              vscode.window.showErrorMessage(`Failed to open file: ${error}`);
+            }
+            break;
+          }
           case "save_all_files": {
             const { template } = msg;
 
@@ -427,7 +489,7 @@ export default class PanelClass {
               false
             );
             if (!willKeepRunFile) {
-              deleteFile(genFilePath);
+              //deleteFile(genFilePath);
             }
             this._panel!.webview.postMessage({
               command: "generator_result",
@@ -571,10 +633,12 @@ export default class PanelClass {
               console.log("queue name vs ALL_QUEUES", msg.queueName, queues);
               throw new Error("Queue not found, how did this happen?");
             }
+
             this.runner = new Runner(
               queues.find((q) => q.name === msg.queueName).steps,
               this.buildRunnerConfig()
             );
+            this.runner.subscribe("queueUpdate", handleQueueUpdate.bind(this));
             await this.runner.initNextStep();
             const data = await fetchFromConfig(this.getPoolDir(), this.runner);
             this._panel!.webview.postMessage({
@@ -598,10 +662,8 @@ export default class PanelClass {
               const queue = queues.find((q) => q.name === queueName);
               this.runner = new Runner(queue.steps, this.buildRunnerConfig());
               this.runner.unsubscribe("queueUpdate");
-              this.runner.subscribe(
-                "queueUpdate",
-                handleQueueUpdate.bind(this)
-              );
+              console.log("subscribing")
+              this.runner.subscribe("queueUpdate", handleQueueUpdate.bind(this));
 
               await this.runner.initNextStep();
               // data will equal:

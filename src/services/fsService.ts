@@ -8,7 +8,12 @@ import {
 
 import { promises as fs } from "fs";
 import * as path from "path";
-import { insertIntoTemplate, orderedParse, tts } from "symmetric-parser";
+import {
+  dumbCombine,
+  insertIntoTemplate,
+  orderedParse,
+  tts,
+} from "symmetric-parser";
 import { formFilePathHash } from "../panel";
 import { RunnerConfig } from "../runner/runner";
 
@@ -21,7 +26,9 @@ export const identity = async (
 
 export const get = async (config: RunnerConfig, input: TemplateAsString) => {
   const baseDir = config.fsReadFromBaseDir;
-  const ignore = config.fsIgnoreFileWithStringCSV;
+  const ignore = config.fsIgnoreFileWithStringCSV
+    .split(",")
+    .map((s) => s.trim());
   const parseTemplate = new Function("return " + input)();
   const excludeTempl = {};
   Object.keys(parseTemplate)
@@ -33,17 +40,15 @@ export const get = async (config: RunnerConfig, input: TemplateAsString) => {
     excludeTempl[key]()
   );
   const allFilePaths = await getAllFilePaths(baseDir, [
-    ignore,
+    ...ignore,
     ...excludeValues,
   ]);
 
-  const allFilePathsTemplate: Template = allFilePaths.reduce(
-    (t: Template, path: string) => {
-      const rt = insertIntoTemplate(t, { localFilePath: () => path });
-      return rt;
-    },
-    {}
-  );
+  let allFilePathsTemplate: Template = {};
+  allFilePaths.forEach((path: string, i) => {
+    allFilePathsTemplate["localFilePath" + i] = () => path;
+  }, {});
+
   const includeTempl = {};
   Object.keys(parseTemplate)
     .filter((key) => key.includes("filePath"))
@@ -51,8 +56,10 @@ export const get = async (config: RunnerConfig, input: TemplateAsString) => {
       includeTempl[key] = parseTemplate[key];
     });
 
-  const division = orderedParse(allFilePathsTemplate, [includeTempl]);
 
+  // Will be a performance hit when  there are thousands of files.
+  // To make that go down, be sure to ignore enough files.
+  const division = orderedParse(allFilePathsTemplate, [includeTempl]);
   // find all keys with filePath in the denominator
   const filePaths = Object.keys(division)
     .filter((key) => key.includes("/filePath"))
@@ -64,8 +71,14 @@ export const get = async (config: RunnerConfig, input: TemplateAsString) => {
     (filePath) => (filePathHashesMap[filePath] = formFilePathHash(filePath))
   );
 
-  await storeFileHashes(config.fsPoolDir, filePathHashesMap);
-  const fileTemplates = await getAllFileTemplates(config.fsPoolDir, filePaths);
+  // oh weird PAY ATTENTION:
+  // we need to store these files in the template pool
+  // if we store them in the fs pool, the template pool can't access them
+  await storeFileHashes(config.templatePoolDir, filePathHashesMap);
+  const fileTemplates = await getAllFileTemplates(
+    config.templatePoolDir,
+    filePaths
+  );
 
   return tts(fileTemplates, false);
 };

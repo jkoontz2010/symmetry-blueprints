@@ -198,7 +198,7 @@ export function useTemplate(
     };
   }, [isMainTemplate]);
   function handleMessage(event: MessageEvent) {
-    if (event.data.data.msgId !== msgId) return;
+    if (event.data?.data?.msgId !== msgId) return;
     const message = event.data; // The json data that the extension sent
     switch (message.command) {
       case "generator_result":
@@ -233,9 +233,10 @@ export function useTemplate(
       msgId,
     });
   }
-  const handleConvertWordSteps = () => {
-    const parsedWord = parseWordStepsIntoWord(definition.name, wordSteps);
-    console.log("parsedWord", parsedWord, wordSteps);
+  const handleConvertWordSteps = (saveAsName?: string) => {
+    const name = saveAsName?.length > 0 ? saveAsName : definition.name;
+    const parsedWord = parseWordStepsIntoWord(name, wordSteps);
+
     postMessage({
       command: "store_runnable_word",
       word: parsedWord,
@@ -259,6 +260,14 @@ export function useTemplate(
       template: tts(template, false),
     });
   };
+
+  function handleOpenFileAtKey(key: string) {
+    postMessage({
+      command: "open_file_at_key",
+      findKey: key,
+      template: tts(template, false),
+    });
+  }
   //console.log("Word steps", wordSteps);
   return {
     template,
@@ -272,6 +281,7 @@ export function useTemplate(
     handleConvertWordSteps,
     handleRunnableWordClick,
     handleTransition,
+    handleOpenFileAtKey,
   };
 }
 

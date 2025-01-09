@@ -20,7 +20,6 @@ export function useQueueListener() {
     const message = event.data; // The json data that the extension sent
     switch (message.command) {
       case "queue_update":
-        console.log("handling generator result");
         handleQueueUpdate(message);
         break;
       default: {

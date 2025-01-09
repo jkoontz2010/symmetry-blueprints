@@ -1,6 +1,6 @@
 import React from "react";
 import { WordStep } from "./useTemplate";
-import { tts } from "symmetric-parser";
+import { genTemplateWithVars, tts } from "symmetric-parser";
 import { Template } from "symmetric-parser/dist/src/templator/template-group";
 
 function parseStringifiedTemplateModule(templateModule: string) {
@@ -157,11 +157,12 @@ export function useFileSystem(postMessage) {
   };
   const addToTemplatePool = (key: string, value: string, args: string[]) => {
     console.log("SENDING TO ADD TO TEMPLATE POOL", key, value, args);
+    const template = genTemplateWithVars({[key]:()=>value}, args);
+    console.log("TTS", tts(template,false));
     postMessage({
       command: "add_template",
-      key,
-      args: JSON.stringify(args),
-      value,
+      template: tts(template,false),
+      key
     });
   };
   const selectQueue = (queueName) => {
@@ -170,6 +171,8 @@ export function useFileSystem(postMessage) {
       queueName,
     });
   };
+
+
 
   return {
     readAllFiles,

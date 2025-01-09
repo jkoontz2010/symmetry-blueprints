@@ -80,7 +80,7 @@ async function handleTemplate(
 }
 
 // make it agnostic from WHAT gets ran
-type SubscribeCb = () => void;
+type SubscribeCb = (newSteps: DequeueStep[]) => void;
 
 export default class Runner {
   steps: DequeueStep[];
@@ -115,7 +115,7 @@ export default class Runner {
   onQueueChange() {
     this.subscribed.forEach((cb, key) => {
       try {
-        cb();
+        cb(this.steps);
       } catch (e) {
         console.error(`onQueueChange failure, ${key} callback failed:`);
         console.error(e);
@@ -163,6 +163,7 @@ export default class Runner {
       transitionAction: oldTransitionAction,
     });
     this.appendLeft(queueSteps);
+    console.log("ALL QUEUE STEPS", this.steps, "VS", queueSteps)
     this.onQueueChange();
     // every handler must implement identity
     this.currentStep.transitionAction = "identity";
@@ -198,7 +199,6 @@ export default class Runner {
         false
       );
       if (queuedTemplates.length > 0) {
-        console.log("FOUND SUB TEMPLATES", queuedTemplates.length);
         this.addSubTemplatesToQueue(queuedTemplates);
       }
       stepTemplate = runResult;
