@@ -55,13 +55,13 @@ const App = () => {
     subTemplate,
   } = useFileSystem(vscode.postMessage);
   React.useEffect(() => {
-    readAllFiles("blank template");
+    readAllFiles("TemplateTreeParse");
   }, []);
   const [showGTWVEditor, setShowGTWVEditor] = React.useState(false);
   const generatorMeta = !loading ? buildAllGeneratorsTemplate(generatorsFileText) : {}
   const generatorNames = !loading ? buildGeneratorNamesFromMeta(generatorMeta) : []
   return (
-    <div>
+    <div style={{backgroundColor: "#f6f8fa", width:"100%"}}>
       <div><QueueHeader/></div>
       <CssVarsProvider>
         <Dropdown
@@ -70,6 +70,7 @@ const App = () => {
             selectQueue(value);
           }}
           placeholder="Select a queue"
+          id="queue-dropdown"
         />
         <Dropdown
           options={wordNames}
@@ -77,20 +78,23 @@ const App = () => {
             setWord(value);
           }}
           placeholder="Select a word"
+          id="word-dropdown"
         />
-        <WordCreator createNewWord={createNewWord} />
+        <WordCreator createNewWord={createNewWord} id="word-creator"/>
         {showGTWVEditor && (
           <GTWVEditor
             handleSubmit={(value) => {
               setShowGTWVEditor(false);
               addToTemplatePool(value.key, value.value, value.args);
             }}
+            id="gtwv-editor"
           />
         )}
         <button
           onClick={() => {
             setShowGTWVEditor(!showGTWVEditor);
           }}
+          id="toggle-gtwv-editor"
         >
           toggle GTWV Editor
         </button>
@@ -125,12 +129,6 @@ const App = () => {
             />
           </>
         )}
-        {/*<BuilderAccordion 
-          generatorsFileText={generatorsFileText} 
-          templatesFileText={templatesFileText} 
-          wordsFileText={wordsFileText} 
-          postMessage={vscode.postMessage}
-        />*/}
       </CssVarsProvider>
     </div>
   );

@@ -63,7 +63,7 @@ export const TemplateEditors = ({
     <div>
       <PanelGroup
         direction="horizontal"
-        style={{ width: "1500px", height: "600px" }}
+        style={{ width: "1500px", height: "600px", backgroundColor: "#f6f8fa" }}
       >
         {templateDefinitions.map((def, i) => {
           const generatorsTemplate = def.meta?.generators ?? {};
@@ -90,7 +90,7 @@ export const TemplateEditors = ({
           );
         })}
       </PanelGroup>
-      <div>
+      <div id="steps-for-panel">
         {Object.keys(stepsForPanel)?.map((k) => {
           //console.log("steps for panel", stepsForPanel, k, stepsForPanel?.[k]);
           return (
@@ -265,6 +265,9 @@ export const TemplateEditor = ({
   return (
     <>
       {templates.map((template, i) => {
+        function handleAddToGeneratorPool() {
+          addToFilledGeneratorPool(multiply(sortTemplateByDeps(template), {}));
+        }
         return (
           <>
             <SkeletonPanel
@@ -288,7 +291,9 @@ export const TemplateEditor = ({
               style={{ overflowX: "scroll", overflowY: "scroll" }}
             >
               {isMainEditor && (
-                <button onClick={handleTransition}>RUN TRANSITION</button>
+                <button onClick={handleTransition} id="run-transition">
+                  RUN TRANSITION
+                </button>
               )}
               <h3 style={{ color: "black" }}>{definition.name}</h3>{" "}
               <SaveWordAs handleSave={(name) => handleConvertWordSteps(name)} />
@@ -311,11 +316,8 @@ export const TemplateEditor = ({
               />
               {!isMainEditor && (
                 <button
-                  onClick={() =>
-                    addToFilledGeneratorPool(
-                      multiply(sortTemplateByDeps(template), {})
-                    )
-                  }
+                  onClick={() => handleAddToGeneratorPool()}
+                  id="add-to-filled-generator-pool"
                 >
                   SAVE step1
                 </button>
@@ -323,6 +325,7 @@ export const TemplateEditor = ({
             </Panel>
             <PanelResizeHandle
               style={{ border: "1px solid black", marginRight: "6px" }}
+              id="123"
             />
           </>
         );
@@ -370,7 +373,7 @@ export const SkeletonPanel = ({
       minSize={15}
       style={{ overflowX: "scroll", overflowY: "scroll" }}
     >
-      <div>
+      <div id="add-definition-to-template">
         <input
           value={defKeyName}
           onChange={(e) => setDefKeyName(e.target.value)}
@@ -392,6 +395,7 @@ export const SkeletonPanel = ({
         </button>
       </div>
       <div style={{ height: "550px", overflowY: "scroll" }}>
+        <div id="click-runnable-generators">Runnable generators:</div>
         {Object.keys(runnableSteps)?.map((rs) => {
           //console.log("HERE WE ARE WITH RUNNABLE STEPS", rs.toString(), rs);
           const full = runnableSteps[rs]();
@@ -408,7 +412,9 @@ export const SkeletonPanel = ({
             </div>
           );
         })}
-        <div style={{ color: "black" }}>Runnable Words:</div>
+        <div style={{ color: "black" }} id="click-runnable-words">
+          Runnable Words:
+        </div>
         {runnableWords.map((k) => {
           return (
             <div>
@@ -439,7 +445,9 @@ export const SkeletonPanel = ({
             </div>
           );
         })}
-        <div style={{ color: "black" }}>Common:</div>
+        <div style={{ color: "black" }} id="click-common">
+          Common:
+        </div>
         {COMMON_CHARS.map((k) => {
           return (
             <div
@@ -457,7 +465,9 @@ export const SkeletonPanel = ({
           );
         })}
 
-        <div style={{ color: "black" }}>Templates:</div>
+        <div style={{ color: "black" }} id="click-templates">
+          Templates:
+        </div>
         {Object.keys(templateModule)?.map((k) => {
           return (
             <div>
@@ -529,7 +539,9 @@ export const SkeletonPanel = ({
             </>
           </>
         )}
-        <div style={{ color: "black" }}>Generators</div>
+        <div style={{ color: "black" }} id="click-generators">
+          Generators
+        </div>
         {lastClickedGenerator != null && (
           <div style={{ color: "red", textDecoration: "none" }}>
             {getGeneratorSignatureFromKey(
@@ -550,6 +562,7 @@ export const SkeletonPanel = ({
                 handleGeneratorClick(k);
                 setLastClickedGenerator(k);
               }}
+              id="click-favorite-generators"
             >
               {k}
             </div>
@@ -656,7 +669,7 @@ export const TemplateTree = ({
   //console.log("TEMPLATE TREE TEMPLATE", template)
   return (
     <div>
-      <button onClick={() => handleSaveAllFiles(template)}>
+      <button onClick={() => handleSaveAllFiles(template)} id="save-all-files">
         Save All Files
       </button>
       <div>
@@ -721,7 +734,9 @@ export const TemplateTree = ({
           );
         })}
       </div>
-      <button onClick={handleCompile}>Compile</button>
+      <button onClick={handleCompile} id="compile">
+        Compile
+      </button>
       {compiledTemplate !== "" && (
         <pre
           style={{
@@ -738,24 +753,24 @@ export const TemplateTree = ({
     </div>
   );
 };
-const IsolatedTemplateSaver = ({
+export const IsolatedTemplateSaver = ({
   handleSave,
 }: {
   handleSave: (name: string) => void;
 }) => {
   const [name, setName] = useState("");
   return (
-    <>
+    <span id="isolated-template-saver">
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Isolated Template Name"
       ></input>
       <button onClick={() => handleSave(name)}>Save Templ</button>
-    </>
+    </span>
   );
 };
-const TreeNode = ({
+export const TreeNode = ({
   tKey,
   insertMode,
   hiddenSet,
@@ -781,25 +796,39 @@ const TreeNode = ({
         display: hiddenSet.has(tKey) ? "none" : "block",
       }}
     >
-      <button onClick={() => handleCollapse(tKey)}>C</button>
+      <button onClick={() => handleCollapse(tKey)} id="tree-collapse">
+        C
+      </button>
       <span
         style={{
           color: insertToKey === numerator ? "black" : clickableNumeratorColor,
           textDecoration: insertToKey === numerator ? "" : "underline",
           cursor: "pointer",
         }}
+        id="tree-numerator-click"
         onClick={() => handleNumeratorClick(numerator)}
       >
         {numerator}
       </span>
-      <button onClick={() => handleOpenFilter(tKey)}>I</button>
+      <button
+        onClick={() => handleOpenFilter(tKey)}
+        id="tree-open-isolation-to-key"
+      >
+        I
+      </button>
       <button
         style={{ marginLeft: "14px" }}
         onClick={() => handleRemoveKey(tKey)}
+        id="tree-remove-key"
       >
         R
       </button>
-      <button onClick={() => handleOpenFileAtKey(tKey)}>V</button>
+      <button
+        onClick={() => handleOpenFileAtKey(tKey)}
+        id="tree-open-key-in-vscode"
+      >
+        V
+      </button>
 
       {collapsedSet.has(tKey) ? (
         <span
@@ -810,6 +839,7 @@ const TreeNode = ({
             textDecoration: "underline",
             marginLeft: "3px",
           }}
+          id="tree-expand"
         >
           . . .
         </span>
@@ -906,10 +936,10 @@ function renderPart(part: string, handleRsClick: (arg: string) => void) {
   return <div style={{ color: "red", padding: "0px 5px" }}>{finalParts}</div>;
 }
 
-const SaveWordAs = ({ handleSave }) => {
+export const SaveWordAs = ({ handleSave }) => {
   const [wordName, setWordName] = useState("");
   return (
-    <div>
+    <div id="save-word-as">
       <input
         placeholder="word name"
         onChange={(e) => setWordName(e.target.value)}

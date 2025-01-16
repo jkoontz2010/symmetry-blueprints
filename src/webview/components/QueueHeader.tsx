@@ -28,7 +28,7 @@ export const QueueHeader = ({}) => {
   }
   const currentStep = queueSteps[0];
   return (
-    <div className={baseStyle}>
+    <div className={baseStyle} id="queue-header">
       {queueSteps.map((step, i) => {
         const style = i === 0 ? currentStepStyle : upcomingStepStyle;
         const bridge = i !== queueSteps.length - 1 ? `-->` : "";

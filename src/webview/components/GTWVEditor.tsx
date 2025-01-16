@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import AceEditor from "react-ace";
 
-export const GTWVEditor = ({ handleSubmit }) => {
+export const GTWVEditor = ({ handleSubmit, id }) => {
   const [value, setValue] = useState("");
   const [args, setArgs] = useState("");
   const [key, setKey] = useState("");
@@ -9,7 +9,7 @@ export const GTWVEditor = ({ handleSubmit }) => {
     setValue(newValue);
   }
   return (
-    <div>
+    <div id={id}>
       <input
         type="text"
         value={key}
