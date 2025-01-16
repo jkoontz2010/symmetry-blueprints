@@ -110,10 +110,14 @@ export const getAllFileTemplates = async (
   //console.log("getAllFileTemplates");
   //console.log("FILE PATHS", Array.from(filePaths));
   const readPromises = Array.from(filePaths).map(async (filePath) => {
+    try {
     const data = await fs.readFile(filePath, { encoding: "utf8" });
     return { filePath, data };
+    }catch {
+      return null;
+    }
   });
-  const allFiles = await Promise.all(readPromises);
+  const allFiles = compact(await Promise.all(readPromises))
   //console.log("ALL FILES", allFiles);
   let allFileTemplates = {};
   let idx = 1;
@@ -175,10 +179,8 @@ export const getFilePathFromHash = async (
   pathToStorage: string,
   fileHash: string
 ) => {
-  console.log("getFilePathFromHash", fileHash, pathToStorage);
   const hashFilePath = path.join(pathToStorage, "filePathHashes.txt");
   const data = await fs.readFile(hashFilePath, { encoding: "utf8" });
-  console.log("DATA", data);
   const lines = data.split("\n");
   const result = lines.find((line) => line.includes(fileHash)).split("=")[1];
   return result;
